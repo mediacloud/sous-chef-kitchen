@@ -26,6 +26,7 @@ def Buffet_TopTerms(data:SousChefBaseOrder):
 	#data = SousChefBaseOrder(**data)
 	recipe = open("topterms_recipe.yaml", "r").read()
 	json_conf = recipe_loader.t_yaml_to_conf(recipe, **data.dict())
+	json_conf["name"] = data.NAME
 	run_data = RunPipeline(json_conf)
 	send_run_summary_email(run_data, data.EMAIL_TO)
 
