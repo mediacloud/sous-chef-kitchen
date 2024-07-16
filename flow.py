@@ -15,15 +15,15 @@ class SousChefBaseOrder(BaseModel):
 	COLLECTIONS: list[str] = ["34412234"]
 	NAME: str = "Sous-Chef-Run"
 	S3_PREFIX:str="mediacloud"
-	EMAIL_TO:str = ["paige@mediacloud.org"]
+	EMAIL_TO:list[str] = ["paige@mediacloud.org"]
 
-	#We'll want some validators here ont he date, etc
+	#We'll want some validators here on the date, etc
 
 
 
 @flow()
-def Buffet_TopTerms(data:dict):
-	data = SousChefBaseOrder(**data)
+def Buffet_TopTerms(data:SousChefBaseOrder):
+	#data = SousChefBaseOrder(**data)
 	recipe = open("topterms_recipe.yaml", "r").read()
 	json_conf = recipe_loader.t_yaml_to_conf(recipe, **test.dict())
 	run_data = RunPipelin(json_conf)

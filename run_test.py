@@ -17,7 +17,7 @@ async def main():
 		S3_PREFIX="first_buffet_test"
 		)
 
-	await deployment_client.run_deployment(parameters={"data":order.json()})
+	await deployment_client.run_deployment(parameters={"data":order.dict()})
 
 if __name__ == "__main__":
 	loop = asyncio.get_event_loop()
