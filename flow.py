@@ -25,7 +25,7 @@ class SousChefBaseOrder(BaseModel):
 def Buffet_TopTerms(data:SousChefBaseOrder):
 	#data = SousChefBaseOrder(**data)
 	recipe = open("topterms_recipe.yaml", "r").read()
-	json_conf = recipe_loader.t_yaml_to_conf(recipe, **recipe.dict())
+	json_conf = recipe_loader.t_yaml_to_conf(recipe, **data.dict())
 	run_data = RunPipeline(json_conf)
 	send_run_summary_email(run_data, data.EMAIL_TO)
 
