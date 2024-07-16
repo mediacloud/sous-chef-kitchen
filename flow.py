@@ -22,8 +22,8 @@ class SousChefBaseOrder(BaseModel):
 
 
 @flow()
-def Buffet_TopTerms(data:SousChefBaseOrder):
-
+def Buffet_TopTerms(data:dict):
+	data = SousChefBaseOrder(**data)
 	recipe = open("topterms_recipe.yaml", "r").read()
 	json_conf = recipe_loader.t_yaml_to_conf(recipe, **test.dict())
 	run_data = RunPipelin(json_conf)
