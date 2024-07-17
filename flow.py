@@ -30,9 +30,6 @@ class SousChefBaseOrder(BaseModel):
 		return f"'{self.END_DATE_STR}'"
 	
 
-
-
-
 @flow()
 def Buffet_TopTerms(data:SousChefBaseOrder):
 	#data = SousChefBaseOrder(**data)
@@ -40,9 +37,7 @@ def Buffet_TopTerms(data:SousChefBaseOrder):
 	json_conf = recipe_loader.t_yaml_to_conf(recipe, **data.dict())
 	json_conf["name"] = data.NAME
 	run_data = RunPipeline(json_conf)
-	send_run_summary_email(run_data, data.EMAIL_TO)
-
-
+	send_run_summary_email({data.NAME:run_data}, data.EMAIL_TO)
 
 
 if __name__ == '__main__':

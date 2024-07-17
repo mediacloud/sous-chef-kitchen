@@ -9,8 +9,8 @@ dep = yaml.safe_load(open("prefect.yaml").read())
 deployment_name = dep["deployments"][0]["name"]
 
 async def run_order(order):
+	print("Running...")
 	deployment_client = SousChefClient(deployment_name)
-
 	await deployment_client.run_deployment(parameters={"data":order.dict()})
 
 
