@@ -1,1 +1,2 @@
-sous-chef @ git+https://github.com/mediacloud/sous-chef
+sous-chef @ git+https://github.com/mediacloud/sous-chef@v0.3
+streamlit-pydantic

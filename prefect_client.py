@@ -41,7 +41,7 @@ class SousChefClient():
             matching_runs = await client.read_flow_runs(flow_run_filter=running_tagged_filter)
             
             if len(matching_runs) <= 0:
-                print(parameters)
+                
                 response = await client.read_deployments(deployment_filter=deployment_filter)
                 run = await client.create_flow_run_from_deployment(response[0].id, parameters=parameters, tags=tags)
                 return run
