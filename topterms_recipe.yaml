@@ -1,4 +1,5 @@
 vars:
+    - API_KEY_BLOCK
     - QUERY
     - COLLECTIONS
     - START_DATE
@@ -8,6 +9,7 @@ vars:
 steps:
     - QueryOnlineNews:
         params:
+            api_key_block: $API_KEY_BLOCK
             query: $QUERY
             collections: $COLLECTIONS
             start_date: $START_DATE
