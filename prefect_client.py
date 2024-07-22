@@ -19,40 +19,40 @@ class SousChefClient():
             response = await client.hello()
         return response.status_code == 200
 
-    async def run_deployment(self, name, tags=[], parameters=None):
-
+    async def run_deployment(self, deployment_name, tags=[], parameters=None):
+        
         deployment_filter = DeploymentFilter(
-            name=DeploymentFilterName(any_=[self.deployment_name])  # Replace with your deployment name
+            name=DeploymentFilterName(any_=[deployment_name])  # Replace with your deployment name
         )
 
-        async with prefect.get_client() as client:
+        matching_runs = await self.active_runs_with_tag(tags=tags)
+        if len(matching_runs) > 0:
+            raise RuntimeError("Won't launch while another run is still active")
 
-            matching_runs = await self.active_runs_with_tag(tags=tags)
-            
-            if len(matching_runs) <= 0:
-                
+        else:
+            async with prefect.get_client() as client:
                 response = await client.read_deployments(deployment_filter=deployment_filter)
                 run = await client.create_flow_run_from_deployment(response[0].id, parameters=parameters, tags=tags)
                 return run
-            else:
-                raise RuntimeError("Won't launch while another run is still active")
 
-    async def active_runs_with_tag(tags=[]):
+
+    async def active_runs_with_tag(self, tags=[]):
         tags = self.base_tags + tags
         running_tagged_filter = FlowRunFilter(
             state=FlowRunFilterState(
                 type=FlowRunFilterStateType(any_=[StateType.RUNNING, StateType.SCHEDULED,StateType.PENDING])),
             tags=FlowRunFilterTags(all_=tags)
         )
-        matching_runs = await client.read_flow_runs(flow_run_filter=running_tagged_filter)
-        return matching_runs
+        async with prefect.get_client() as client:
+            matching_runs = await client.read_flow_runs(flow_run_filter=running_tagged_filter)
+            return matching_runs
 
 
     async def check_run_status(self, id):
         pass
 
 
-    async def check_secret_exists(self, secret_key):
+    async def check_secret_exists(self, secret_key) -> bool:
          async with prefect.get_client() as client:
             
             existing_secrets = await client.read_block_documents()

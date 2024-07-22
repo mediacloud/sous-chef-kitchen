@@ -9,7 +9,6 @@ import asyncio
 dep = yaml.safe_load(open("prefect.yaml").read())
 deployment_name = dep["deployments"][0]["name"]
 
-email_to_defaults = ["paige@mediacloud.org"]
 
 deployment_client = SousChefClient()
 
@@ -27,26 +26,32 @@ if "email_checked" not in st.session_state:
 	st.session_state.email_checked = False
 if "secret_exists" not in st.session_state:
 	st.session_state.secret_exists = False
+if "email_list" not in st.session_state:
+	st.session_state.email_list = ["paige@mediacloud.org"]
+
+st.session_state.disable_run_button = not st.session_state.secret_exists
 
 
 async def secret_exists(key_name):
 	st.session_state.secret_exists = await deployment_client.check_secret_exists(key_name)
 	st.session_state.email_checked = True
+	st.rerun()
 
 async def create_secret(key_name, secret):
 	key_name = await deployment_client.get_or_create_secret(key_name, secret)
 	if key_name:
 		st.session_state.secret_exists = True
-
+		st.rerun()
 
 
 @st.experimental_dialog("User Info", width="large")
 def get_user_info():
 	email = st.text_input("User Email")
 	key_name = email_to_secret_name(email)
-	st.session_state.key_name = key_name
 
 	if st.button("Submit Email"):
+		st.session_state.key_name = key_name
+		st.session_state.email_list.extend([email])
 		asyncio.run(secret_exists(key_name))
 
 	if st.session_state.email_checked:
@@ -60,9 +65,6 @@ def get_user_info():
 
 if not st.session_state.secret_exists:
 	get_user_info()
-
-def disabled():
-	return "api_key" not in st.session_state
 
 
 st.subheader(f"Configuration for : {deployment_name}")
@@ -83,7 +85,7 @@ with col2:
 
 	email_to = st_tags(label="email to",
 					text="Press enter to add more",
-					value=email_to_defaults,
+					value=st.session_state.email_list,
 					)
 
 with st.expander("Advanced"):
@@ -91,15 +93,16 @@ with st.expander("Advanced"):
 	s3_prefix = st.text_input("s3 prefix", "mediacloud")
 
 
-
 async def run_order(order):
 	print("Running...")
-	await deployment_client.run_deployment(name=deployment_name, parameters={"data":order.dict()})
+	await deployment_client.run_deployment(deployment_name=deployment_name, parameters={"data":order.dict()})
 
-go = st.button("Submit run", disabled=st.session_state.secret_exists)
+st.write(st.session_state)
+
+go = st.button("Submit run", disabled=st.session_state.disable_run_button)
 if go:
 	order = SousChefBaseOrder(
-			API_KEY_NAME=st.session_state.key_name,
+			API_KEY_BLOCK=st.session_state.key_name,
 			QUERY=q,
 			START_DATE_STR=start_date.strftime("%Y-%m-%d"),
 			END_DATE_STR=end_date.strftime("%Y-%m-%d"),
