@@ -3,24 +3,24 @@ Sous-Chef Buffet
 
 A place to experiment with an interface for self-service sous-chef. 
 
-
 flow.py 
-	- this defines the code that runs in prefect- including sous-chef setup and runtime.
+	* this defines the code that runs in prefect- including sous-chef setup and runtime.
 
 prefect.yaml
-	- this defines how flow.py is deployed into prefect.
+	* this defines how flow.py is deployed into prefect.
 
-prefect_client.py
-	- this defines an interface to interact with that flow once it is deployed.
+souschef_client.py
+	* this defines an interface to interact with that flow once it is deployed, and other details about the prefect environment
 
-run_test.py 
-	- this will read the pydantic model from flow.py and use it to define an argparse interface to run the flow via the prefect_client
-		currently not doing that first part but honestly that's not neccesary
+api.py
+	* a fastapi wrapper around souschef_client
 
 buffet.py
-	- this will read the pydantic model from flow.py and use it to define a simple web interface to run the model and monitor its status 
+	* This is a streamlit application that makes it super easy to provide query parameters for a sous-chef flow and to run them.
+	* streamlit's syncronicity requirements are kind of a bummer though- and the final version of this will be a lightweight vue.js app
+	* leaning on api.py 
+	
 
-
-
-There's some extra thought needed about: getting API keys in there, flow status, retrieving flow output for the ui, etc...
-But the basic prefect_client loop is here now, plus a demo of a streamlit app to run it! This is in demo status officially!
+app.py
+	* A flask app (with vue frontend in buffet_app) to try and run the rest of the distance that buffet.py can't quite fill
+	

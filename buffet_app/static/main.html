@@ -1,0 +1,104 @@
+<html>
+	<head>
+		<link rel="stylesheet" href="style.css">
+		<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+		<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+	</head>
+	<body>
+
+	<div id="app">
+		<buffet>
+			<header>
+				Mediacloud Buffet
+			</header>
+			<main>
+				<run-column>
+					<sc_run v-for="r in all_runs"
+						:id=r.id
+						:name=r.name
+						:params=r.parameters
+						:state=r.state_name
+					>
+				    </sc_run>
+				</run-column>
+				<detail-column>
+
+				</detail-column>
+			</main>
+		</buffet>
+	</div>
+	<div class="padding">
+		<div> 
+			
+
+		</div>
+	</div>
+
+	<script>
+		const { createApp, ref } = Vue
+
+		app = createApp({
+			data(){
+				return{
+					all_runs:[]
+				}
+			},
+			methods:{
+				async getRuns(){
+					const res = await fetch("http://127.0.0.1:5000/all_runs")
+					runs = await res.json()
+					this.all_runs = runs
+					console.log(runs)
+				},
+			},
+			mounted(){
+				this.getRuns()
+			}
+
+		})
+		//Summary component- show a card for each run, with key info and state. 
+		app.component("sc_run", {
+			props:["id", "name", "params", "state"],
+			template:`
+				<div class="sc_run">
+					{{ name }}
+					{{ id }}
+					{{ recipe_name }}
+					{{ start_date }}
+					{{ end_date }}
+					<RunState :state=state> </RunStatus>
+				</div>
+			`,
+			data(){
+				return{
+					recipe_name: this.params.data.NAME,
+					query : this.params.data.QUERY,
+					start_date :  this.params.data.START_DATE_STR,
+					end_date: this.params.data.END_DATE_STR
+
+				}
+			},		
+
+			mounted(){
+				console.log(this.state)
+			}
+		})
+
+		//Reusable state component, which manages updating state on its own. 
+		app.component("RunState", {
+			props:["state"],
+			template:`
+				<div class="run_state">
+					{{ state }}
+				</div>
+			`,
+			mounted(){
+				console.log("Status mounted")
+			}
+		})
+
+		app.mount("#app")
+
+	</script>
+	</body>
+</html>

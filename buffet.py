@@ -2,18 +2,19 @@ import streamlit as st
 from streamlit_tags import st_tags
 from streamlit_modal import Modal
 from models import SousChefBaseOrder
-from prefect_client import SousChefClient
+from souschef_client import SousChefClient
+from prefect.client.schemas.objects import StateType
 import yaml
 import asyncio
+import time
 
 dep = yaml.safe_load(open("prefect.yaml").read())
 deployment_name = dep["deployments"][0]["name"]
 
-
 deployment_client = SousChefClient()
 
 st.set_page_config(
-	page_title="Mediacloud Buffet: Sous-Chef",
+	page_title="Mediacloud Buffet",
 	layout="wide",
 	page_icon="🍽️"
 )
@@ -28,6 +29,12 @@ if "secret_exists" not in st.session_state:
 	st.session_state.secret_exists = False
 if "email_list" not in st.session_state:
 	st.session_state.email_list = ["paige@mediacloud.org"]
+if "run_submitted" not in st.session_state:
+	st.session_state.run_submitted = False
+if "run_status_name" not in st.session_state:
+	st.session_state.run_status_name = "Waiting"
+if "run_status" not in st.session_state:
+	st.session_state.run_status = None
 
 st.session_state.disable_run_button = not st.session_state.secret_exists
 
@@ -68,14 +75,13 @@ if not st.session_state.secret_exists:
 	get_user_info()
 
 
-st.subheader(f"Configuration for : {deployment_name}")
+st.subheader(f"{deployment_name}")
 q = st.text_area("Query text")
 
 col1, col2 = st.columns(2)
 
 with col1:
 	start_date = st.date_input('Start Date')
-	
 	collections = st_tags(label="Collections",
 					text="Press enter to add more",
 					value=["34412234"],
@@ -95,10 +101,34 @@ with st.expander("Advanced"):
 
 
 async def run_order(order):
-	print("Running...")
-	await deployment_client.run_deployment(deployment_name=deployment_name, parameters={"data":order.dict()})
+	try:
+		run = await deployment_client.start_deployment(deployment_name=deployment_name, parameters={"data":order.dict()})
+	except RuntimeError:
+		st.error("SC Buffet run already running!")
+	if run:
+		st.session_state.run = run
+		st.session_state.run_submitted = True
 
-st.write(st.session_state)
+
+async def run_status_loop(run, status):
+	with status:
+		with st.spinner(f"Working...") as spinner:
+			status_indicator = status.empty()
+			while True:
+				updated_run = await deployment_client.check_run_status(st.session_state.run.id)
+				st.session_state.run_status = updated_run.state_type
+				st.session_state.run_status_name = updated_run.state_name
+				status_indicator.write(f"Status is: {st.session_state.run_status_name}")
+				if updated_run.state_type in [StateType.RUNNING, StateType.SCHEDULED,StateType.PENDING]:
+					time.sleep(10)
+				else:
+					break
+
+		status_indicator.write(f"Status is: {st.session_state.run_status_name}")
+
+async def get_run_info(run, field):
+	value = await deployment_client.check_run_status(st.session_state.run.id)
+	field.write(value)
 
 go = st.button("Submit run", disabled=st.session_state.disable_run_button)
 if go:
@@ -114,4 +144,17 @@ if go:
 		)
 	loop = asyncio.run(run_order(order))
 
+status = st.container()
 
+if st.session_state.run_submitted:
+	status.write("Run submitted")
+	st.session_state.disable_run_button = True
+	asyncio.run(run_status_loop(st.session_state.run, status))
+	
+		
+if st.session_state.run_status == StateType.COMPLETED:
+	status.success("Run completed successfully, you should have an email in your inbox now!")
+
+if st.session_state.run_status == StateType.FAILED:
+	status.error("Run Failed- contact paige@mediacloud.org for assistance")
+	asyncio.run(get_run_info(st.session_state.run, status))
