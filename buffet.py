@@ -115,11 +115,11 @@ async def run_status_loop(run, status):
 		with st.spinner(f"Working...") as spinner:
 			status_indicator = status.empty()
 			while True:
-				updated_run = await deployment_client.check_run_status(st.session_state.run.id)
-				st.session_state.run_status = updated_run.state_type
-				st.session_state.run_status_name = updated_run.state_name
+				updated_run = await deployment_client.get_run(st.session_state.run.id)
+				st.session_state.run_status = updated_run["state_type"]
+				st.session_state.run_status_name = updated_run["state_name"]
 				status_indicator.write(f"Status is: {st.session_state.run_status_name}")
-				if updated_run.state_type in [StateType.RUNNING, StateType.SCHEDULED,StateType.PENDING]:
+				if updated_run["state_type"] in [StateType.RUNNING, StateType.SCHEDULED,StateType.PENDING]:
 					time.sleep(10)
 				else:
 					break
@@ -127,7 +127,7 @@ async def run_status_loop(run, status):
 		status_indicator.write(f"Status is: {st.session_state.run_status_name}")
 
 async def get_run_info(run, field):
-	value = await deployment_client.check_run_status(st.session_state.run.id)
+	value = await deployment_client.get_run(st.session_state.run.id)
 	field.write(value)
 
 go = st.button("Submit run", disabled=st.session_state.disable_run_button)

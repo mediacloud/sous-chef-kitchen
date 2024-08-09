@@ -35,14 +35,14 @@ class SousChefClient():
             name=DeploymentFilterName(any_=[deployment_name])  # Replace with your deployment name
         )
 
-        matching_runs = await self.active_runs_with_tag(tags=tags)
+        matching_runs = await self.ongoing_runs(tags=tags)
         if len(matching_runs) > 0:
             raise RuntimeError("Won't launch while another run is still active")
 
         else:
             async with prefect.get_client() as client:
                 response = await client.read_deployments(deployment_filter=deployment_filter)
-                run = await client.create_flow_run_from_deployment(response[0].id, parameters=parameters, tags=self.tags)
+                run = await client.create_flow_run_from_deployment(response[0].id, parameters=parameters, tags=tags)
                 return run
 
     async def all_runs(self, tags=[]):
@@ -65,10 +65,11 @@ class SousChefClient():
             matching_runs = await client.read_flow_runs(flow_run_filter=running_tagged_filter)
             return matching_runs
 
-    async def check_run_status(self, id):
+    async def get_run(self, id):
         async with prefect.get_client() as client:
+            print(id)
             value = await client.read_flow_run(id)
-            return value
+            return run_to_json(value)
 
     async def check_secret_exists(self, secret_key) -> bool:
          async with prefect.get_client() as client:

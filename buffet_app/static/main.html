@@ -7,25 +7,24 @@
 	<body>
 
 	<div id="app">
-		<buffet>
-			<header>
+		
+		<header>
 				Mediacloud Buffet
-			</header>
-			<main>
-				<run-column>
-					<sc_run v-for="r in all_runs"
-						:id=r.id
-						:name=r.name
-						:params=r.parameters
-						:state=r.state_name
-					>
-				    </sc_run>
-				</run-column>
-				<detail-column>
-
-				</detail-column>
-			</main>
-		</buffet>
+		</header>
+		<main>
+			<div class="run-column">
+				<sc_run v-for="r in all_runs"
+					:id=r.id
+					:name=r.name
+					:params=r.parameters
+					:start_state=r.state_name
+				>
+			    </sc_run>
+			</div>
+			<div class="detail-column">
+			</div>
+		</main>
+		
 	</div>
 	<div class="padding">
 		<div> 
@@ -45,10 +44,11 @@
 			},
 			methods:{
 				async getRuns(){
-					const res = await fetch("http://127.0.0.1:5000/all_runs")
+					const res = await fetch(
+							"http://127.0.0.1:5000/all_runs"
+													)
 					runs = await res.json()
 					this.all_runs = runs
-					console.log(runs)
 				},
 			},
 			mounted(){
@@ -58,7 +58,7 @@
 		})
 		//Summary component- show a card for each run, with key info and state. 
 		app.component("sc_run", {
-			props:["id", "name", "params", "state"],
+			props:["id", "name", "params", "start_state"],
 			template:`
 				<div class="sc_run">
 					{{ name }}
@@ -66,7 +66,7 @@
 					{{ recipe_name }}
 					{{ start_date }}
 					{{ end_date }}
-					<RunState :state=state> </RunStatus>
+					<RunState :state=state> </RunState>
 				</div>
 			`,
 			data(){
@@ -74,13 +74,29 @@
 					recipe_name: this.params.data.NAME,
 					query : this.params.data.QUERY,
 					start_date :  this.params.data.START_DATE_STR,
-					end_date: this.params.data.END_DATE_STR
-
+					end_date: this.params.data.END_DATE_STR,
+					state: this.start_state
 				}
 			},		
-
+			methods:{
+				async getRunStatus(){
+					console.log(`Checking Status for ${this.id}`)
+					const res = await fetch(`http://127.0.0.1:5000/run/${this.id}`)
+					final_res = await res.json()
+					this.state = final_res.state_name
+					console.log(this.state)
+					if(this.isOngoing()){
+						setTimeout(this.getRunStatus, 10000)
+					}
+				},
+				isOngoing(){
+					return ["Running", "Scheduled", "Pending"].includes(this.state)
+				}
+			},
 			mounted(){
-				console.log(this.state)
+				if(this.isOngoing()){
+					setTimeout(this.getRunStatus, 10000)
+				}
 			}
 		})
 

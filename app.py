@@ -52,3 +52,10 @@ async def all_runs(tags:List = []):
 	runs = await client.all_runs(tags=tags)
 	return runs
 
+@app.get("/run/<run_id>")
+async def get_run(run_id):
+	run = await client.get_run(run_id)
+	return run
+
+
+
