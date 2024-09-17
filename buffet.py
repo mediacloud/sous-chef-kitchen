@@ -105,9 +105,10 @@ async def run_order(order):
 		run = await deployment_client.start_deployment(deployment_name=deployment_name, parameters={"data":order.dict()})
 	except RuntimeError:
 		st.error("SC Buffet run already running!")
-	if run:
-		st.session_state.run = run
-		st.session_state.run_submitted = True
+	else:
+		if run:
+			st.session_state.run = run
+			st.session_state.run_submitted = True
 
 
 async def run_status_loop(run, status):
@@ -135,8 +136,8 @@ if go:
 	order = SousChefBaseOrder(
 			API_KEY_BLOCK=st.session_state.key_name,
 			QUERY=q,
-			START_DATE_STR=start_date.strftime("%Y-%m-%d"),
-			END_DATE_STR=end_date.strftime("%Y-%m-%d"),
+			START=start_date,
+			END=end_date,
 			COLLECTIONS=collections,
 			NAME=run_name,
 			S3_PREFIX=s3_prefix,

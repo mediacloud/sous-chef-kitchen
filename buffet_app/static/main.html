@@ -3,6 +3,9 @@
 		<link rel="stylesheet" href="style.css">
 		<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
 		<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/jsonform/2.2.5/jsonform.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/@jsonforms/vue@3.3.0/lib/jsonforms-vue.esm.min.js "></script>
+
 	</head>
 	<body>
 
@@ -22,6 +25,10 @@
 			    </sc_run>
 			</div>
 			<div class="detail-column">
+				<sc_detail
+								>
+
+				</sc_detail>
 			</div>
 		</main>
 		
@@ -32,7 +39,7 @@
 
 		</div>
 	</div>
-
+	
 	<script>
 		const { createApp, ref } = Vue
 
@@ -66,7 +73,7 @@
 					{{ recipe_name }}
 					{{ start_date }}
 					{{ end_date }}
-					<RunState :state=state> </RunState>
+					<run_state :state=state> </run_state>
 				</div>
 			`,
 			data(){
@@ -80,7 +87,7 @@
 			},		
 			methods:{
 				async getRunStatus(){
-					console.log(`Checking Status for ${this.id}`)
+					
 					const res = await fetch(`http://127.0.0.1:5000/run/${this.id}`)
 					final_res = await res.json()
 					this.state = final_res.state_name
@@ -101,16 +108,94 @@
 		})
 
 		//Reusable state component, which manages updating state on its own. 
-		app.component("RunState", {
+		app.component("run_state", {
 			props:["state"],
 			template:`
 				<div class="run_state">
 					{{ state }}
 				</div>
 			`,
+		})
+
+		//still not completely sure what the signature is here- it's probably a run id, but run id can be none...
+		app.component("sc_detail", {
+			template:`
+			<div>
+				{{ title }}
+				{{ menu }}
+				<sc-form
+					:data="data"
+					:renderers="renderers"
+					:schema="schema"
+					:uischema="uischema"
+					@change="onChange"				
+				/>
+				
+			</div>
+			`,
+			data(){
+				return{
+					menu: null,
+					title: "",
+					fields:[]
+				}
+			},
+			methods:{
+				async getSCSchema(){
+					const res = await fetch(`http://127.0.0.1:5000/menu`)
+					final_res = await res.json()
+					this.menu = final_res
+					this.title = this.menu.title
+					for( let field of Object.values(final_res.properties)){
+						console.log(field)
+						this.fields.push(field)
+					}
+					console.log(this.fields)
+				}
+
+			},
+
 			mounted(){
-				console.log("Status mounted")
+				this.getSCSchema()
+				console.log(this.menu)
 			}
+
+		})
+
+		app.component("sc-form", {
+			components:{
+				JSONForm,
+			},
+			data() {
+			    return {
+			    	 // freeze renderers for performance gains
+			    	renderers: Object.freeze(this.renderers),
+			    	data: {
+			        	number: 5,
+			      	},
+			     	schema: {
+			        	properties: {
+			          		number: {
+			            		type: 'number',
+			          		},
+			       		},
+			      	},
+			      	uischema: {
+			        	type: 'VerticalLayout',
+			        	elements: [
+			          		{
+			        	    type: 'Control',
+			            	scope: '#/properties/number',
+			          		},
+			        	],
+			      	},
+			    }
+			},
+			methods: {
+			   	onChange(event) {
+			      this.data = event.data;
+			    },
+			},
 		})
 
 		app.mount("#app")

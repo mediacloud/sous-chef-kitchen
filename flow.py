@@ -13,7 +13,7 @@ from email_flow import send_run_summary_email
 @flow()
 def Buffet_TopTerms(data:SousChefBaseOrder):
 	#data = SousChefBaseOrder(**data)
-	recipe = open("topterms_recipe.yaml", "r").read()
+	recipe = open("recipes/topterms.yaml", "r").read()
 	json_conf = recipe_loader.t_yaml_to_conf(recipe, **data.dict())
 	json_conf["name"] = data.NAME
 	run_data = RunPipeline(json_conf)
@@ -26,7 +26,7 @@ if __name__ == '__main__':
 		S3_PREFIX="first_buffet_test"
 		)
 
-	recipe = open("topterms_recipe.yaml", "r").read()
+	recipe = open("recipes/topterms.yaml", "r").read()
 	json_conf = recipe_loader.t_yaml_to_conf(recipe, **data.dict())
 	json_conf["name"] = data.NAME
 	run_data = RunPipeline(json_conf)

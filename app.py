@@ -1,4 +1,5 @@
 from souschef_client import SousChefClient
+from models import SousChefBaseOrder
 from flask import Flask, jsonify, render_template, send_file, request
 import mediacloud.api
 import datetime
@@ -51,6 +52,12 @@ def style():
 async def all_runs(tags:List = []):
 	runs = await client.all_runs(tags=tags)
 	return runs
+
+@app.get("/menu")
+async def menu():
+	return SousChefBaseOrder.model_json_schema()
+	#For now this is just the one schema, but this could be for 
+
 
 @app.get("/run/<run_id>")
 async def get_run(run_id):
