@@ -83,7 +83,7 @@ if not st.session_state.secret_exists:
 	get_user_info()
 
 
-st.subheader(f"{deployment_name}")
+st.subheader(f"Sous-Chef Buffet: {deployment_name}")
 
 recipe = st.selectbox("Recipe", available_recipes)
 
@@ -113,10 +113,11 @@ with st.expander("Advanced"):
 
 async def run_order(recipe, order):
 	try:
-		run = await deployment_client.start_deployment(deployment_name=deployment_name, parameters={"data":order.dict()})
+		run = await deployment_client.start_deployment(deployment_name=deployment_name, parameters={"recipe_name":recipe, "data":order.dict()})
 	except RuntimeError:
 		st.error("SC Buffet run already running!")
 	else:
+		print("Got this far!")
 		if run:
 			st.session_state.run = run
 			st.session_state.run_submitted = True
