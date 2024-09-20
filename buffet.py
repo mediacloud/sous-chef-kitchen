@@ -17,7 +17,6 @@ deployment_client = SousChefClient()
 
 st.set_page_config(
 	page_title="Mediacloud Buffet",
-	layout="wide",
 	page_icon="🍽️"
 )
 
