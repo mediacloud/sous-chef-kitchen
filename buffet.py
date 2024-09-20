@@ -117,11 +117,11 @@ async def run_order(recipe, order):
 	except RuntimeError:
 		st.error("SC Buffet run already running!")
 	else:
-		print("Got this far!")
+
 		if run:
 			st.session_state.run = run
 			st.session_state.run_submitted = True
-
+		print("...")
 
 async def run_status_loop(run, status):
 	with status:
