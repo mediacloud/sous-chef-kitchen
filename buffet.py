@@ -7,9 +7,11 @@ from prefect.client.schemas.objects import StateType
 import yaml
 import asyncio
 import time
+import os
 
 dep = yaml.safe_load(open("prefect.yaml").read())
 deployment_name = dep["deployments"][0]["name"]
+title = "Sous-Chef Buffet"
 
 deployment_client = SousChefClient()
 
@@ -18,6 +20,12 @@ st.set_page_config(
 	layout="wide",
 	page_icon="🍽️"
 )
+
+def get_recipes():
+	recipes = os.listdir("recipes")
+	return [r.split(".")[0] for r in recipes]
+
+available_recipes = get_recipes()
 
 def email_to_secret_name(email):
 	return f"{email.split("@")[0]}-mc-api-secret"
@@ -76,6 +84,9 @@ if not st.session_state.secret_exists:
 
 
 st.subheader(f"{deployment_name}")
+
+recipe = st.selectbox("Recipe", available_recipes)
+
 q = st.text_area("Query text")
 
 col1, col2 = st.columns(2)
@@ -100,7 +111,7 @@ with st.expander("Advanced"):
 	s3_prefix = st.text_input("s3 prefix", "mediacloud")
 
 
-async def run_order(order):
+async def run_order(recipe, order):
 	try:
 		run = await deployment_client.start_deployment(deployment_name=deployment_name, parameters={"data":order.dict()})
 	except RuntimeError:
@@ -143,7 +154,7 @@ if go:
 			S3_PREFIX=s3_prefix,
 			EMAIL_TO=email_to
 		)
-	loop = asyncio.run(run_order(order))
+	loop = asyncio.run(run_order(recipe, order))
 
 status = st.container()
 

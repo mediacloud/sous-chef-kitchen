@@ -35,11 +35,11 @@ pull:
 
 # the deployments section allows you to provide configuration for deploying flows
 deployments:
-- name: buffet-top-terms
+- name: buffet-base
   version:
   tags: []
   description:
-  entrypoint: flow.py:Buffet_TopTerms
+  entrypoint: flow.py:buffet_base
   work_pool:
     name: Guerin
     work_queue_name:

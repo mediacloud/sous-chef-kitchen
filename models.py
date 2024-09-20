@@ -21,3 +21,7 @@ class SousChefBaseOrder(BaseModel):
 	@computed_field()
 	def END_DATE(self) -> str:
 		return f"'{self.END.strftime("%Y-%m-%d")}'"
+
+
+class EntitiesOrder(SousChefBaseOrder):
+	NER_MODEL_NAME: str = ""
