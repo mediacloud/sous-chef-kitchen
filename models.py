@@ -1,6 +1,8 @@
 from pydantic import BaseModel, computed_field
 from datetime import date
 
+str_format = "%Y-%m-%d"
+
 class SousChefBaseOrder(BaseModel):
 	API_KEY_BLOCK:str = "default"
 	QUERY:str = ""
@@ -16,11 +18,11 @@ class SousChefBaseOrder(BaseModel):
 	#or maybe to have a transformed output function instead of relying on .dict()
 	@computed_field()
 	def START_DATE(self) -> str:
-		return f"'{self.START.strftime("%Y-%m-%d")}'"
+		return f"'{self.START.strftime(str_format)}'"
 
 	@computed_field()
 	def END_DATE(self) -> str:
-		return f"'{self.END.strftime("%Y-%m-%d")}'"
+		return f"'{self.END.strftime(str_format)}'"
 
 
 class EntitiesOrder(SousChefBaseOrder):
