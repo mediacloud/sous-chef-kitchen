@@ -27,7 +27,7 @@ def get_recipes():
 available_recipes = get_recipes()
 
 def email_to_secret_name(email):
-	return f"{email.split("@")[0]}-mc-api-secret"
+	return f"{email.split('@')[0]}-mc-api-secret"
 
 
 if "email_checked" not in st.session_state:
@@ -120,7 +120,6 @@ else:
 			if run:
 				st.session_state.run = run
 				st.session_state.run_submitted = True
-			print("...")
 
 	async def run_status_loop(run, status):
 		with status:
