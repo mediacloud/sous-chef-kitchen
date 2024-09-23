@@ -80,93 +80,93 @@ def get_user_info():
 
 if not st.session_state.secret_exists:
 	get_user_info()
+else:
+
+	st.subheader(f"Sous-Chef Buffet: {deployment_name}")
+
+	recipe = st.selectbox("Recipe", available_recipes)
+
+	q = st.text_area("Query text")
+
+	col1, col2 = st.columns(2)
+
+	with col1:
+		start_date = st.date_input('Start Date')
+		collections = st_tags(label="Collections",
+						text="Press enter to add more",
+						value=["34412234"],
+						)
+
+	with col2:
+		end_date = st.date_input('End Date')
+
+		email_to = st_tags(label="email to",
+						text="Press enter to add more",
+						value=st.session_state.email_list,
+						)
+
+	with st.expander("Advanced"):
+		run_name = st.text_input("Run Name", "buffet_test")
+		s3_prefix = st.text_input("s3 prefix", "mediacloud")
 
 
-st.subheader(f"Sous-Chef Buffet: {deployment_name}")
+	async def run_order(recipe, order):
+		try:
+			run = await deployment_client.start_deployment(deployment_name=deployment_name, parameters={"recipe_name":recipe, "data":order.dict()})
+		except RuntimeError:
+			st.error("SC Buffet run already running!")
+		else:
 
-recipe = st.selectbox("Recipe", available_recipes)
+			if run:
+				st.session_state.run = run
+				st.session_state.run_submitted = True
+			print("...")
 
-q = st.text_area("Query text")
+	async def run_status_loop(run, status):
+		with status:
+			with st.spinner(f"Working...") as spinner:
+				status_indicator = status.empty()
+				while True:
+					updated_run = await deployment_client.get_run(st.session_state.run.id)
+					st.session_state.run_status = updated_run["state_type"]
+					st.session_state.run_status_name = updated_run["state_name"]
+					status_indicator.write(f"Status is: {st.session_state.run_status_name}")
+					if updated_run["state_type"] in [StateType.RUNNING, StateType.SCHEDULED,StateType.PENDING]:
+						time.sleep(10)
+					else:
+						break
 
-col1, col2 = st.columns(2)
+			status_indicator.write(f"Status is: {st.session_state.run_status_name}")
 
-with col1:
-	start_date = st.date_input('Start Date')
-	collections = st_tags(label="Collections",
-					text="Press enter to add more",
-					value=["34412234"],
-					)
+	async def get_run_info(run, field):
+		value = await deployment_client.get_run(st.session_state.run.id)
+		field.write(value)
 
-with col2:
-	end_date = st.date_input('End Date')
+	go = st.button("Submit run", disabled=st.session_state.disable_run_button)
+	if go:
+		order = SousChefBaseOrder(
+				API_KEY_BLOCK=st.session_state.key_name,
+				QUERY=q,
+				START=start_date,
+				END=end_date,
+				COLLECTIONS=collections,
+				NAME=run_name,
+				S3_PREFIX=s3_prefix,
+				EMAIL_TO=email_to
+			)
+		loop = asyncio.run(run_order(recipe, order))
 
-	email_to = st_tags(label="email to",
-					text="Press enter to add more",
-					value=st.session_state.email_list,
-					)
+	status = st.container()
 
-with st.expander("Advanced"):
-	run_name = st.text_input("Run Name", "buffet_test")
-	s3_prefix = st.text_input("s3 prefix", "mediacloud")
-
-
-async def run_order(recipe, order):
-	try:
-		run = await deployment_client.start_deployment(deployment_name=deployment_name, parameters={"recipe_name":recipe, "data":order.dict()})
-	except RuntimeError:
-		st.error("SC Buffet run already running!")
-	else:
-
-		if run:
-			st.session_state.run = run
-			st.session_state.run_submitted = True
-		print("...")
-
-async def run_status_loop(run, status):
-	with status:
-		with st.spinner(f"Working...") as spinner:
-			status_indicator = status.empty()
-			while True:
-				updated_run = await deployment_client.get_run(st.session_state.run.id)
-				st.session_state.run_status = updated_run["state_type"]
-				st.session_state.run_status_name = updated_run["state_name"]
-				status_indicator.write(f"Status is: {st.session_state.run_status_name}")
-				if updated_run["state_type"] in [StateType.RUNNING, StateType.SCHEDULED,StateType.PENDING]:
-					time.sleep(10)
-				else:
-					break
-
-		status_indicator.write(f"Status is: {st.session_state.run_status_name}")
-
-async def get_run_info(run, field):
-	value = await deployment_client.get_run(st.session_state.run.id)
-	field.write(value)
-
-go = st.button("Submit run", disabled=st.session_state.disable_run_button)
-if go:
-	order = SousChefBaseOrder(
-			API_KEY_BLOCK=st.session_state.key_name,
-			QUERY=q,
-			START=start_date,
-			END=end_date,
-			COLLECTIONS=collections,
-			NAME=run_name,
-			S3_PREFIX=s3_prefix,
-			EMAIL_TO=email_to
-		)
-	loop = asyncio.run(run_order(recipe, order))
-
-status = st.container()
-
-if st.session_state.run_submitted:
-	status.write("Run submitted")
-	st.session_state.disable_run_button = True
-	asyncio.run(run_status_loop(st.session_state.run, status))
-	
+	if st.session_state.run_submitted:
+		status.write("Run submitted")
+		st.session_state.disable_run_button = True
+		asyncio.run(run_status_loop(st.session_state.run, status))
 		
-if st.session_state.run_status == StateType.COMPLETED:
-	status.success("Run completed successfully, you should have an email in your inbox now!")
+			
+	if st.session_state.run_status == StateType.COMPLETED:
+		status.success("Run completed successfully, you should have an email in your inbox now!")
 
-if st.session_state.run_status == StateType.FAILED:
-	status.error("Run Failed- contact paige@mediacloud.org for assistance")
-	asyncio.run(get_run_info(st.session_state.run, status))
+	if st.session_state.run_status == StateType.FAILED:
+		status.error("Run Failed- contact paige@mediacloud.org for assistance")
+		asyncio.run(get_run_info(st.session_state.run, status))
