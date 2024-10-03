@@ -58,7 +58,7 @@ async def create_secret(key_name, secret):
 		st.rerun()
 
 
-@st.experimental_dialog("User Info", width="large")
+@st.dialog("User Info", width="large")
 def get_user_info():
 	st.write("The user information used to authenticate via Mediacloud")
 	email = st.text_input("User Email")
