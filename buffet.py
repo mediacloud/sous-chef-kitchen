@@ -112,7 +112,7 @@ else:
 
 	async def run_order(recipe, order):
 		try:
-			run = await deployment_client.start_deployment(deployment_name=deployment_name, parameters={"recipe_name":recipe, "data":order.dict()})
+			run = await deployment_client.start_deployment(deployment_name=deployment_name, tags=[st.session_state.key_name], parameters={"recipe_name":recipe, "data":order.dict()})
 		except RuntimeError:
 			st.error("SC Buffet run already running!")
 		else:
