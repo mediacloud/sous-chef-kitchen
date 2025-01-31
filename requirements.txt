@@ -1,3 +1,0 @@
-sous-chef @ git+https://github.com/mediacloud/sous-chef@v0.15
-streamlit-tags
-streamlit-modal

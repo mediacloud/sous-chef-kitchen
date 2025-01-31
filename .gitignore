@@ -1,4 +1,7 @@
+__pycache__
 venv/
-__pycache__/
-data/
-.DS_STORE
+*.csv
+.env
+.env.*
+Pipfile
+Pipfile.lock

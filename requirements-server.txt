@@ -1,0 +1,6 @@
+fastapi[standard]
+mediacloud
+pydantic
+sous-chef @ git+https://github.com/mediacloud/sous-chef@v0.16
+streamlit-tags
+streamlit-modal

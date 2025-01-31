@@ -1,0 +1,6 @@
+click
+requests
+ruamel.yaml
+pydantic
+python-dotenv
+tabulate
