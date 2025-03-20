@@ -39,14 +39,79 @@ def get_root(response: Response) -> None:
 
 
 @app.post("/recipe/start")
-async def start_recipe(name: str, auth: bearer, request: Request,
-	response: Response) -> bool | SousChefKitchenAuthStatus:
-
+async def start_recipe(auth: bearer, request: Request, response: Response) \
+	-> Dict[str, Any] | SousChefKitchenAuthStatus:
+	"""Fetch all Sous Chef Buffet runs from Prefect."""
+	
 	auth_status = await _validate_auth(auth, request, response)
 	if not auth_status.authorized:
 		return auth_status
 	
-	return await chef.start_recipe(name)
+	# TODO: Fix bearer token vs function signature issue
+	recipe_name = request.query_params["recipe_name"]
+	
+	return await chef.start_recipe(recipe_name)
+
+
+@app.get("/runs/active")
+async def fetch_active_runs(auth: bearer, request: Request, response: Response) \
+	-> List[Dict[str, Any]] | SousChefKitchenAuthStatus:
+	"""Fetch any active or upcoming Sous Chef Buffet runs from Prefect."""
+	
+	auth_status = await _validate_auth(auth, request, response)
+	if not auth_status.authorized:
+		return auth_status
+	
+	return await chef.fetch_active_runs()
+
+
+@app.post("/runs/cancel")
+async def cancel_recipe_run(auth: bearer, request: Request, response: Response) \
+	-> List[Dict[str, Any]] | SousChefKitchenAuthStatus:
+	"""Cancel the specified Sous Chef Buffet run."""
+
+	auth_status = await _validate_auth(auth, request, response)
+	if not auth_status.authorized:
+		return auth_status
+
+	# TODO: Fix bearer token vs function signature issue
+	recipe_name = request.query_params["recipe_name"]
+	run_id = request.query_params["run_id"]
+	
+	return await chef.cancel_recipe_run(recipe_name, run_id)
+
+
+@app.post("/runs/pause")
+async def pause_recipe_run(auth: bearer, request: Request, response: Response) \
+	-> List[Dict[str, Any]] | SousChefKitchenAuthStatus:
+	"""Pause the specified Sous Chef Buffet run."""
+
+	auth_status = await _validate_auth(auth, request, response)
+	if not auth_status.authorized:
+		return auth_status
+
+	# TODO: Fix bearer token vs function signature issue
+	recipe_name = request.query_params["recipe_name"]
+	run_id = request.query_params["run_id"]
+	
+	return await chef.pause_recipe_run(recipe_name, run_id)
+
+
+@app.post("/runs/resume")
+async def resume_recipe_run(auth: bearer, request: Request, response: Response) \
+	-> List[Dict[str, Any]] | SousChefKitchenAuthStatus:
+	"""Resume the specified Sous Chef Buffet run."""
+
+	auth_status = await _validate_auth(auth, request, response)
+	if not auth_status.authorized:
+		return auth_status
+
+	# TODO: Fix bearer token vs function signature issue
+	recipe_name = request.query_params["recipe_name"]
+	run_id = request.query_params["run_id"]
+	
+	return await chef.resume_recipe_run(recipe_name, run_id)
+
 
 
 @app.get("/runs/all")
@@ -59,18 +124,6 @@ async def fetch_all_runs(auth: bearer, request: Request, response: Response) \
 		return auth_status
 	
 	return await chef.fetch_all_runs()
-
-
-@app.get("/runs/current")
-async def fetch_current_runs(auth: bearer, request: Request, response: Response) \
-	-> List[Dict[str, Any]] | SousChefKitchenAuthStatus:
-	"""Fetch any current or upcoming Sous Chef Buffet runs from Prefect."""
-	
-	auth_status = await _validate_auth(auth, request, response)
-	if not auth_status.authorized:
-		return auth_status
-	
-	return await chef.fetch_current_runs()
 
 
 @app.get("/run/{run_id}")

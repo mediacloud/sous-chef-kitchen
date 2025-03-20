@@ -61,13 +61,52 @@ def runs() -> None:
     pass
 
 
+@click.command("cancel")
+@click.argument("recipe_name", required=True)
+@click.argument("run_id", required=True)
+def runs_cancel(recipe_name: str, run_id: str) -> None:
+    """Cancel a Sous Chef recipe run."""
+
+    api_client = SousChefKitchenAPIClient()
+    if api_client.cancel_recipe(recipe_name, run_id):
+        click.echo(f"Run {run_id} for recipe {recipe_name} cancelled.")
+    else:
+        click.echo(f"Unable to cancel run {run_id} for recipe {recipe_name}.")
+
+
+@click.command("pause")
+@click.argument("recipe_name", required=True)
+@click.argument("run_id", required=True)
+def runs_cancel(recipe_name: str, run_id: str) -> None:
+    """Pause a Sous Chef recipe run."""
+
+    api_client = SousChefKitchenAPIClient()
+    if api_client.pause_recipe(recipe_name, run_id):
+        click.echo(f"Run {run_id} for recipe {recipe_name} paused.")
+    else:
+        click.echo(f"Unable to pause run {run_id} for recipe {recipe_name}.")
+
+
+@click.command("resume")
+@click.argument("recipe_name", required=True)
+@click.argument("run_id", required=True)
+def runs_cancel(recipe_name: str, run_id: str) -> None:
+    """Resume a Sous Chef recipe run."""
+
+    api_client = SousChefKitchenAPIClient()
+    if api_client.resume_recipe(recipe_name, run_id):
+        click.echo(f"Run {run_id} for recipe {recipe_name} resumed.")
+    else:
+        click.echo(f"Unable to resume run {run_id} for recipe {recipe_name}.")
+
+
 @click.command("inspect")
-@click.argument("id", required=True)
-def runs_inspect(id: str) -> None:
+@click.argument("run_id", required=True)
+def runs_inspect(run_id: str) -> None:
     """Inspect the details of the specified Sous Chef run."""
 
     api_client = SousChefKitchenAPIClient()
-    results = api_client.fetch_run_by_id(id)
+    results = api_client.fetch_run_by_id(run_id)
     
     # TODO: Add actual formatting rather than just a pretty print
     pprint(results)
@@ -77,13 +116,13 @@ def runs_inspect(id: str) -> None:
 @click.option("--all", 'all_', is_flag=True, default=False, show_default=True,
     help="Include all runs in the output, not just current runs.")
 def runs_list(all_: bool) -> None:
-    """List currently executing or queued Sous Chef runs and their statuses."""
+    """List actively executing or queued Sous Chef runs and their statuses."""
 
     api_client = SousChefKitchenAPIClient()
     if all_:
         results = api_client.fetch_all_runs()
     else:
-        results = api_client.fetch_current_runs()
+        results = api_client.fetch_active_runs()
     
     # TODO: Add actual formatting rather than just a pretty print
     pprint(results)

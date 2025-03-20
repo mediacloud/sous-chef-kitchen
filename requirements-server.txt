@@ -1,6 +1,7 @@
+# Kitchen Requirements
 fastapi[standard]
 mediacloud
 pydantic
+python-dotenv
+ruamel.yaml
 sous-chef @ git+https://github.com/mediacloud/sous-chef@v0.16
-streamlit-tags
-streamlit-modal

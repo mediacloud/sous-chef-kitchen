@@ -65,11 +65,11 @@ class SousChefKitchenAPIClient:
         response.raise_for_status()
 
 
-    def fetch_current_runs(self) -> Dict[str, Any] | SousChefKitchenAuthStatus:
-        """Fetch any current or upcoming Sous Chef Buffet runs from Prefect."""
+    def fetch_active_runs(self) -> Dict[str, Any] | SousChefKitchenAuthStatus:
+        """Fetch any active or upcoming Sous Chef Buffet runs from Prefect."""
 
         expected_responses = {HTTPStatus.OK, HTTPStatus.FORBIDDEN}
-        url = urllib.parse.urljoin(self.base_url, "runs/current")
+        url = urllib.parse.urljoin(self.base_url, "runs/active")
 
         response = self._session.get(url)
         if response.status_code in expected_responses:
@@ -105,12 +105,52 @@ class SousChefKitchenAPIClient:
             return SousChefKitchenSystemStatus()
     
 
-    def start_recipe(self, recipe_name:str) -> bool:
+    def start_recipe(self, recipe_name:str) -> Dict[str, Any]:
         """Start a Sous Chef recipe."""
 
         expected_responses = {HTTPStatus.OK, HTTPStatus.FORBIDDEN}
         url = urllib.parse.urljoin(self.base_url, f"recipe/start")
-        params = {"name": recipe_name}
+        params = {"recipe_name": recipe_name} # TODO: Allow arbitrary recipe parameters
+
+        response = self._session.post(url, params=params)
+        if response.status_code in expected_responses:
+            return response.json()
+        response.raise_for_status()
+
+
+
+    def cancel_recipe(self, recipe_name:str, run_id: UUID | str) -> Dict[str, Any]:
+        """Cancel a Sous Chef recipe run."""
+
+        expected_responses = {HTTPStatus.OK, HTTPStatus.FORBIDDEN}
+        url = urllib.parse.urljoin(self.base_url, f"runs/cancel")
+        params = {"recipe_name": recipe_name, "run_id": run_id}
+
+        response = self._session.post(url, params=params)
+        if response.status_code in expected_responses:
+            return response.json()
+        response.raise_for_status()
+
+
+    def pause_recipe(self, recipe_name:str, run_id: UUID | str) -> Dict[str, Any]:
+        """Pause a Sous Chef recipe run."""
+
+        expected_responses = {HTTPStatus.OK, HTTPStatus.FORBIDDEN}
+        url = urllib.parse.urljoin(self.base_url, f"runs/pause")
+        params = {"recipe_name": recipe_name, "run_id": run_id}
+
+        response = self._session.post(url, params=params)
+        if response.status_code in expected_responses:
+            return response.json()
+        response.raise_for_status()
+
+
+    def resume_recipe(self, recipe_name:str, run_id: UUID | str) -> Dict[str, Any]:
+        """Resume a Sous Chef recipe run."""
+
+        expected_responses = {HTTPStatus.OK, HTTPStatus.FORBIDDEN}
+        url = urllib.parse.urljoin(self.base_url, f"runs/resume")
+        params = {"recipe_name": recipe_name, "run_id": run_id}
 
         response = self._session.post(url, params=params)
         if response.status_code in expected_responses:

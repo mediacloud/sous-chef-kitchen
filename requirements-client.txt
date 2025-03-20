@@ -1,6 +1,14 @@
+# CLI Client Requirements
 click
 requests
-ruamel.yaml
+tabulate
+
+# Web Client Requirements
+streamlit
+streamlit-tags
+streamlit-modal
+
+# Shared Client Requirements
 pydantic
 python-dotenv
-tabulate
+ruamel.yaml

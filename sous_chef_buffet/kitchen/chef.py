@@ -11,7 +11,6 @@ from uuid import UUID
 
 import mediacloud.api
 import prefect
-from prefect import flow
 from prefect.blocks.system import Secret
 from prefect.client.schemas.filters import (
     DeploymentFilter, DeploymentFilterName, FlowRunFilter, FlowRunFilterState,
@@ -19,15 +18,15 @@ from prefect.client.schemas.filters import (
 from prefect.client.schemas.objects import (
     FlowRun, StateType, WorkerStatus, WorkPoolStatus)
 from prefect.exceptions import ObjectNotFound
+from prefect.server.schemas.responses import SetStateStatus
+from prefect.server.schemas.states import State
 
-from sous_chef import RunPipeline, recipe_loader
-
-from sous_chef_buffet.shared import recipe
 from sous_chef_buffet.shared.models import (
-    SousChefKitchenAuthStatus, SousChefBaseOrder, SousChefKitchenSystemStatus)
+    SousChefKitchenAuthStatus, SousChefKitchenSystemStatus)
 
-DEFAULT_TAGS = ["buffet"]
-DEFAULT_PREFECT_WORK_POOL = "Guerin"
+BASE_TAGS = ["buffet"]
+DEFAULT_PREFECT_WORK_POOL = "CGIAR-Test" # TODO: Change this back to Guerin
+PREFECT_ACTIVE_STATES = [StateType.RUNNING, StateType.SCHEDULED, StateType.PENDING]
 PREFECT_DEPLOYMENT = os.getenv("SC_PREFECT_DEPLOYMENT", "buffet-base")
 PREFECT_WORK_POOL = os.getenv("SC_PREFECT_WORK_POOL", DEFAULT_PREFECT_WORK_POOL)
 
@@ -62,34 +61,15 @@ def _run_to_dict(run: FlowRun) -> Dict[str, Any]:
         "name": run.name,
         "parameters": run.parameters,
         "state_name": run.state_name,
-        "state_type": run.state_type
+        "state_type": run.state_type,
+        "tags": run.tags
     }
-
-
-async def _store_credentials(auth_email:str, auth_key:str) -> Secret:
-    """Store user credentials as a secret block in Prefect."""
-
-    get_user_name = lambda email: re.sub("\W+", "", email.split("@")[0])
-    block_name = f"{get_user_name(auth_email)}-mc-api-secret"
-    
-    async with prefect.get_client() as client:
-        try:
-            user_block = await client.read_block_document_by_name(
-                name=block_name, block_type_slug="secret")
-        except ObjectNotFound:
-            user_block = None
-
-        if not user_block:
-            user_block = Secret(name=block_name, value=auth_key)
-            await user_block.save(name=block_name)
-    
-    return user_block
 
 
 async def fetch_all_runs(tags:List[str]=[]) -> List[Dict[str, Any]]:
     """Fetch all Sous Chef Buffet runs from Prefect."""
     
-    tags += DEFAULT_TAGS
+    tags += BASE_TAGS
     tags_filter = FlowRunFilter(tags=FlowRunFilterTags(all_=tags))
 
     async with prefect.get_client() as client:
@@ -97,19 +77,50 @@ async def fetch_all_runs(tags:List[str]=[]) -> List[Dict[str, Any]]:
         return [_run_to_dict(run) for run in runs]
 
 
-async def fetch_current_runs(tags:List[str]=[]) -> List[Dict[str, Any]]:
-    """Fetch any current or upcoming Sous Chef Buffet runs from Prefect."""
+async def cancel_recipe_run(recipe_name:str, run_id:str,
+    tags:List[str]=[]):
+    """Cancel the specified run for the specified Sous Chef recipe."""
 
-    tags += DEFAULT_TAGS
-    states = [StateType.RUNNING, StateType.SCHEDULED, StateType.PENDING]
+    tags += BASE_TAGS + [recipe_name]
+    all_runs = {run["id"]:run for run in await fetch_all_runs(tags)}
+    recipe_run = all_runs.get(run_id)
     
-    states_filter = FlowRunFilter(
-        state=FlowRunFilterState(type=FlowRunFilterStateType(any_=states)),
-        tags=FlowRunFilterTags(all_=tags))
+    if not recipe_run:
+        raise ValueError(
+            f"Unable to find a run {run_id} for recipe {recipe_name}.")
 
     async with prefect.get_client() as client:
-        runs = await client.read_flow_runs(flow_run_filter=states_filter)
+        result = await client.set_flow_run_state(
+            recipe_run["id"], State(type=StateType.CANCELLING))
+    
+    if result.status == SetStateStatus.ABORT:
+        raise RuntimeError(
+            f"Unable to cancel the flow run: {result.details.reason}")
+    
+    return result
+
+
+async def fetch_active_runs(tags:List[str]=[]) -> List[Dict[str, Any]]:
+    """Fetch any active or upcoming Sous Chef Buffet runs from Prefect."""
+
+    return await fetch_runs_by_state(tags, PREFECT_ACTIVE_STATES)
+
+
+async def fetch_all_runs(tags:List[str]=[]) -> List[Dict[str, Any]]:
+    """Fetch all Sous Chef Buffet runs from Prefect."""
+    
+    tags += BASE_TAGS
+    tags_filter = FlowRunFilter(tags=FlowRunFilterTags(all_=tags))
+
+    async with prefect.get_client() as client:
+        runs = await client.read_flow_runs(flow_run_filter=tags_filter)
         return [_run_to_dict(run) for run in runs]
+
+
+async def fetch_paused_runs(tags:List[str]=[]) -> List[Dict[str, Any]]:
+    "Fetch any paused Sous Chef Buffet runs from Prefect."
+
+    return await fetch_runs_by_state(tags, [StateType.PAUSED])
 
 
 async def fetch_run_by_id(run_id: UUID | str) -> Dict[str, Any]:
@@ -125,6 +136,21 @@ async def fetch_run_by_id(run_id: UUID | str) -> Dict[str, Any]:
     async with prefect.get_client() as client:
         run = await client.read_flow_run(run_id)
         return _run_to_dict(run)
+    
+
+async def fetch_runs_by_state(tags:List[str]=[],
+    states:List[StateType]=[]) -> List[Dict[str, Any]]:
+    """Fetch Sous Chef Buffet runs that match the specified filters."""
+
+    tags += BASE_TAGS
+    states_filter = FlowRunFilter(
+        state=FlowRunFilterState(type=FlowRunFilterStateType(
+            any_=states)),
+        tags=FlowRunFilterTags(all_=tags))
+
+    async with prefect.get_client() as client:
+        runs = await client.read_flow_runs(flow_run_filter=states_filter)
+        return [_run_to_dict(run) for run in runs]
 
 
 async def get_system_status() -> SousChefKitchenSystemStatus:
@@ -153,29 +179,74 @@ async def get_system_status() -> SousChefKitchenSystemStatus:
     return status
 
 
-@flow(name=PREFECT_DEPLOYMENT)
+async def pause_recipe_run(recipe_name:str, run_id:str, tags:List[str]=[]) -> None:
+    """Pause the specified run for the specified Sous Chef recipe."""
+
+    tags += BASE_TAGS + [recipe_name]
+    active_runs = {run["id"]:run for run in await fetch_active_runs(tags)}
+    recipe_run = active_runs.get(run_id)
+    
+    if not recipe_run:
+        raise ValueError(
+            f"Unable to find an active run named {run_id} for recipe {recipe_name}.")
+
+    await prefect.pause_flow_run(flow_run_id=recipe_run["id"])
+
+
+async def resume_recipe_run(recipe_name:str, run_id:str, tags:List[str]=[]) -> None:
+    """Resume the specified run for the specified Sous Chef recipe."""
+
+    tags += BASE_TAGS + [recipe_name]
+    paused_runs = {run["id"]:run for run in await fetch_paused_runs(tags)}
+    recipe_run = paused_runs.get(run_id)
+    
+    if not recipe_run:
+        raise ValueError(
+            f"Unable to find a paused run named {run_id} for recipe {recipe_name}.")
+
+    await prefect.resume_flow_run(flow_run_id=recipe_run["id"])
+
+
 async def start_recipe(recipe_name: str, tags:List[str]=[],
-    parameters:Dict[str, str]=None) -> FlowRun:
-    """Handle orders for the requested recipe from the sous chef buffet."""
+    parameters:Dict[str, str]={}) -> FlowRun:
+    """Handle orders for the requested recipe from the Sous Chef buffet."""
 
-    # NOTE: Refactoring this after realizing it did not block extracting the
-    # output from the QueryOnlineNews atom from the client side as well as
-    # I thought it did. Purging the corresponding return values from RunPipeline
-    # seems to work in most but not all cases.
+    tags += BASE_TAGS
+    deployment_filter = DeploymentFilter(name=DeploymentFilterName(
+        any_=[PREFECT_DEPLOYMENT]))
 
-    order = SousChefBaseOrder(**parameters)
+    active_runs = await fetch_active_runs(tags)
+    if len(active_runs) > 0:
+        raise RuntimeError("Cannot start a new recipe run whiile another run is active")
+
+    parameters = {"recipe_name": recipe_name, "tags": tags, "parameters": parameters}
+    async with prefect.get_client() as client:
+        response = await client.read_deployments(deployment_filter=deployment_filter)
+        run = await client.create_flow_run_from_deployment(
+            response[0].id, parameters=parameters, tags=tags)
     
-    recipe_folder = recipe.get_recipe_folder(recipe_name)
-    with open(f"{recipe_folder/"recipe.yaml"}", "r") as f:
-        recipe = f.read()
-    
-    conf = recipe_loader.t_yaml_to_conf(recipe, **order.dict())
-    conf["name"] = order.NAME
-    run_data = RunPipeline(conf)
+    return _run_to_dict(run)
 
-    # TODO: Re-add QueryOnlineNews return value cleanup here
-    # TODO: Re-add task to create_table_artifact from run_data here after cleanup
-     
+
+async def store_credentials(auth_email:str, auth_key:str) -> Secret:
+    """Store user credentials as a secret block in Prefect."""
+
+    get_user_name = lambda email: re.sub("\W+", "", email.split("@")[0])
+    block_name = f"{get_user_name(auth_email)}-mc-api-secret"
+    
+    async with prefect.get_client() as client:
+        try:
+            user_block = await client.read_block_document_by_name(
+                name=block_name, block_type_slug="secret")
+        except ObjectNotFound:
+            user_block = None
+
+        if not user_block:
+            user_block = Secret(name=block_name, value=auth_key)
+            await user_block.save(name=block_name)
+    
+    return user_block
+
 
 async def validate_auth(auth_email: str, auth_key: str) \
     -> SousChefKitchenAuthStatus:
@@ -199,6 +270,12 @@ async def validate_auth(auth_email: str, auth_key: str) \
         return status
     
     status.media_cloud_authorized = await _auth_media_cloud(auth_email, auth_key)
-    status.sous_chef_authorized = bool(await _store_credentials(auth_email, auth_key))
+    status.sous_chef_authorized = bool(await store_credentials(auth_email, auth_key))
 
     return status
+
+
+# TODO: Remove this check
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(start_recipe(recipe_name="test_name", tags=['buffet'], parameters={"hello": "world"}))
