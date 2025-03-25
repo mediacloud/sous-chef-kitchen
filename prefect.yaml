@@ -9,9 +9,9 @@ prefect-version: 2.20.3
 # build section allows you to manage and build docker images
 build:
 - prefect_docker.deployments.steps.build_docker_image:
-    id: build_image
+    id: build-image
     requires: prefect-docker>=0.3.1
-    image_name: graceworthy/buffet
+    image_name: docker.io/graceworthy/buffet
     tag: b2
     dockerfile: auto
 
@@ -21,8 +21,7 @@ push:
     requires: prefect-docker>=0.3.1
     image_name: '{{ build-image.image_name }}'
     tag: '{{ build-image.tag }}'
-    credentials: '{{ prefect_docker.docker-registry-credentials.docker_registry_creds_name
-      }}'
+    credentials: '{{ prefect.blocks.docker-registry-credentials.docker-auth }}'
 
 # pull section allows you to provide instructions for cloning this project in remote locations
 pull:
