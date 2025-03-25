@@ -37,7 +37,7 @@ pull:
 
 - prefect.deployments.steps.pip_install_requirements:
     directory: "{{ clone-step.directory }}"
-    requirements_file: requirements-server.txt
+    requirements_file: requirements-flow.txt
     stream_output: true
 
 
