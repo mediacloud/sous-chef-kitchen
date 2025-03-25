@@ -25,8 +25,14 @@ push:
 
 # pull section allows you to provide instructions for cloning this project in remote locations
 pull:
-- prefect.deployments.steps.set_working_directory:
-    directory: /opt/prefect/buffet-base
+- prefect.deployments.steps.git_clone:
+    repository: https://github.com/mediacloud/sc-buffet.git
+    credentials: '{{ prefect.blocks.github-credentials.sous-chef-read-only }}'
+
+- prefect.deployments.steps.pip_install_requirements:
+    requirements_file: requirements-server.txt
+    stream_output: true
+
 
 # the deployments section allows you to provide configuration for deploying flows
 deployments:
