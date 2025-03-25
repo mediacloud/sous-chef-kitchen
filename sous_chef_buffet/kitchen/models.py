@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field, computed_field
 DATE_STR_FORMAT = "%Y-%m-%d"
 API_AUTH_KEY = os.getenv("SC_API_AUTH_KEY")
 DEFAULT_EMAIL_NOTIFICATION_LIST = os.getenv(
-    "SC_DEFAULT_NOTIFICATION_EMAIL_LIST", "eric.pennington@gmail.com").split(",")
+    "SC_DEFAULT_NOTIFICATION_EMAIL_LIST", "paige@mediacloud.org").split(",")
     # TODO: Replace with paige@mediacloud.org as default after testing
 
 class SousChefBaseOrder(BaseModel):
