@@ -1,1 +1,1 @@
-sous-chef @ git+https://github.com/mediacloud/sous-chef@v0.16
+sous-chef @ git+https://github.com/mediacloud/sous-chef@v1.0
