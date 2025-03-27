@@ -40,6 +40,9 @@ pull:
     requirements_file: requirements-flow.txt
     stream_output: true
 
+- prefect.deployments.steps.set_working_directory:
+    directory: "{{ clone-step.directory }}"
+
 
 # the deployments section allows you to provide configuration for deploying flows
 deployments:
