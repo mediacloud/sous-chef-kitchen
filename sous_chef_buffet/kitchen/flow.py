@@ -37,7 +37,7 @@ async def buffet_base(recipe_name: str, tags:List[str]=[],
     # validation step here before the data is passed through to RunPipeline
     conf = recipe_loader.t_yaml_to_conf(recipe, **order.model_dump())
     conf["name"] = order.NAME
-    with prefect.tags(tags):
+    with prefect.tags(*tags):
         run_data = RunPipeline(conf)
 
     return run_data
