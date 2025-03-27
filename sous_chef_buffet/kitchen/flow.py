@@ -19,7 +19,7 @@ PREFECT_DEPLOYMENT = os.getenv("SC_PREFECT_DEPLOYMENT", "buffet-base")
 
 @flow(name=PREFECT_DEPLOYMENT)
 async def buffet_base(recipe_name: str, tags:List[str]=[],
-    order:SousChefBaseOrder=None) -> FlowRun:
+    order:dict=None) -> FlowRun:
     """Handle orders for the requested recipe from the Sous Chef buffet."""
 
     # NOTE: Refactoring this after realizing it did not block extracting the
@@ -28,7 +28,7 @@ async def buffet_base(recipe_name: str, tags:List[str]=[],
     # seems to work in most but not all cases.
 
     tags += BASE_TAGS + [recipe_name]
-    
+    order = SousChefBaseOrder(**parameters)
     recipe_folder = get_recipe_folder(recipe_name)
     with open(f"{recipe_folder}/recipe.yaml", "r") as f:
         recipe = f.read()

@@ -4,4 +4,4 @@ mediacloud
 pydantic
 python-dotenv
 ruamel.yaml
-sous-chef @ git+https://github.com/mediacloud/sous-chef@v1.0
+sous-chef @ git+https://github.com/mediacloud/sous-chef@v1.1
