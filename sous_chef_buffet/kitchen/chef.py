@@ -25,7 +25,7 @@ from sous_chef_buffet.shared.models import (
     SousChefKitchenAuthStatus, SousChefKitchenSystemStatus)
 
 BASE_TAGS = ["buffet"]
-DEFAULT_PREFECT_WORK_POOL = "CGIAR-Test" # TODO: Change this back to Guerin
+DEFAULT_PREFECT_WORK_POOL = "bly" # TODO: Change this back to Guerin
 PREFECT_ACTIVE_STATES = [StateType.RUNNING, StateType.SCHEDULED, StateType.PENDING]
 PREFECT_DEPLOYMENT = os.getenv("SC_PREFECT_DEPLOYMENT", "buffet-base")
 PREFECT_WORK_POOL = os.getenv("SC_PREFECT_WORK_POOL", DEFAULT_PREFECT_WORK_POOL)

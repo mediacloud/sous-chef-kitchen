@@ -147,7 +147,7 @@ async def validate_auth(auth: bearer, request: Request, response: Response) \
 	-> SousChefKitchenAuthStatus:
 	"""Check whether the API key is authorized for Media Cloud and Sous Chef."""
 
-	return _validate_auth(auth, request, response)
+	return await _validate_auth(auth, request, response)
 
 
 @app.get("/system/status", response_model=SousChefKitchenSystemStatus)
