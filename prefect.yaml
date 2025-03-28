@@ -33,7 +33,7 @@ pull:
 - prefect.deployments.steps.run_shell_script:
     id: update-build
     script: |
-      pip install --upgrade pip setuptools wheel flit
+      pip install --upgrade pip setuptools wheel flit packaging
 
 - prefect.deployments.steps.pip_install_requirements:
     directory: "{{ clone-step.directory }}"
