@@ -8,11 +8,11 @@ A job API around Prefect for driving Sous-Chef, Mediacloud's internal data pipel
 
 Requires the latest version of the prefect server running (3.2.x rn) - with the following blocks configured:
 
-AWS-credentials - 'aws-s3-credentials'
-Docker Registry Credentials - 'docker-auth'
-Email Server Credentials - 'paige-mediacloud-email-password'
-Github Credentials - 'sous-chef-read-only'
-Standard Secret (for the Mediacloud API key) - "mediacloud-api-key"
+* AWS-credentials - 'aws-s3-credentials'
+* Docker Registry Credentials - 'docker-auth'
+* Email Server Credentials - 'paige-mediacloud-email-password'
+* Github Credentials - 'sous-chef-read-only'
+* Standard Secret (for the Mediacloud API key) - "mediacloud-api-key"
 
 
 
