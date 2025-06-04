@@ -21,13 +21,13 @@ from prefect.exceptions import ObjectNotFound
 from prefect.server.schemas.responses import SetStateStatus
 from prefect.server.schemas.states import State
 
-from sous_chef_buffet.shared.models import (
+from sous_chef_kitchen.shared.models import (
     SousChefKitchenAuthStatus, SousChefKitchenSystemStatus)
 
-BASE_TAGS = ["buffet"]
+BASE_TAGS = ["kitchen"]
 DEFAULT_PREFECT_WORK_POOL = "bly" # TODO: Change this back to Guerin
 PREFECT_ACTIVE_STATES = [StateType.RUNNING, StateType.SCHEDULED, StateType.PENDING]
-PREFECT_DEPLOYMENT = os.getenv("SC_PREFECT_DEPLOYMENT", "buffet-base")
+PREFECT_DEPLOYMENT = os.getenv("SC_PREFECT_DEPLOYMENT", "kitchen-base")
 PREFECT_WORK_POOL = os.getenv("SC_PREFECT_WORK_POOL", DEFAULT_PREFECT_WORK_POOL)
 
 
@@ -67,7 +67,7 @@ def _run_to_dict(run: FlowRun) -> Dict[str, Any]:
 
 
 async def fetch_all_runs(tags:List[str]=[]) -> List[Dict[str, Any]]:
-    """Fetch all Sous Chef Buffet runs from Prefect."""
+    """Fetch all Sous Chef Kitchen runs from Prefect."""
     
     tags += BASE_TAGS
     tags_filter = FlowRunFilter(tags=FlowRunFilterTags(all_=tags))
@@ -101,13 +101,13 @@ async def cancel_recipe_run(recipe_name:str, run_id:str,
 
 
 async def fetch_active_runs(tags:List[str]=[]) -> List[Dict[str, Any]]:
-    """Fetch any active or upcoming Sous Chef Buffet runs from Prefect."""
+    """Fetch any active or upcoming Sous Chef Kitchen runs from Prefect."""
 
     return await fetch_runs_by_state(tags, PREFECT_ACTIVE_STATES)
 
 
 async def fetch_all_runs(tags:List[str]=[]) -> List[Dict[str, Any]]:
-    """Fetch all Sous Chef Buffet runs from Prefect."""
+    """Fetch all Sous Chef Kitchen runs from Prefect."""
     
     tags += BASE_TAGS
     tags_filter = FlowRunFilter(tags=FlowRunFilterTags(all_=tags))
@@ -118,13 +118,13 @@ async def fetch_all_runs(tags:List[str]=[]) -> List[Dict[str, Any]]:
 
 
 async def fetch_paused_runs(tags:List[str]=[]) -> List[Dict[str, Any]]:
-    "Fetch any paused Sous Chef Buffet runs from Prefect."
+    """Fetch any paused Sous Chef Kitchen runs from Prefect."""
 
     return await fetch_runs_by_state(tags, [StateType.PAUSED])
 
 
 async def fetch_run_by_id(run_id: UUID | str) -> Dict[str, Any]:
-    """Fetch a specific Sous Chef Buffet run from Prefect by its ID."""
+    """Fetch a specific Sous Chef Kitchen run from Prefect by its ID."""
 
     if type(run_id) is str:
         try:
@@ -140,7 +140,7 @@ async def fetch_run_by_id(run_id: UUID | str) -> Dict[str, Any]:
 
 async def fetch_runs_by_state(tags:List[str]=[],
     states:List[StateType]=[]) -> List[Dict[str, Any]]:
-    """Fetch Sous Chef Buffet runs that match the specified filters."""
+    """Fetch Sous Chef Kitchen runs that match the specified filters."""
 
     tags += BASE_TAGS
     states_filter = FlowRunFilter(
@@ -209,7 +209,7 @@ async def resume_recipe_run(recipe_name:str, run_id:str, tags:List[str]=[]) -> N
 
 async def start_recipe(recipe_name: str, tags:List[str]=[],
     parameters:Dict[str, str]={}) -> FlowRun:
-    """Handle orders for the requested recipe from the Sous Chef buffet."""
+    """Handle orders for the requested recipe from the Sous Chef Kitchen."""
 
     tags += BASE_TAGS
     deployment_filter = DeploymentFilter(name=DeploymentFilterName(
@@ -278,4 +278,4 @@ async def validate_auth(auth_email: str, auth_key: str) \
 # TODO: Remove this check
 if __name__ == "__main__":
     import asyncio
-    asyncio.run(start_recipe(recipe_name="test_name", tags=['buffet'], parameters={"hello": "world"}))
+    asyncio.run(start_recipe(recipe_name="test_name", tags=['kitchen'], parameters={"hello": "world"}))

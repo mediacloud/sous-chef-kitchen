@@ -1,6 +1,5 @@
 # Sous-Chef Kitchen
 
-
 A job API around Prefect for driving Sous-Chef, Mediacloud's internal data pipeline process. 
 
 
@@ -24,7 +23,7 @@ nb, prefect coordinates auth etc for client and server via 'profiles' in the env
 
 ## launch the Kitchen 
 
-right now I'm launching via: `fastapi dev sous_chef_buffet/kitchen/api.py `
+right now I'm launching via: `fastapi dev sous_chef_kitchen/kitchen/api.py `
 
 ## invoke the client
 

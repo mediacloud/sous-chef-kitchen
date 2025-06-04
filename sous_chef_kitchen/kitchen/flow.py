@@ -1,5 +1,5 @@
 """
-Run (cook) recipe requests on Prefect using the buffet-base flow.
+Run (cook) recipe requests on Prefect using the kitchen-base flow.
 """
 
 import os
@@ -10,17 +10,17 @@ from prefect import flow
 from prefect.client.schemas.objects import FlowRun
 
 from sous_chef import RunPipeline, recipe_loader
-from sous_chef_buffet.kitchen.models import SousChefBaseOrder
-from sous_chef_buffet.shared.recipe import get_recipe_folder
+from sous_chef_kitchen.kitchen.models import SousChefBaseOrder
+from sous_chef_kitchen.shared.recipe import get_recipe_folder
 
-BASE_TAGS = ["buffet"]
-PREFECT_DEPLOYMENT = os.getenv("SC_PREFECT_DEPLOYMENT", "buffet-base")
+BASE_TAGS = ["kitchen"]
+PREFECT_DEPLOYMENT = os.getenv("SC_PREFECT_DEPLOYMENT", "kitchen-base")
 
 
 @flow(name=PREFECT_DEPLOYMENT)
-async def buffet_base(recipe_name: str, tags:List[str]=[],
+async def kitchen_base(recipe_name: str, tags:List[str]=[],
     parameters:SousChefBaseOrder=None) -> FlowRun:
-    """Handle orders for the requested recipe from the Sous Chef buffet."""
+    """Handle orders for the requested recipe from the Sous Chef kitchen."""
 
     # NOTE: Refactoring this after realizing it did not block extracting the
     # output from the QueryOnlineNews atom from the client side as well as

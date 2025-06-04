@@ -3,7 +3,7 @@
 # control along with your flow code.
 
 # Generic metadata about this project
-name: buffet-base
+name: kitchen-base
 prefect-version: 3.2.0
 
 # build section allows you to manage and build docker images
@@ -11,7 +11,7 @@ build:
 - prefect_docker.deployments.steps.build_docker_image:
     id: build-image
     requires: prefect-docker>=0.3.1
-    image_name: docker.io/graceworthy/buffet
+    image_name: docker.io/graceworthy/kitchen
     tag: b2
     dockerfile: auto
 
@@ -27,7 +27,7 @@ push:
 pull:
 - prefect.deployments.steps.git_clone:
     id: clone-step
-    repository: https://github.com/mediacloud/sc-buffet.git
+    repository: https://github.com/mediacloud/sous-chef-kitchen.git
     credentials: '{{ prefect.blocks.github-credentials.sous-chef-read-only }}'
 
 - prefect.deployments.steps.run_shell_script:
@@ -43,12 +43,12 @@ pull:
 
 # the deployments section allows you to provide configuration for deploying flows
 deployments:
-- name: buffet-base
+- name: kitchen-base
   version:
   tags:
-  - buffet
-  description: Sous Chef Buffet
-  entrypoint: sous_chef_buffet/kitchen/flow.py:buffet_base
+  - kitchen
+  description: Sous Chef Kitchen
+  entrypoint: sous_chef_kitchen/kitchen/flow.py:kitchen_base
   parameters: {}
   work_pool:
     name: bly

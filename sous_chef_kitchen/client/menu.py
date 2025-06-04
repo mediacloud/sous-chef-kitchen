@@ -12,11 +12,11 @@ from uuid import UUID
 import requests
 from requests import ConnectionError
 
-from sous_chef_buffet.shared.models import \
+from sous_chef_kitchen.shared.models import \
     SousChefKitchenAuthStatus, SousChefKitchenSystemStatus
 
 DEFAULT_API_BASE_URL = "https://souschef.ddns.net/api/"
-DEFAULT_API_USER_AGENT = "Sous Chef Buffet"
+DEFAULT_API_USER_AGENT = "Sous Chef Kitchen"
 
 API_AUTH_EMAIL = os.getenv("SC_API_AUTH_EMAIL")
 API_AUTH_KEY = os.getenv("SC_API_AUTH_KEY")
@@ -54,7 +54,7 @@ class SousChefKitchenAPIClient:
     
 
     def fetch_all_runs(self) -> Dict[str, Any] | SousChefKitchenAuthStatus:
-        """Fetch all Sous Chef Buffet runs from Prefect."""
+        """Fetch all Sous Chef Kitchen runs from Prefect."""
 
         expected_responses = {HTTPStatus.OK, HTTPStatus.FORBIDDEN}
         url = urllib.parse.urljoin(self.base_url, "runs/all")
@@ -66,7 +66,7 @@ class SousChefKitchenAPIClient:
 
 
     def fetch_active_runs(self) -> Dict[str, Any] | SousChefKitchenAuthStatus:
-        """Fetch any active or upcoming Sous Chef Buffet runs from Prefect."""
+        """Fetch any active or upcoming Sous Chef Kitchen runs from Prefect."""
 
         expected_responses = {HTTPStatus.OK, HTTPStatus.FORBIDDEN}
         url = urllib.parse.urljoin(self.base_url, "runs/active")
@@ -79,7 +79,7 @@ class SousChefKitchenAPIClient:
 
     def fetch_run_by_id(self, run_id: UUID | str) \
         -> Dict[str, Any] | SousChefKitchenAuthStatus:
-        """Fetch a specific Sous Chef Buffet run from Prefect by its ID."""
+        """Fetch a specific Sous Chef Kitchen run from Prefect by its ID."""
 
         expected_responses = {HTTPStatus.OK, HTTPStatus.FORBIDDEN}
         url = urllib.parse.urljoin(self.base_url, f"run/{run_id}")

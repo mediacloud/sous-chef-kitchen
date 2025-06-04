@@ -8,8 +8,8 @@ from uuid import UUID
 from fastapi import Depends, FastAPI, Request, Response, status as http_status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
-from sous_chef_buffet.kitchen import chef
-from sous_chef_buffet.shared.models import \
+from sous_chef_kitchen.kitchen import chef
+from sous_chef_kitchen.shared.models import \
 	SousChefKitchenAuthStatus, SousChefKitchenSystemStatus
 
 app = FastAPI()
@@ -41,7 +41,7 @@ def get_root(response: Response) -> None:
 @app.post("/recipe/start")
 async def start_recipe(auth: bearer, request: Request, response: Response) \
 	-> Dict[str, Any] | SousChefKitchenAuthStatus:
-	"""Fetch all Sous Chef Buffet runs from Prefect."""
+	"""Fetch all Sous Chef Kitchen runs from Prefect."""
 	
 	auth_status = await _validate_auth(auth, request, response)
 	if not auth_status.authorized:
@@ -56,7 +56,7 @@ async def start_recipe(auth: bearer, request: Request, response: Response) \
 @app.get("/runs/active")
 async def fetch_active_runs(auth: bearer, request: Request, response: Response) \
 	-> List[Dict[str, Any]] | SousChefKitchenAuthStatus:
-	"""Fetch any active or upcoming Sous Chef Buffet runs from Prefect."""
+	"""Fetch any active or upcoming Sous Chef Kitchen runs from Prefect."""
 	
 	auth_status = await _validate_auth(auth, request, response)
 	if not auth_status.authorized:
@@ -68,7 +68,7 @@ async def fetch_active_runs(auth: bearer, request: Request, response: Response) 
 @app.post("/runs/cancel")
 async def cancel_recipe_run(auth: bearer, request: Request, response: Response) \
 	-> List[Dict[str, Any]] | SousChefKitchenAuthStatus:
-	"""Cancel the specified Sous Chef Buffet run."""
+	"""Cancel the specified Sous Chef Kitchen run."""
 
 	auth_status = await _validate_auth(auth, request, response)
 	if not auth_status.authorized:
@@ -84,7 +84,7 @@ async def cancel_recipe_run(auth: bearer, request: Request, response: Response) 
 @app.post("/runs/pause")
 async def pause_recipe_run(auth: bearer, request: Request, response: Response) \
 	-> List[Dict[str, Any]] | SousChefKitchenAuthStatus:
-	"""Pause the specified Sous Chef Buffet run."""
+	"""Pause the specified Sous Chef Kitchen run."""
 
 	auth_status = await _validate_auth(auth, request, response)
 	if not auth_status.authorized:
@@ -100,7 +100,7 @@ async def pause_recipe_run(auth: bearer, request: Request, response: Response) \
 @app.post("/runs/resume")
 async def resume_recipe_run(auth: bearer, request: Request, response: Response) \
 	-> List[Dict[str, Any]] | SousChefKitchenAuthStatus:
-	"""Resume the specified Sous Chef Buffet run."""
+	"""Resume the specified Sous Chef Kitchen run."""
 
 	auth_status = await _validate_auth(auth, request, response)
 	if not auth_status.authorized:
@@ -117,7 +117,7 @@ async def resume_recipe_run(auth: bearer, request: Request, response: Response) 
 @app.get("/runs/all")
 async def fetch_all_runs(auth: bearer, request: Request, response: Response) \
 	-> List[Dict[str, Any]] | SousChefKitchenAuthStatus:
-	"""Fetch all Sous Chef Buffet runs from Prefect."""
+	"""Fetch all Sous Chef Kitchen runs from Prefect."""
 	
 	auth_status = await _validate_auth(auth, request, response)
 	if not auth_status.authorized:
@@ -129,7 +129,7 @@ async def fetch_all_runs(auth: bearer, request: Request, response: Response) \
 @app.get("/run/{run_id}")
 async def fetch_run_by_id(run_id: str, auth: bearer, request: Request,
 	response: Response) -> Dict[str, Any] | SousChefKitchenAuthStatus:
-	"""Fetch a specific Sous Chef Buffet run from Prefect by its ID."""
+	"""Fetch a specific Sous Chef Kitchen run from Prefect by its ID."""
 	
 	auth_status = await _validate_auth(auth, request, response)
 	if not auth_status.authorized:

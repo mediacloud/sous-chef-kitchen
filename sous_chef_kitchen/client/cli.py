@@ -1,5 +1,5 @@
 """
-Interact with the Sous Chef Buffet via the command line.
+Interact with the Sous Chef Kitchen via the command line.
 """
 
 import os
@@ -10,16 +10,16 @@ import click
 import dotenv
 from tabulate import tabulate
 
-from sous_chef_buffet.client.menu import SousChefKitchenAPIClient
-from sous_chef_buffet.shared import recipe
-from sous_chef_buffet.shared.models import SousChefKitchenSystemStatus
+from sous_chef_kitchen.client.menu import SousChefKitchenAPIClient
+from sous_chef_kitchen.shared import recipe
+from sous_chef_kitchen.shared.models import SousChefKitchenSystemStatus
 
 DEFAULT_ENV_PATH = Path.cwd() / ".env"
 
 
 @click.group()
 def cli() -> None:
-    """Interact with the Sous Chef Buffet via the command line."""
+    """Interact with the Sous Chef Kitchen via the command line."""
 
     pass
 
