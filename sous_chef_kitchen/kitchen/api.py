@@ -8,6 +8,8 @@ from uuid import UUID
 from fastapi import Depends, FastAPI, Request, Response, status as http_status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
+import logging
+
 from sous_chef_kitchen.kitchen import chef
 from sous_chef_kitchen.shared.models import \
 	SousChefKitchenAuthStatus, SousChefKitchenSystemStatus
@@ -15,6 +17,7 @@ from sous_chef_kitchen.shared.models import \
 app = FastAPI()
 security = HTTPBearer()
 bearer = Annotated[HTTPAuthorizationCredentials, Depends(security)]
+logger = logging.getLogger(__name__)
 
 
 async def _validate_auth(auth: bearer, request: Request, response: Response) \
@@ -27,6 +30,7 @@ async def _validate_auth(auth: bearer, request: Request, response: Response) \
 	auth_status = await chef.validate_auth(auth_email, auth_key)
 	if not auth_status.authorized:
 		response.status_code = http_status.HTTP_403_FORBIDDEN
+	logger.info(f"Auth status {auth_status}")
 	return auth_status
 
 
@@ -49,7 +53,7 @@ async def start_recipe(auth: bearer, request: Request, response: Response) \
 	
 	# TODO: Fix bearer token vs function signature issue
 	recipe_name = request.query_params["recipe_name"]
-	
+	logger.info(f"Start recipe {recipe_name}")
 	return await chef.start_recipe(recipe_name)
 
 

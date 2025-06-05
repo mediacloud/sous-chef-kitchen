@@ -8,6 +8,7 @@ import os
 from datetime import date, timedelta
 from typing import Any, Dict, List
 from uuid import UUID
+import logging
 
 import mediacloud.api
 import prefect
@@ -29,7 +30,7 @@ DEFAULT_PREFECT_WORK_POOL = "bly" # TODO: Change this back to Guerin
 PREFECT_ACTIVE_STATES = [StateType.RUNNING, StateType.SCHEDULED, StateType.PENDING]
 PREFECT_DEPLOYMENT = os.getenv("SC_PREFECT_DEPLOYMENT", "kitchen-base")
 PREFECT_WORK_POOL = os.getenv("SC_PREFECT_WORK_POOL", DEFAULT_PREFECT_WORK_POOL)
-
+logger  = logging.getLogger(__name__)
 
 async def _auth_media_cloud(auth_email:str, auth_key:str) -> bool:
     """Confirm the account has the necessary Media Cloud permissions.
@@ -41,11 +42,12 @@ async def _auth_media_cloud(auth_email:str, auth_key:str) -> bool:
     mc_search = mediacloud.api.SearchApi(auth_key)
 
     try:
-        mc_search.story_list(
+        auth_result = mc_search.story_list(
             "mediacloud",
             start_date = date.today(),
             end_date = date.today() - timedelta(1),
             expanded = True)
+        logger.info(f"Auth result: {auth_result}")
     except RuntimeError:
         # TODO: Parse out the text of the runtime error for the "real" error
         return False
