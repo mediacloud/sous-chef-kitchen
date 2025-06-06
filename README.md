@@ -29,3 +29,10 @@ right now I'm launching via: `fastapi dev sous_chef_kitchen/kitchen/api.py `
 
 cli via just `python buffet.py` does it, self-documenting and all that. 
 No consumer client as yet though. 
+
+
+# Sous-Chef a la carte
+A second flow entrypoint for sous chef, mantained here for ease of deployment and versioning logic. 
+The 'old school' way of interacting with sous-chef, where the recipes live somewhere in the cloud (S3, B2)
+Launched/managed directly via prefect interface, not the kitchen api. 
+For unusual one-off research data requests or testing. 

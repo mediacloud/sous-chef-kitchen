@@ -47,7 +47,7 @@ deployments:
   version:
   tags:
   - kitchen
-  description: Sous Chef Kitchen
+  description: Sous Chef Kitchen (api managed flows)
   entrypoint: sous_chef_kitchen/kitchen/flow.py:kitchen_base
   parameters: {}
   work_pool:
@@ -57,3 +57,18 @@ deployments:
       image: '{{ build-image.image }}'
   schedules: []
 
+- name: alacarte-base
+  version:
+  tags:
+  - alacarte
+  description: Sous Chef A La Carte (for recipes that aren't on the core menu)
+  entrypoint: a_la_carte/flow.py:alacarte_base
+  parameters:
+    aws_credentials_block: "aws-s3-credentials"
+    bucket_name: "sous-chef-recipes"
+  work_pool:
+    name: bly
+    work_queue_name:
+    job_variables:
+      image: '{{ build_image.image }}'
+  schedules: []
