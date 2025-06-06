@@ -21,9 +21,11 @@ from prefect.client.schemas.objects import (
 from prefect.exceptions import ObjectNotFound
 from prefect.server.schemas.responses import SetStateStatus
 from prefect.server.schemas.states import State
+from sous_chef import SousChefRecipe
 
 from sous_chef_kitchen.shared.models import (
     SousChefKitchenAuthStatus, SousChefKitchenSystemStatus)
+from sous_chef_kitchen.shared.recipe import get_recipe_folder
 
 BASE_TAGS = ["kitchen"]
 DEFAULT_PREFECT_WORK_POOL = "bly" # TODO: Change this back to Guerin
@@ -208,7 +210,7 @@ async def resume_recipe_run(recipe_name:str, run_id:str, tags:List[str]=[]) -> N
 
     await prefect.resume_flow_run(flow_run_id=recipe_run["id"])
 
-
+'''
 async def start_recipe(recipe_name: str, tags:List[str]=[],
     parameters:Dict[str, str]={}) -> FlowRun:
     """Handle orders for the requested recipe from the Sous Chef Kitchen."""
@@ -228,6 +230,36 @@ async def start_recipe(recipe_name: str, tags:List[str]=[],
             response[0].id, parameters=parameters, tags=tags)
     
     return _run_to_dict(run)
+'''
+
+#Reconfiguring to construct the SousChefRecipe in this stage, validating before invoking prefect.
+async def start_recipe(recipe_name:str, tags:List[str]=[], 
+    parameters:Dict[str, str]= {}) -> FlowRun:
+    """Handle orders for the requested recipe from the Sous Chef Kitchen, using SousChef v2 Recipes."""
+
+    recipe_folder = get_recipe_folder(recipe_name)
+    try:
+        recipe_parameters = SousChefRecipe(recipe_folder, parameters)
+    except Exception as e:
+        expected = SousChefRecipe.get_param_schema(recipe_folder)
+        raise RuntimeError(f"Error validating parameters for '{recipe_name}' with {parameters}: {e}. \n Expected schema like: {expected}")
+
+    tags += BASE_TAGS
+    deployment_filter = DeploymentFilter(name=DeploymentFilterName(
+        any_=[PREFECT_DEPLOYMENT]))
+
+    active_runs = await fetch_active_runs(tags)
+    if len(active_runs) > 0:
+        raise RuntimeError("Cannot start a new recipe run whiile another run is active")
+
+    parameters = {"recipe_name": recipe_name, "tags": tags, "parameters": recipe_parameters}
+    async with prefect.get_client() as client:
+        response = await client.read_deployments(deployment_filter=deployment_filter)
+        run = await client.create_flow_run_from_deployment(
+            response[0].id, parameters=parameters, tags=tags)
+    
+    return _run_to_dict(run)
+
 
 
 async def store_credentials(auth_email:str, auth_key:str) -> Secret:

@@ -9,14 +9,14 @@ import prefect
 from prefect import flow
 from prefect.client.schemas.objects import FlowRun
 
-from sous_chef import RunPipeline, recipe_loader
+from sous_chef import RunPipeline, recipe_loader, SousChefRecipe
 from sous_chef_kitchen.kitchen.models import SousChefBaseOrder
 from sous_chef_kitchen.shared.recipe import get_recipe_folder
 
 BASE_TAGS = ["kitchen"]
 PREFECT_DEPLOYMENT = os.getenv("SC_PREFECT_DEPLOYMENT", "kitchen-base")
 
-
+''' #Commenting out during development of the replacement flow.
 @flow(name=PREFECT_DEPLOYMENT)
 async def kitchen_base(recipe_name: str, tags:List[str]=[],
     parameters:SousChefBaseOrder=None) -> FlowRun:
@@ -43,3 +43,17 @@ async def kitchen_base(recipe_name: str, tags:List[str]=[],
 
     # TODO: Re-add QueryOnlineNews return value cleanup here
     # TODO: Re-add task to create_table_artifact from run_data here after cleanup
+'''
+
+#In this pattern, sc schema validation happens in chef.py when the SousChefRecipe is constructed, so we trust that we have something that works
+@flow(name=PREFECT_DEPLOYMENT)
+async def kitchen_base(recipe_name: str, tags: List[str] = [], parameters:SousChefRecipe) -> FlowRun:
+    tags += BASE_TAGS + [recipe_name]
+
+    with prefect.tags(*tags):
+        run_data = RunPipeline(parameters)
+
+    # TODO: add task to cleanup return value (extract full_text)
+    # TODO: add task to create_table_artifact from rundata after cleanup
+
+    return run_data
