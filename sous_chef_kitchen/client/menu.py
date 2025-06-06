@@ -121,9 +121,9 @@ class SousChefKitchenAPIClient:
 
         expected_responses = {HTTPStatus.OK, HTTPStatus.FORBIDDEN}
         url = urllib.parse.urljoin(self.base_url, f"recipe/start")
-        params = {"recipe_name": recipe_name, "recipe_parameters": recipe_parameters} # TODO: Allow arbitrary recipe parameters
+        params = {"recipe_name": recipe_name} # TODO: Allow arbitrary recipe parameters
 
-        response = self._session.post(url, params=params)
+        response = self._session.post(url, params=params, json={"recipe_parameters": recipe_parameters})
         if response.status_code in expected_responses:
             return response.json()
         response.raise_for_status()
