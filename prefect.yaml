@@ -36,7 +36,7 @@ pull:
       pip install --upgrade pip setuptools wheel flit packaging
 
 - prefect.deployments.steps.pip_install_requirements:
-    directory: "{{ clone-step.directory }}"
+    directory: '{{ clone-step.directory }}'
     requirements_file: requirements-flow.txt
     stream_output: true
 
@@ -64,11 +64,12 @@ deployments:
   description: Sous Chef A La Carte (for recipes that aren't on the core menu)
   entrypoint: a_la_carte/flow.py:alacarte_base
   parameters:
-    aws_credentials_block: "aws-s3-credentials"
-    bucket_name: "sous-chef-recipes"
+    aws_credentials_block: aws-s3-credentials
+    bucket_name: sous-chef-recipes
   work_pool:
     name: bly
     work_queue_name:
     job_variables:
       image: '{{ build_image.image }}'
   schedules: []
+  concurrency_limit:

@@ -47,7 +47,7 @@ async def kitchen_base(recipe_name: str, tags:List[str]=[],
 
 #In this pattern, sc schema validation happens in chef.py when the SousChefRecipe is constructed, so we trust that we have something that works
 @flow(name=PREFECT_DEPLOYMENT)
-async def kitchen_base(recipe_name: str, tags: List[str] = [], parameters:SousChefRecipe) -> FlowRun:
+async def kitchen_base(recipe_name: str, tags: List[str] = [], parameters:SousChefRecipe=None) -> FlowRun:
     tags += BASE_TAGS + [recipe_name]
 
     with prefect.tags(*tags):
