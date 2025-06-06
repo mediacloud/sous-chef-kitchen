@@ -241,7 +241,7 @@ async def start_recipe(recipe_name:str, tags:List[str]=[],
     try:
         recipe_parameters = SousChefRecipe(recipe_folder+"/recipe.yaml", parameters)
     except Exception as e:
-        expected = SousChefRecipe.get_param_schema(recipe_folder)
+        expected = SousChefRecipe.get_param_schema(recipe_folder+"/recipe.yaml")
         raise RuntimeError(f"Error validating parameters for '{recipe_name}' with {parameters}: {e}. \n Expected schema like: {expected}")
 
     tags += BASE_TAGS
