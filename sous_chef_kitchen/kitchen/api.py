@@ -53,7 +53,7 @@ async def start_recipe(auth: bearer, request: Request, response: Response) \
 	
 	# TODO: Fix bearer token vs function signature issue
 	recipe_name = request.query_params["recipe_name"]
-	recipe_parameters = requests.query_params["recipe_parameters"]
+	recipe_parameters = request.query_params["recipe_parameters"]
 	logger.info(f"Start recipe {recipe_name}")
 	return await chef.start_recipe(recipe_name, parameters = recipe_parameters)
 
