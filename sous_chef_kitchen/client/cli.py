@@ -10,7 +10,7 @@ import click
 import dotenv
 from tabulate import tabulate
 
-from sous_chef_kitchen.client.menu import SousChefKitchenAPIClient
+from sous_chef_kitchen.client.menu import SousChefKitchenAPIClient, API_BASE_URL
 from sous_chef_kitchen.shared import recipe
 from sous_chef_kitchen.shared.models import SousChefKitchenSystemStatus
 
@@ -172,7 +172,7 @@ def system_status() -> None:
     system_name = lambda k: SousChefKitchenSystemStatus.model_fields[k].title
     system_ready = lambda v: "Ready" if v else "Not Ready"
     system_rows = [(system_name(k), system_ready(v)) for k,v in system_status]
-
+    click.echo(f"SC_API_BASE_URL: {API_BASE_URL}")
     click.echo(tabulate(system_rows, headers=["System Name", "Status"]))
 
 
