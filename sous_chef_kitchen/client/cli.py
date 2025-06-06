@@ -44,11 +44,14 @@ def recipes_list() -> None:
 
 @click.command("start")
 @click.argument("name", required=True)
-def recipes_start(name: str) -> None:
+@click.argument("parameters", nargs=-1)
+def recipes_start(name: str, parameters) -> None:
     """Start a Sous Chef recipe."""
 
     api_client = SousChefKitchenAPIClient()
-    if api_client.start_recipe(name):
+    recipe_parameters = dict(zip(parameters[::2], parameters[1::2])) #Stack Overflow is still my friend! 
+    print(f"Parsed parameters: {recipe_parameters}")
+    if api_client.start_recipe(name, recipe_parameters):
         click.echo(f"Recipe {name} started successfully.")
     else:
         click.echo(f"Unable to start recipe {name}.")

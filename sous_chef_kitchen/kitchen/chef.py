@@ -262,9 +262,14 @@ async def start_recipe(recipe_name:str, tags:List[str]=[],
     return _run_to_dict(run)
 
 async def recipe_schema(recipe_name: str) -> Dict:
-    recipe_folder = get_recipe_folder(recipe_name)
+    try:
+        recipe_folder = get_recipe_folder(recipe_name)
+    except ValueError:
+        return None
+    
     recipe_location = os.path.join(recipe_folder, "recipe.yaml")
-    return SousChefRecipe.get_param_schema(recipe_location)
+    return SousChefRecipe.get_param_schema(recipe_location)["properties"]
+
 
 async def store_credentials(auth_email:str, auth_key:str) -> Secret:
     """Store user credentials as a secret block in Prefect."""

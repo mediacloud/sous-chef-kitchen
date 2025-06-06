@@ -53,8 +53,9 @@ async def start_recipe(auth: bearer, request: Request, response: Response) \
 	
 	# TODO: Fix bearer token vs function signature issue
 	recipe_name = request.query_params["recipe_name"]
+	recipe_parameters = requests.query_params["recipe_parameters"]
 	logger.info(f"Start recipe {recipe_name}")
-	return await chef.start_recipe(recipe_name)
+	return await chef.start_recipe(recipe_name, parameters = recipe_parameters)
 
 
 @app.post("/recipe/schema")
@@ -68,7 +69,11 @@ async def recipe_schema(auth:bearer, request: Request, response: Response) \
 	# TODO: Fix bearer token vs function signature issue
 	recipe_name = request.query_params["recipe_name"]
 	logger.info(f"Get recipe schema for {recipe_name}")
-	return await chef.recipe_schema(recipe_name)
+	try:
+		return await chef.recipe_schema(recipe_name)
+	except ValueError:
+		response.status_code = http_status.HTTP_404_NOT_FOUND
+		return
 
 
 @app.get("/runs/active")

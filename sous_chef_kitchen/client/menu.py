@@ -116,12 +116,12 @@ class SousChefKitchenAPIClient:
             return response.json()
         response.raise_for_status()
 
-    def start_recipe(self, recipe_name:str) -> Dict[str, Any]:
+    def start_recipe(self, recipe_name:str, recipe_parameters:Dict) -> Dict[str, Any]:
         """Start a Sous Chef recipe."""
 
         expected_responses = {HTTPStatus.OK, HTTPStatus.FORBIDDEN}
         url = urllib.parse.urljoin(self.base_url, f"recipe/start")
-        params = {"recipe_name": recipe_name} # TODO: Allow arbitrary recipe parameters
+        params = {"recipe_name": recipe_name, "recipe_parameters": recipe_parameters} # TODO: Allow arbitrary recipe parameters
 
         response = self._session.post(url, params=params)
         if response.status_code in expected_responses:
