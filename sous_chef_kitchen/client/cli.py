@@ -59,7 +59,7 @@ def recipes_schema(name: str) -> None:
     """ Get the parameter schema for a recipe """
 
     api_client = SousChefKitchenAPIClient()
-    schema = api_client.recipe_schema(name):
+    schema = api_client.recipe_schema(name)
     if schema:
         click.echo(f"Schema for recipe {name}: \n {schema} ")
     else:
