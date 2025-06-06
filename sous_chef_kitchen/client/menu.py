@@ -123,11 +123,14 @@ class SousChefKitchenAPIClient:
         url = urllib.parse.urljoin(self.base_url, f"recipe/start")
         params = {"recipe_name": recipe_name} # TODO: Allow arbitrary recipe parameters
 
+        #THIS IS BRITTLE, but I want to just get a demo active!!!
+        if "COLLECTIONS" in recipe_parameters: 
+            recipe_parameters["COLLECTIONS"] = list(recipe_parameters["COLLECTIONS"])
+
         response = self._session.post(url, params=params, json={"recipe_parameters": recipe_parameters})
         if response.status_code in expected_responses:
             return response.json()
         response.raise_for_status()
-
 
 
     def cancel_recipe(self, recipe_name:str, run_id: UUID | str) -> Dict[str, Any]:
