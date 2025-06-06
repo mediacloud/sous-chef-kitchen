@@ -50,9 +50,10 @@ async def start_recipe(auth: bearer, request: Request, response: Response) \
 	auth_status = await _validate_auth(auth, request, response)
 	if not auth_status.authorized:
 		return auth_status
-		
+
 	# TODO: Fix bearer token vs function signature issue
 	recipe_name = request.query_params["recipe_name"]
+	recipe_parameters = await request.json()
 	recipe_parameters = recipe_parameters["recipe_parameters"] # all hail King King the Kingth
 	logger.info(f"Start recipe {recipe_name}")
 	return await chef.start_recipe(recipe_name, parameters = recipe_parameters)
