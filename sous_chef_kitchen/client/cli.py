@@ -198,6 +198,7 @@ def _initialize_cli() -> None:
 
     recipes.add_command(recipes_list)
     recipes.add_command(recipes_start)
+    recipes.add_command(recipes_schema)
 
     runs.add_command(runs_list)
     runs.add_command(runs_inspect)
