@@ -53,6 +53,17 @@ def recipes_start(name: str) -> None:
     else:
         click.echo(f"Unable to start recipe {name}.")
 
+@click.command("schema")
+@click.argument("name", required=True)
+def recipes_schema(name: str) -> None:
+    """ Get the parameter schema for a recipe """
+
+    api_client = SousChefKitchenAPIClient()
+    schema = api_client.recipe_schema(name):
+    if schema:
+        click.echo(f"Schema for recipe {name}: \n {schema} ")
+    else:
+        click.echo(f"Unable to find any schema information for {name}")
 
 @click.group()
 def runs() -> None:

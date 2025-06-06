@@ -57,6 +57,20 @@ async def start_recipe(auth: bearer, request: Request, response: Response) \
 	return await chef.start_recipe(recipe_name)
 
 
+@app.post("/recipe/schema")
+async def recipe_schema(auth:bearer, request: Request, response: Response) \
+	-> Dict[str, Any]:
+
+	auth_status = await _validate_auth(auth, request, response)
+	if not auth_status.authorized:
+		return auth_status
+	
+	# TODO: Fix bearer token vs function signature issue
+	recipe_name = request.query_params["recipe_name"]
+	logger.info(f"Get recipe schema for {recipe_name}")
+	return await chef.recipe_schema(recipe_name)
+
+
 @app.get("/runs/active")
 async def fetch_active_runs(auth: bearer, request: Request, response: Response) \
 	-> List[Dict[str, Any]] | SousChefKitchenAuthStatus:

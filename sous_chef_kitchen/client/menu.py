@@ -103,7 +103,18 @@ class SousChefKitchenAPIClient:
             response.raise_for_status()
         except ConnectionError as e:
             return SousChefKitchenSystemStatus()
-    
+
+    def recipe_schema(self, recipe_name:str) -> Dict[str, Any]:
+        """ Return the expected parameter values for a given recipe """
+
+        expected_responses = {HTTPStatus.OK, HTTPStatus.FORBIDDEN}
+        url = urllib.parse.urljoin(self.base_url, f"recipe/schema")
+        params = {"recipe_name": recipe_name}
+
+        response = self._session.post(url, params=params)
+        if response.status_code in expected_responses:
+            return response.json()
+        response.raise_for_status()
 
     def start_recipe(self, recipe_name:str) -> Dict[str, Any]:
         """Start a Sous Chef recipe."""
