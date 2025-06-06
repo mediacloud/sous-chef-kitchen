@@ -1,11 +1,19 @@
-vars:
-    - API_KEY_BLOCK
-    - QUERY
-    - COLLECTIONS
-    - START_DATE
-    - END_DATE
-    - NAME
-    - S3_PREFIX
+parameters:
+    API_KEY_BLOCK:
+        type: str
+    QUERY:
+        type: str
+    COLLECTIONS:
+        type: List[str]
+    START_DATE:
+        type: date
+    END_DATE:
+        type: date
+    NAME:
+        type: str
+    S3_PREFIX:
+        type: str
+        
 steps:
     #Discovery Block
     - QueryOnlineNews:
