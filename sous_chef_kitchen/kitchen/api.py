@@ -5,7 +5,7 @@ Field requests to the Sous Chef Kitchen API.
 from typing import Annotated, Any, Dict, List
 from uuid import UUID
 
-from fastapi import Depends, FastAPI, Request, Response, status as http_status
+from fastapi import Depends, FastAPI, Request, Response, HTTPException, status as http_status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 import logging
@@ -56,7 +56,11 @@ async def start_recipe(auth: bearer, request: Request, response: Response) \
 	recipe_parameters = await request.json()
 	recipe_parameters = recipe_parameters["recipe_parameters"] # all hail King King the Kingth
 	logger.info(f"Start recipe {recipe_name}")
-	return await chef.start_recipe(recipe_name, parameters = recipe_parameters)
+
+	try:
+		return await chef.start_recipe(recipe_name, parameters = recipe_parameters)
+	except Exception as e:
+		raise HTTPException(status=http_status.HTTP_400_BAD_REQUEST, detail=e.message)
 
 
 @app.post("/recipe/schema")

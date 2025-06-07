@@ -213,16 +213,17 @@ async def resume_recipe_run(recipe_name:str, run_id:str, tags:List[str]=[]) -> N
 
 #Reconfiguring to construct the SousChefRecipe in this stage, validating before invoking prefect.
 async def start_recipe(recipe_name:str, tags:List[str]=[], 
-    parameters:Dict[str, str]= {}) -> FlowRun:
+    parameters:Dict= {}) -> FlowRun:
     """Handle orders for the requested recipe from the Sous Chef Kitchen, using SousChef v2 Recipes."""
+    print(parameters)
 
     recipe_folder = get_recipe_folder(recipe_name)
     recipe_location = os.path.join(recipe_folder, "recipe.yaml")
     try:
         recipe = SousChefRecipe(recipe_location, parameters)
     except Exception as e:
-        expected = SousChefRecipe.get_param_schema(recipe_location)
-        raise RuntimeError(f"Error validating parameters for '{recipe_name}' with {parameters}: {e}. \n Expected schema like: {expected}")
+        expected = SousChefRecipe.get_param_schema(recipe_location)["properties"]
+        raise ValueError(f"Error validating parameters for '{recipe_name}' with {parameters}: \n {e} \n Expected schema like: {expected}")
 
     tags += BASE_TAGS
     deployment_filter = DeploymentFilter(name=DeploymentFilterName(
