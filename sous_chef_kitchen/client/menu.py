@@ -6,6 +6,7 @@ used by both the CLI and web clients.
 import os
 import urllib.parse
 from http import HTTPStatus
+import json
 from typing import Any, Dict
 from uuid import UUID
 
@@ -125,7 +126,7 @@ class SousChefKitchenAPIClient:
 
         #THIS IS BRITTLE, but I want to just get a demo active!!!
         if "COLLECTIONS" in recipe_parameters: 
-            recipe_parameters["COLLECTIONS"] = list(recipe_parameters["COLLECTIONS"])
+            recipe_parameters["COLLECTIONS"] = json.loads(recipe_parameters["COLLECTIONS"])
 
         response = self._session.post(url, params=params, json={"recipe_parameters": recipe_parameters})
         if response.status_code in expected_responses:
