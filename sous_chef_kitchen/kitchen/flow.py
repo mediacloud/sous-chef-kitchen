@@ -6,7 +6,7 @@ import os
 from typing import Dict, List
 
 import prefect
-from prefect import flow
+from prefect import flow, get_run_logger
 from prefect.client.schemas.objects import FlowRun
 
 from sous_chef import RunPipeline, SousChefRecipe
@@ -19,6 +19,7 @@ PREFECT_DEPLOYMENT = os.getenv("SC_PREFECT_DEPLOYMENT", "kitchen-base")
 #Therefore we just accept those parameters as a dict, and trust that it's correct. 
 @flow(name=PREFECT_DEPLOYMENT)
 async def kitchen_base(recipe_name: str, tags: List[str] = [], parameters:Dict = {}) -> FlowRun:
+    logger = get_run_logger()
     tags += BASE_TAGS + [recipe_name]
 
     recipe_folder = get_recipe_folder(recipe_name)
@@ -32,5 +33,5 @@ async def kitchen_base(recipe_name: str, tags: List[str] = [], parameters:Dict =
     # TODO: add task to cleanup return value (extract full_text)
     # TODO: add task to create_table_artifact from rundata after cleanup
     #Just printing the run data now to validate. 
-    print(run_data)
+    logger.info(run_data)
     return run_data
