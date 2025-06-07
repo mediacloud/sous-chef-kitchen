@@ -240,7 +240,7 @@ async def start_recipe(recipe_name:str, tags:List[str]=[],
     recipe_folder = get_recipe_folder(recipe_name)
     recipe_location = os.path.join(recipe_folder, "recipe.yaml")
     try:
-        recipe_parameters = SousChefRecipe(recipe_location, parameters)
+        recipe = SousChefRecipe(recipe_location, parameters)
     except Exception as e:
         expected = SousChefRecipe.get_param_schema(recipe_location)
         raise RuntimeError(f"Error validating parameters for '{recipe_name}' with {parameters}: {e}. \n Expected schema like: {expected}")
@@ -253,7 +253,9 @@ async def start_recipe(recipe_name:str, tags:List[str]=[],
     if len(active_runs) > 0:
         raise RuntimeError("Cannot start a new recipe run whiile another run is active")
 
-    parameters = {"recipe_name": recipe_name, "tags": tags, "parameters": recipe_parameters}
+    final_params = await recipe.get_params()
+
+    parameters = {"recipe_name": recipe_name, "tags": tags, "parameters": final_params}
     async with prefect.get_client() as client:
         response = await client.read_deployments(deployment_filter=deployment_filter)
         run = await client.create_flow_run_from_deployment(

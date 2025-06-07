@@ -45,9 +45,10 @@ async def kitchen_base(recipe_name: str, tags:List[str]=[],
     # TODO: Re-add task to create_table_artifact from run_data here after cleanup
 '''
 
-#In this pattern, sc schema validation happens in chef.py when the SousChefRecipe is constructed, so we trust that we have something that works
+#In this pattern, sc schema validation happens in chef.py when the SousChefRecipe is constructed.
+#Therefore we just accept those parameters as a dict, and trust that it's correct. 
 @flow(name=PREFECT_DEPLOYMENT)
-async def kitchen_base(recipe_name: str, tags: List[str] = [], parameters:SousChefRecipe=None) -> FlowRun:
+async def kitchen_base(recipe_name: str, tags: List[str] = [], parameters:Dict = {}) -> FlowRun:
     tags += BASE_TAGS + [recipe_name]
 
     with prefect.tags(*tags):
