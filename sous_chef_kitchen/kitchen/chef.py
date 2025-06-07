@@ -210,27 +210,6 @@ async def resume_recipe_run(recipe_name:str, run_id:str, tags:List[str]=[]) -> N
 
     await prefect.resume_flow_run(flow_run_id=recipe_run["id"])
 
-'''
-async def start_recipe(recipe_name: str, tags:List[str]=[],
-    parameters:Dict[str, str]={}) -> FlowRun:
-    """Handle orders for the requested recipe from the Sous Chef Kitchen."""
-
-    tags += BASE_TAGS
-    deployment_filter = DeploymentFilter(name=DeploymentFilterName(
-        any_=[PREFECT_DEPLOYMENT]))
-
-    active_runs = await fetch_active_runs(tags)
-    if len(active_runs) > 0:
-        raise RuntimeError("Cannot start a new recipe run whiile another run is active")
-
-    parameters = {"recipe_name": recipe_name, "tags": tags, "parameters": parameters}
-    async with prefect.get_client() as client:
-        response = await client.read_deployments(deployment_filter=deployment_filter)
-        run = await client.create_flow_run_from_deployment(
-            response[0].id, parameters=parameters, tags=tags)
-    
-    return _run_to_dict(run)
-'''
 
 #Reconfiguring to construct the SousChefRecipe in this stage, validating before invoking prefect.
 async def start_recipe(recipe_name:str, tags:List[str]=[], 
@@ -262,6 +241,7 @@ async def start_recipe(recipe_name:str, tags:List[str]=[],
             response[0].id, parameters=parameters, tags=tags)
     
     return _run_to_dict(run)
+
 
 async def recipe_schema(recipe_name: str) -> Dict:
     try:
