@@ -21,8 +21,13 @@ PREFECT_DEPLOYMENT = os.getenv("SC_PREFECT_DEPLOYMENT", "kitchen-base")
 async def kitchen_base(recipe_name: str, tags: List[str] = [], parameters:Dict = {}) -> FlowRun:
     tags += BASE_TAGS + [recipe_name]
 
+    recipe_folder = get_recipe_folder(recipe_name)
+    recipe_location = os.path.join(recipe_folder, "recipe.yaml")
+
+    parsed_parameters = SousChefRecipe(recipe_location, parameters)
+    
     with prefect.tags(*tags):
-        run_data = RunPipeline(parameters)
+        run_data = RunPipeline(parsed_parameters)
 
     # TODO: add task to cleanup return value (extract full_text)
     # TODO: add task to create_table_artifact from rundata after cleanup
