@@ -60,7 +60,7 @@ async def start_recipe(auth: bearer, request: Request, response: Response) \
 	try:
 		return await chef.start_recipe(recipe_name, parameters = recipe_parameters)
 	except Exception as e:
-		raise HTTPException(status=http_status.HTTP_400_BAD_REQUEST, detail=e.message)
+		raise HTTPException(status_code=http_status.HTTP_400_BAD_REQUEST, detail=e)
 
 
 @app.post("/recipe/schema")
