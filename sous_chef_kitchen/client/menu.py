@@ -125,9 +125,10 @@ class SousChefKitchenAPIClient:
         params = {"recipe_name": recipe_name} # TODO: Allow arbitrary recipe parameters
 
         #THIS IS BRITTLE, but I want to just get a demo active!!!
+        print(recipe_parameters)
         if "COLLECTIONS" in recipe_parameters: 
             recipe_parameters["COLLECTIONS"] = json.loads(recipe_parameters["COLLECTIONS"])
-
+        print(recipe_parameters)
         response = self._session.post(url, params=params, json={"recipe_parameters": recipe_parameters})
         if response.status_code in expected_responses:
             return response.json()
