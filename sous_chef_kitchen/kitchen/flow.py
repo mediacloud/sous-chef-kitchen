@@ -31,5 +31,6 @@ async def kitchen_base(recipe_name: str, tags: List[str] = [], parameters:Dict =
 
     # TODO: add task to cleanup return value (extract full_text)
     # TODO: add task to create_table_artifact from rundata after cleanup
-
+    #Just printing the run data now to validate. 
+    print(run_data)
     return run_data

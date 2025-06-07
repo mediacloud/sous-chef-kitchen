@@ -14,7 +14,6 @@ Requires the latest version of the prefect server running (3.2.x rn) - with the 
 * Standard Secret (for the Mediacloud API key) - "mediacloud-api-key"
 
 
-
 ## deploy flow
 
 The flow is the code that is actually excecuted by Prefect- this is a wrapper around the core Sous-Chef library. Deploy via `prefect deploy`
@@ -28,7 +27,7 @@ right now I'm launching via: `fastapi dev sous_chef_kitchen/kitchen/api.py `
 ## invoke the client
 
 cli via just `python buffet.py` does it, self-documenting and all that. 
-No consumer client as yet though. 
+The consumer client `SousChefKitchenAPIClient` lives in `sous_chef_kitchen/client/menu.py` 
 
 
 # Sous-Chef a la carte
