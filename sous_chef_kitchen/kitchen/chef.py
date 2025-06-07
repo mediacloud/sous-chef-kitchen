@@ -253,7 +253,7 @@ async def start_recipe(recipe_name:str, tags:List[str]=[],
     if len(active_runs) > 0:
         raise RuntimeError("Cannot start a new recipe run whiile another run is active")
 
-    final_params = await recipe.get_params()
+    final_params = recipe.get_params()
 
     parameters = {"recipe_name": recipe_name, "tags": tags, "parameters": final_params}
     async with prefect.get_client() as client:
