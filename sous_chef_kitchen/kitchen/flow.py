@@ -40,13 +40,13 @@ async def kitchen_base(recipe_name: str, tags: List[str] = [], parameters:Dict =
     logger.info(run_data)
     create_table_artifact(
         key = flow_run_name, 
-        table = run_data)
+        table = [run_data])
     for task, output in run_data.items():
         logger.info(task)
         logger.info(output)
         create_table_artifact(
             key = flow_run_name+"::"+task,
-            table = output,
+            table = [output],
             description = task
         )
     
