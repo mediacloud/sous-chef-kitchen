@@ -93,7 +93,7 @@ class SousChefKitchenAPIClient:
     def fetch_run_artifacts(self, run_id: UUID | str) -> Dict[str, Any]:
         """ fetch artifacts associated with a completed sous-chef run """
         expected_responses = {HTTPStatus.OK, HTTPStatus.FORBIDDEN}
-        url = urllib.parse.urljoin(self.base_url, f"runs/{run_id}/artifacts")
+        url = urllib.parse.urljoin(self.base_url, f"run/{run_id}/artifacts")
 
         response = self._session.get(url)
         if response.status_code in expected_responses:
