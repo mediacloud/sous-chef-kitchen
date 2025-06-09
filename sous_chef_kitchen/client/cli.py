@@ -214,7 +214,7 @@ def _initialize_cli() -> None:
 
     runs.add_command(runs_list)
     runs.add_command(runs_inspect)
-    runs.add_comment(runs_artifacts)
+    runs.add_command(runs_artifacts)
     
 
 _initialize_cli()
