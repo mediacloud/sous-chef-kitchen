@@ -314,7 +314,7 @@ async def validate_auth(auth_email: str, auth_key: str) \
 async def fetch_run_artifacts(run_id: str):
     """ Fetch all of the artifacts associated with a given run """
 
-    id_filter = FlowRunFilter(tags=FlowRunFilterId(id=run.id))
+    id_filter = FlowRunFilter(tags=FlowRunFilterId(id=run_id))
 
     async with prefect.get_client() as client:
         artifacts = await client.read_artifacts(flow_run_filter=id_filter)
