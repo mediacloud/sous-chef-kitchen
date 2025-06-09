@@ -16,7 +16,7 @@ from prefect.artifacts import Artifact
 from prefect.blocks.system import Secret
 from prefect.client.schemas.filters import (
     DeploymentFilter, DeploymentFilterName, FlowRunFilter, FlowRunFilterState,
-    FlowRunFilterStateType, FlowRunFilterTags, FlowRunFilterID)
+    FlowRunFilterStateType, FlowRunFilterTags, FlowRunFilterId)
 from prefect.client.schemas.objects import (
     FlowRun, StateType, WorkerStatus, WorkPoolStatus)
 from prefect.exceptions import ObjectNotFound
@@ -314,7 +314,7 @@ async def validate_auth(auth_email: str, auth_key: str) \
 async def fetch_run_artifacts(run_id: str):
     """ Fetch all of the artifacts associated with a given run """
 
-    id_filter = FlowRunFilter(tags=FlowRunFilterID(id=run.id))
+    id_filter = FlowRunFilter(tags=FlowRunFilterId(id=run.id))
 
     async with prefect.get_client() as client:
         artifacts = await client.read_artifacts(flow_run_filter=id_filter)
