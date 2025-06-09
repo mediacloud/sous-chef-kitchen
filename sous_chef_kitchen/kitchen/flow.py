@@ -36,11 +36,11 @@ async def kitchen_base(recipe_name: str, tags: List[str] = [], parameters:Dict =
     # TODO: add task to create_table_artifact from rundata after cleanup
     #Just printing the run data now to validate. 
     flow_run_name = FlowRunContext.get().flow_run.dict().get('name')
-    print(run_data)
-    print([i for i in run_data.items()])
+    logger.info(run_data)
+    logger.info([i for i in run_data.items()])
     for task, output in run_data.items():
-        print(task)
-        print(output)
+        logger.info(task)
+        logger.info(output)
         create_table_artifact(
             key = flow_run_name+"::"+task,
             table = output
