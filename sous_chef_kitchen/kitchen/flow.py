@@ -34,16 +34,23 @@ async def kitchen_base(recipe_name: str, tags: List[str] = [], parameters:Dict =
 
     # TODO: add task to cleanup return value (remove full_text [pending authentication test])
     # TODO: add task to create_table_artifact from rundata after cleanup
-    #Just printing the run data now to validate. 
+    logger.info("updated without deploy...")
+    make_artifact(run_data)
+    
+    return run_data
+
+@task
+async def make_artifact(run_data):
     flow_run_name = FlowRunContext.get().flow_run.dict().get('name')
     logger.info(run_data)
-    logger.info([i for i in run_data.items()])
+    create_table_artifact(
+        key = flow_run_name, 
+        table = run_data)
     for task, output in run_data.items():
         logger.info(task)
         logger.info(output)
         create_table_artifact(
             key = flow_run_name+"::"+task,
-            table = output
+            table = output,
+            description = task
         )
-    
-    return run_data
