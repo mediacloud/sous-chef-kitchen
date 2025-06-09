@@ -173,6 +173,21 @@ async def fetch_run_by_id(run_id: str, auth: bearer, request: Request,
 		response.status_code = http_status.HTTP_400_BAD_REQUEST
 
 
+@app.get("/run/{run_id}/artifacts")
+async def fetch_run_artifacts(run_id: str, auth: bearer, request: Request,
+	response: Response):
+	
+	auth_status = await _validate_auth(auth, request, response)
+	if not auth_status.authorized:
+		return auth_status
+
+	try:
+		return await chef.fetch_run_artifacts(run_id)
+	except Exception as e:
+		print("fetch run artifacts failed")
+		raise e
+
+
 @app.get("/auth/validate", response_model=SousChefKitchenAuthStatus)
 async def validate_auth(auth: bearer, request: Request, response: Response) \
 	-> SousChefKitchenAuthStatus:

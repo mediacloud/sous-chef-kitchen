@@ -126,6 +126,15 @@ def runs_inspect(run_id: str) -> None:
     pprint(results)
 
 
+@click.command("artifacts")
+@click.argument("run_id", required=True)
+def runs_artifacts(run_id:str) -> None:
+    """Return the artifacts associated with a run, if any"""
+    api_client = SousChefKitchenAPIClient()
+    results = api_client.fetch_run_artifacts(run_id)
+
+    pprint(results)
+
 @click.command("list")
 @click.option("--all", 'all_', is_flag=True, default=False, show_default=True,
     help="Include all runs in the output, not just current runs.")
@@ -205,6 +214,7 @@ def _initialize_cli() -> None:
 
     runs.add_command(runs_list)
     runs.add_command(runs_inspect)
+    runs.add_comment(runs_artifacts)
     
 
 _initialize_cli()

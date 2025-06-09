@@ -12,6 +12,7 @@ import logging
 
 import mediacloud.api
 import prefect
+from prefect.artifacts import Artifact
 from prefect.blocks.system import Secret
 from prefect.client.schemas.filters import (
     DeploymentFilter, DeploymentFilterName, FlowRunFilter, FlowRunFilterState,
@@ -67,6 +68,15 @@ def _run_to_dict(run: FlowRun) -> Dict[str, Any]:
         "state_name": run.state_name,
         "state_type": run.state_type,
         "tags": run.tags
+    }
+
+def _artifact_to_dict(artifact: Artifact) -> Dict[str, Any]:
+    """ Serialize a prefect Artifact into a dictionary """
+    return {
+        "type": artifact.type,
+        "key": artifact.key,
+        "data": artifact.data,
+        "description": artifact.description
     }
 
 
@@ -299,6 +309,16 @@ async def validate_auth(auth_email: str, auth_key: str) \
     status.sous_chef_authorized = bool(await store_credentials(auth_email, auth_key))
 
     return status
+
+
+async def fetch_artifacts(run_id: str):
+    """ Fetch all of the artifacts associated with a given run """
+
+    id_filter = FlowRunFilter(tags=FlowRunFilterID(id=run.id))
+
+    async with prefect.get_client() as client:
+        artifacts = await client.read_artifacts(flow_run_filter=id_filter)
+        return [_artifact_to_dict(artifact) for artifact in artifacts]
 
 
 # TODO: Remove this check

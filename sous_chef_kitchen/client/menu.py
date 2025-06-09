@@ -90,6 +90,15 @@ class SousChefKitchenAPIClient:
             return response.json()
         response.raise_for_status()
 
+    def fetch_run_artifacts(self, run_id: UUID | str) -> Dict[str, Any]:
+        """ fetch artifacts associated with a completed sous-chef run """
+        expected_responses = {HTTPStatus.OK, HTTPStatus.FORBIDDEN}
+        url = urllib.parse.urljoin(self.base_url, f"runs/{run_id}/artifacts")
+
+        response = self._session.get(url)
+        if response.status_code in expected_responses:
+            return response.json()
+        response.raise_for_status()    
 
     def fetch_system_status(self) -> SousChefKitchenSystemStatus:
         """Check whether the Sous Che backend systems are available and ready."""
@@ -130,7 +139,7 @@ class SousChefKitchenAPIClient:
             collections = json.loads(recipe_parameters["COLLECTIONS"])
             collections = [str(c) for c in collections]
             recipe_parameters["COLLECTIONS"] = collections
-            
+
         response = self._session.post(url, params=params, json={"recipe_parameters": recipe_parameters})
         if response.status_code in expected_responses:
             return response.json()
@@ -175,6 +184,7 @@ class SousChefKitchenAPIClient:
             return response.json()
         response.raise_for_status()
 
+    
 
     def validate_auth(self) -> SousChefKitchenAuthStatus:
         """Check whether the API key is authorized for Media Cloud and Sous Chef."""
