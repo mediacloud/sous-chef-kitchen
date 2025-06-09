@@ -16,7 +16,7 @@ from prefect.artifacts import Artifact
 from prefect.blocks.system import Secret
 from prefect.client.schemas.filters import (
     DeploymentFilter, DeploymentFilterName, FlowRunFilter, FlowRunFilterState,
-    FlowRunFilterStateType, FlowRunFilterTags)
+    FlowRunFilterStateType, FlowRunFilterTags, FlowRunFilterID)
 from prefect.client.schemas.objects import (
     FlowRun, StateType, WorkerStatus, WorkPoolStatus)
 from prefect.exceptions import ObjectNotFound
