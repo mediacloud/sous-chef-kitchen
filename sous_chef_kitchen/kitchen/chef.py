@@ -311,7 +311,7 @@ async def validate_auth(auth_email: str, auth_key: str) \
     return status
 
 
-async def fetch_artifacts(run_id: str):
+async def fetch_run_artifacts(run_id: str):
     """ Fetch all of the artifacts associated with a given run """
 
     id_filter = FlowRunFilter(tags=FlowRunFilterID(id=run.id))
