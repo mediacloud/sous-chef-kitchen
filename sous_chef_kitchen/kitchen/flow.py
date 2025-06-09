@@ -6,7 +6,7 @@ import os
 from typing import Dict, List
 
 import prefect
-from prefect import flow, get_run_logger
+from prefect import task, flow, get_run_logger
 from prefect.artifacts import create_table_artifact
 from prefect.client.schemas.objects import FlowRun
 from prefect.context import FlowRunContext
