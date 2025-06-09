@@ -41,6 +41,8 @@ async def kitchen_base(recipe_name: str, tags: List[str] = [], parameters:Dict =
 
 @task
 async def make_artifact(run_data):
+    logger = get_run_logger()
+    logger.info("make artifact?")
     flow_run_name = FlowRunContext.get().flow_run.dict().get('name')
     logger.info(run_data)
     create_table_artifact(
