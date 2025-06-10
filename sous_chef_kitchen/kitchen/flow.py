@@ -42,7 +42,7 @@ def kitchen_base(recipe_name: str, tags: List[str] = [], parameters:Dict = {}) -
         table = [run_data])
     
     for task, output in run_data.items():
-        key = re.sub('[^0-9a-zA-Z]+', '-', task)
+        key = re.sub('[^0-9a-zA-Z]+', '-', task.lower())
         create_table_artifact(
             key = flow_run_name+"-"+key,
             table = [output],
