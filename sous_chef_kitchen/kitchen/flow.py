@@ -38,14 +38,18 @@ async def kitchen_base(recipe_name: str, tags: List[str] = [], parameters:Dict =
     logger.info("make artifact?")
     flow_run_name = FlowRunContext.get().flow_run.dict().get('name')
     logger.info(run_data)
+    
     create_table_artifact(
         key = flow_run_name, 
         table = [run_data])
+    
+    logger.info("markdown artifact? : "+flow_run_name+"-md-test")
     create_markdown_artifact(
         key=flow_run_name+"-md-test",
         markdown = "THIS IS A MARKDOWN ARTIFACT FOR "+flow_run_name,
         description= "Must I?"
         )
+
     for task, output in run_data.items():
         logger.info(task)
         logger.info(output)
@@ -55,22 +59,6 @@ async def kitchen_base(recipe_name: str, tags: List[str] = [], parameters:Dict =
             description = task
         )
     
+    logger.info("On the other side!")
     return run_data
 
-@task
-async def make_artifact(run_data):
-    logger = get_run_logger()
-    logger.info("make artifact?")
-    flow_run_name = FlowRunContext.get().flow_run.dict().get('name')
-    logger.info(run_data)
-    create_table_artifact(
-        key = flow_run_name, 
-        table = run_data)
-    for task, output in run_data.items():
-        logger.info(task)
-        logger.info(output)
-        create_table_artifact(
-            key = flow_run_name+"-"+task,
-            table = output,
-            description = task
-        )
