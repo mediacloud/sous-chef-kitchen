@@ -70,7 +70,7 @@ async def make_artifact(run_data):
         logger.info(task)
         logger.info(output)
         create_table_artifact(
-            key = flow_run_name+"::"+task,
+            key = flow_run_name+"-"+task,
             table = output,
             description = task
         )
