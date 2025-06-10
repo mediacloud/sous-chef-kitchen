@@ -42,8 +42,8 @@ async def kitchen_base(recipe_name: str, tags: List[str] = [], parameters:Dict =
         key = flow_run_name, 
         table = [run_data])
     create_markdown_artifact(
-        key=flow_run_name+" md test",
-        markdown = "THIS IS A MARKDOWN ARTIFACT FOR "+flow_run_name + "we got data: "+str(run_data),
+        key=flow_run_name+"-md-test",
+        markdown = "THIS IS A MARKDOWN ARTIFACT FOR "+flow_run_name,
         description= "Must I?"
         )
     for task, output in run_data.items():
