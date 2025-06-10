@@ -51,8 +51,10 @@ def recipes_start(name: str, parameters) -> None:
     api_client = SousChefKitchenAPIClient()
     recipe_parameters = dict(zip(parameters[::2], parameters[1::2])) #Stack Overflow is still my friend! 
     print(f"Parsed parameters: {recipe_parameters}")
-    if api_client.start_recipe(name, recipe_parameters):
-        click.echo(f"Recipe {name} started successfully.")
+    result = api_client.start_recipe(name, recipe_parameters):
+    if result:
+        click.echo(f"Recipe {name} started successfully:")
+        click.echo(result)
     else:
         click.echo(f"Unable to start recipe {name}.")
 
