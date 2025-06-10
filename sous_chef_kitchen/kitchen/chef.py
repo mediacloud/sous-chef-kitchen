@@ -44,6 +44,10 @@ async def _auth_media_cloud(auth_email:str, auth_key:str) -> bool:
 
     mc_search = mediacloud.api.SearchApi(auth_key)
 
+     
+    auth_result = mc.user_profile()
+    print(auth_result)
+
     try:
         auth_result = mc_search.story_list(
             "mediacloud",
