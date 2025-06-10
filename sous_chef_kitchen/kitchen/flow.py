@@ -3,6 +3,7 @@ Run (cook) recipe requests on Prefect using the kitchen-base flow.
 """
 
 import os
+import re
 from typing import Dict, List
 
 import prefect
@@ -45,16 +46,11 @@ def kitchen_base(recipe_name: str, tags: List[str] = [], parameters:Dict = {}) -
     
     logger.info("markdown artifact? : "+flow_run_name+"-md-test")
 
-    create_markdown_artifact(
-        key=flow_run_name+"-md-test",
-        markdown = "THIS IS A MARKDOWN ARTIFACT FOR "+flow_run_name,
-        description= "Must I?"
-        )
 
     for task, output in run_data.items():
-
+        key = re.sub('[^0-9a-zA-Z]+', '-', task)
         create_table_artifact(
-            key = flow_run_name+"-"+task,
+            key = flow_run_name+"-"+key,
             table = [output],
             description = task
         )
