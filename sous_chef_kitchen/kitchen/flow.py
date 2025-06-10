@@ -34,19 +34,13 @@ def kitchen_base(recipe_name: str, tags: List[str] = [], parameters:Dict = {}) -
         run_data = RunPipeline(parsed_parameters)
 
     # TODO: add task to cleanup return value (remove full_text [pending authentication test])
-    # TODO: add task to create_table_artifact from rundata after cleanup
-    logger.info("updated without deploy...")
-    logger.info("make artifact?")
+
     flow_run_name = FlowRunContext.get().flow_run.dict().get('name')
-    logger.info(run_data)
     
     create_table_artifact(
         key = flow_run_name, 
         table = [run_data])
     
-    logger.info("markdown artifact? : "+flow_run_name+"-md-test")
-
-
     for task, output in run_data.items():
         key = re.sub('[^0-9a-zA-Z]+', '-', task)
         create_table_artifact(
@@ -55,6 +49,5 @@ def kitchen_base(recipe_name: str, tags: List[str] = [], parameters:Dict = {}) -
             description = task
         )
     
-    logger.info("On the other side!")
     return run_data
 
