@@ -53,6 +53,7 @@ steps:
 
     - CSVToS3:
         params:
+            task_name: "keywords-export"
             columns:
                 - top_keywords
                 - keyword_counts
