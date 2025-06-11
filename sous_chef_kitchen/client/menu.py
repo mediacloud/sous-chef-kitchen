@@ -3,18 +3,20 @@ Provide a menu of client-side handlers for orders to the Sous Chef Kitchen API
 used by both the CLI and web clients.
 """
 
+import json
 import os
 import urllib.parse
 from http import HTTPStatus
-import json
 from typing import Any, Dict
 from uuid import UUID
 
 import requests
 from requests import ConnectionError
 
-from sous_chef_kitchen.shared.models import \
-    SousChefKitchenAuthStatus, SousChefKitchenSystemStatus
+from sous_chef_kitchen.shared.models import (
+    SousChefKitchenAuthStatus,
+    SousChefKitchenSystemStatus,
+)
 
 DEFAULT_API_BASE_URL = "https://souschef.ddns.net/api/"
 DEFAULT_API_USER_AGENT = "Sous Chef Kitchen"
@@ -28,31 +30,34 @@ API_USER_AGENT = os.getenv("SC_API_USER_AGENT", DEFAULT_API_USER_AGENT)
 class SousChefKitchenAPIClient:
     """A client for handling interactions with the Sous Chef Kitchen API."""
 
-    def __init__(self, auth_email=API_AUTH_EMAIL, auth_key=API_AUTH_KEY,
-        base_url=API_BASE_URL, user_agent=API_USER_AGENT) -> None:
+    def __init__(
+        self,
+        auth_email=API_AUTH_EMAIL,
+        auth_key=API_AUTH_KEY,
+        base_url=API_BASE_URL,
+        user_agent=API_USER_AGENT,
+    ) -> None:
         """Initialize the Sous Chef Kitchen API client."""
 
         self.auth_email = auth_email
         self.auth_key = auth_key
         self.base_url = base_url
         self.user_agent = user_agent
-        
-        self._session = self._init_session()
 
+        self._session = self._init_session()
 
     def _init_session(self) -> requests.Session:
         """Initialize a session with the API."""
 
         session = requests.Session()
-        session.headers.update({'Accept': 'application/json'})
+        session.headers.update({"Accept": "application/json"})
         session.headers.update({"User-Agent": self.user_agent})
         if self.auth_email:
-            session.headers.update({'mediacloud-email': self.auth_email})
+            session.headers.update({"mediacloud-email": self.auth_email})
         if self.auth_key:
-            session.headers.update({'Authorization': f'Bearer {self.auth_key}'})
-        
+            session.headers.update({"Authorization": f"Bearer {self.auth_key}"})
+
         return session
-    
 
     def fetch_all_runs(self) -> Dict[str, Any] | SousChefKitchenAuthStatus:
         """Fetch all Sous Chef Kitchen runs from Prefect."""
@@ -65,7 +70,6 @@ class SousChefKitchenAPIClient:
             return response.json()
         response.raise_for_status()
 
-
     def fetch_active_runs(self) -> Dict[str, Any] | SousChefKitchenAuthStatus:
         """Fetch any active or upcoming Sous Chef Kitchen runs from Prefect."""
 
@@ -77,9 +81,9 @@ class SousChefKitchenAPIClient:
             return response.json()
         response.raise_for_status()
 
-
-    def fetch_run_by_id(self, run_id: UUID | str) \
-        -> Dict[str, Any] | SousChefKitchenAuthStatus:
+    def fetch_run_by_id(
+        self, run_id: UUID | str
+    ) -> Dict[str, Any] | SousChefKitchenAuthStatus:
         """Fetch a specific Sous Chef Kitchen run from Prefect by its ID."""
 
         expected_responses = {HTTPStatus.OK, HTTPStatus.FORBIDDEN}
@@ -91,14 +95,14 @@ class SousChefKitchenAPIClient:
         response.raise_for_status()
 
     def fetch_run_artifacts(self, run_id: UUID | str) -> Dict[str, Any]:
-        """ fetch artifacts associated with a completed sous-chef run """
+        """fetch artifacts associated with a completed sous-chef run"""
         expected_responses = {HTTPStatus.OK, HTTPStatus.FORBIDDEN}
         url = urllib.parse.urljoin(self.base_url, f"run/{run_id}/artifacts")
 
         response = self._session.get(url)
         if response.status_code in expected_responses:
             return response.json()
-        response.raise_for_status()    
+        response.raise_for_status()
 
     def fetch_system_status(self) -> SousChefKitchenSystemStatus:
         """Check whether the Sous Che backend systems are available and ready."""
@@ -114,8 +118,8 @@ class SousChefKitchenAPIClient:
         except ConnectionError as e:
             return SousChefKitchenSystemStatus()
 
-    def recipe_schema(self, recipe_name:str) -> Dict[str, Any]:
-        """ Return the expected parameter values for a given recipe """
+    def recipe_schema(self, recipe_name: str) -> Dict[str, Any]:
+        """Return the expected parameter values for a given recipe"""
 
         expected_responses = {HTTPStatus.OK, HTTPStatus.FORBIDDEN}
         url = urllib.parse.urljoin(self.base_url, f"recipe/schema")
@@ -126,27 +130,28 @@ class SousChefKitchenAPIClient:
             return response.json()
         response.raise_for_status()
 
-    def start_recipe(self, recipe_name:str, recipe_parameters:Dict) -> Dict[str, Any]:
+    def start_recipe(self, recipe_name: str, recipe_parameters: Dict) -> Dict[str, Any]:
         """Start a Sous Chef recipe."""
 
         expected_responses = {HTTPStatus.OK, HTTPStatus.FORBIDDEN}
         url = urllib.parse.urljoin(self.base_url, f"recipe/start")
-        params = {"recipe_name": recipe_name} # TODO: Allow arbitrary recipe parameters
+        params = {"recipe_name": recipe_name}  # TODO: Allow arbitrary recipe parameters
 
-        #THIS IS BRITTLE, but I want to just get a demo active!!!
+        # THIS IS BRITTLE, but I want to just get a demo active!!!
 
-        if "COLLECTIONS" in recipe_parameters: 
+        if "COLLECTIONS" in recipe_parameters:
             collections = json.loads(recipe_parameters["COLLECTIONS"])
             collections = [str(c) for c in collections]
             recipe_parameters["COLLECTIONS"] = collections
 
-        response = self._session.post(url, params=params, json={"recipe_parameters": recipe_parameters})
+        response = self._session.post(
+            url, params=params, json={"recipe_parameters": recipe_parameters}
+        )
         if response.status_code in expected_responses:
             return response.json()
         response.raise_for_status()
 
-
-    def cancel_recipe(self, recipe_name:str, run_id: UUID | str) -> Dict[str, Any]:
+    def cancel_recipe(self, recipe_name: str, run_id: UUID | str) -> Dict[str, Any]:
         """Cancel a Sous Chef recipe run."""
 
         expected_responses = {HTTPStatus.OK, HTTPStatus.FORBIDDEN}
@@ -158,8 +163,7 @@ class SousChefKitchenAPIClient:
             return response.json()
         response.raise_for_status()
 
-
-    def pause_recipe(self, recipe_name:str, run_id: UUID | str) -> Dict[str, Any]:
+    def pause_recipe(self, recipe_name: str, run_id: UUID | str) -> Dict[str, Any]:
         """Pause a Sous Chef recipe run."""
 
         expected_responses = {HTTPStatus.OK, HTTPStatus.FORBIDDEN}
@@ -171,8 +175,7 @@ class SousChefKitchenAPIClient:
             return response.json()
         response.raise_for_status()
 
-
-    def resume_recipe(self, recipe_name:str, run_id: UUID | str) -> Dict[str, Any]:
+    def resume_recipe(self, recipe_name: str, run_id: UUID | str) -> Dict[str, Any]:
         """Resume a Sous Chef recipe run."""
 
         expected_responses = {HTTPStatus.OK, HTTPStatus.FORBIDDEN}
@@ -183,8 +186,6 @@ class SousChefKitchenAPIClient:
         if response.status_code in expected_responses:
             return response.json()
         response.raise_for_status()
-
-    
 
     def validate_auth(self) -> SousChefKitchenAuthStatus:
         """Check whether the API key is authorized for Media Cloud and Sous Chef."""

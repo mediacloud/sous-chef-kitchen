@@ -21,7 +21,7 @@ class SousChefKitchenAuthStatus(BaseModel):
 
 class SousChefKitchenSystemStatus(BaseModel):
     """Status of Sous Chef Kitchen backend system components."""
-    
+
     connection_ready: bool = Field(False, title="Sous Chef Kitchen Connection")
     kitchen_api_ready: bool = Field(False, title="Sous Chef Kitchen API")
     prefect_cloud_ready: bool = Field(False, title="Prefect Cloud")
@@ -33,8 +33,10 @@ class SousChefKitchenSystemStatus(BaseModel):
     def ready(self) -> bool:
         """Whether all Sous Chef Kitchen backend system components are ready."""
 
-        return self.connection_ready \
-            and self.kitchen_api_ready \
-            and self.prefect_cloud_ready \
-            and self.prefect_work_pool_ready \
+        return (
+            self.connection_ready
+            and self.kitchen_api_ready
+            and self.prefect_cloud_ready
+            and self.prefect_work_pool_ready
             and self.prefect_workers_ready
+        )

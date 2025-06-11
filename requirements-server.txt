@@ -5,3 +5,8 @@ pydantic
 python-dotenv
 ruamel.yaml
 sous-chef @ git+https://github.com/mediacloud/sous-chef@v2.2.1
+
+# Linting Requirements
+black==24.2.0
+flake8==7.0.0
+isort==5.13.2

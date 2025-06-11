@@ -10,7 +10,7 @@ import click
 import dotenv
 from tabulate import tabulate
 
-from sous_chef_kitchen.client.menu import SousChefKitchenAPIClient, API_BASE_URL
+from sous_chef_kitchen.client.menu import API_BASE_URL, SousChefKitchenAPIClient
 from sous_chef_kitchen.shared import recipe
 from sous_chef_kitchen.shared.models import SousChefKitchenSystemStatus
 
@@ -35,9 +35,11 @@ def recipes() -> None:
 def recipes_list() -> None:
     """List available recipes."""
 
-    recipe_info = [recipe.get_recipe_info(recipe_path)
-        for recipe_path in recipe.get_recipe_folders()]
-    
+    recipe_info = [
+        recipe.get_recipe_info(recipe_path)
+        for recipe_path in recipe.get_recipe_folders()
+    ]
+
     recipe_rows = ((name, info[0]) for (name, info) in recipe_info)
     click.echo(tabulate(recipe_rows, headers=["Recipe Name", "Description"]))
 
@@ -49,7 +51,9 @@ def recipes_start(name: str, parameters) -> None:
     """Start a Sous Chef recipe."""
 
     api_client = SousChefKitchenAPIClient()
-    recipe_parameters = dict(zip(parameters[::2], parameters[1::2])) #Stack Overflow is still my friend! 
+    recipe_parameters = dict(
+        zip(parameters[::2], parameters[1::2])
+    )  # Stack Overflow is still my friend!
     print(f"Parsed parameters: {recipe_parameters}")
     result = api_client.start_recipe(name, recipe_parameters)
     if result:
@@ -58,10 +62,11 @@ def recipes_start(name: str, parameters) -> None:
     else:
         click.echo(f"Unable to start recipe {name}.")
 
+
 @click.command("schema")
 @click.argument("name", required=True)
 def recipes_schema(name: str) -> None:
-    """ Get the parameter schema for a recipe """
+    """Get the parameter schema for a recipe"""
 
     api_client = SousChefKitchenAPIClient()
     schema = api_client.recipe_schema(name)
@@ -69,6 +74,7 @@ def recipes_schema(name: str) -> None:
         click.echo(f"Schema for recipe {name}: \n {schema} ")
     else:
         click.echo(f"Unable to find any schema information for {name}")
+
 
 @click.group()
 def runs() -> None:
@@ -93,7 +99,7 @@ def runs_cancel(recipe_name: str, run_id: str) -> None:
 @click.command("pause")
 @click.argument("recipe_name", required=True)
 @click.argument("run_id", required=True)
-def runs_cancel(recipe_name: str, run_id: str) -> None:
+def runs_pause(recipe_name: str, run_id: str) -> None:
     """Pause a Sous Chef recipe run."""
 
     api_client = SousChefKitchenAPIClient()
@@ -106,7 +112,7 @@ def runs_cancel(recipe_name: str, run_id: str) -> None:
 @click.command("resume")
 @click.argument("recipe_name", required=True)
 @click.argument("run_id", required=True)
-def runs_cancel(recipe_name: str, run_id: str) -> None:
+def runs_resume(recipe_name: str, run_id: str) -> None:
     """Resume a Sous Chef recipe run."""
 
     api_client = SousChefKitchenAPIClient()
@@ -123,23 +129,30 @@ def runs_inspect(run_id: str) -> None:
 
     api_client = SousChefKitchenAPIClient()
     results = api_client.fetch_run_by_id(run_id)
-    
+
     # TODO: Add actual formatting rather than just a pretty print
     pprint(results)
 
 
 @click.command("artifacts")
 @click.argument("run_id", required=True)
-def runs_artifacts(run_id:str) -> None:
+def runs_artifacts(run_id: str) -> None:
     """Return the artifacts associated with a run, if any"""
     api_client = SousChefKitchenAPIClient()
     results = api_client.fetch_run_artifacts(run_id)
 
     pprint(results)
 
+
 @click.command("list")
-@click.option("--all", 'all_', is_flag=True, default=False, show_default=True,
-    help="Include all runs in the output, not just current runs.")
+@click.option(
+    "--all",
+    "all_",
+    is_flag=True,
+    default=False,
+    show_default=True,
+    help="Include all runs in the output, not just current runs.",
+)
 def runs_list(all_: bool) -> None:
     """List actively executing or queued Sous Chef runs and their statuses."""
 
@@ -148,14 +161,19 @@ def runs_list(all_: bool) -> None:
         results = api_client.fetch_all_runs()
     else:
         results = api_client.fetch_active_runs()
-    
+
     # TODO: Add actual formatting rather than just a pretty print
     pprint(results)
 
 
 @click.command("auth")
-@click.option("--validate", is_flag=True, default=True, show_default=True,
-    help="Test whether the supplied credentials are valid for Sous Chef.")
+@click.option(
+    "--validate",
+    is_flag=True,
+    default=True,
+    show_default=True,
+    help="Test whether the supplied credentials are valid for Sous Chef.",
+)
 def auth(validate: bool) -> None:
     """Cache Media Cloud API credentials."""
 
@@ -170,7 +188,7 @@ def auth(validate: bool) -> None:
     if not api_auth_key:
         api_auth_key = click.prompt("Media Cloud API Auth Key")
         new_api_key_provided = True
-    
+
     if validate:
         api_client = SousChefKitchenAPIClient(api_auth_email, api_auth_key)
         auth_status = api_client.validate_auth()
@@ -196,7 +214,7 @@ def system_status() -> None:
     system_status = api_client.fetch_system_status()
     system_name = lambda k: SousChefKitchenSystemStatus.model_fields[k].title
     system_ready = lambda v: "Ready" if v else "Not Ready"
-    system_rows = [(system_name(k), system_ready(v)) for k,v in system_status]
+    system_rows = [(system_name(k), system_ready(v)) for k, v in system_status]
     click.echo(f"SC_API_BASE_URL: {API_BASE_URL}")
     click.echo(tabulate(system_rows, headers=["System Name", "Status"]))
 
@@ -217,6 +235,6 @@ def _initialize_cli() -> None:
     runs.add_command(runs_list)
     runs.add_command(runs_inspect)
     runs.add_command(runs_artifacts)
-    
+
 
 _initialize_cli()
