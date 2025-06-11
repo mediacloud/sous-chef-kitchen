@@ -193,7 +193,8 @@ async def fetch_run_by_id(
 @app.get("/run/{run_id}/artifacts")
 async def fetch_run_artifacts(
     run_id: str, auth: bearer, request: Request, response: Response
-):
+) -> List[Dict[str, Any]] | SousChefKitchenAuthStatus:
+    """Fetch artifacts for a specific run."""
 
     auth_status = await _validate_auth(auth, request, response)
     if not auth_status.authorized:

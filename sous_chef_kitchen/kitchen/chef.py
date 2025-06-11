@@ -106,7 +106,7 @@ async def fetch_all_runs(tags: List[str] = []) -> List[Dict[str, Any]]:
         return [_run_to_dict(run) for run in runs]
 
 
-async def cancel_recipe_run(recipe_name: str, run_id: str, tags: List[str] = []):
+async def cancel_recipe_run(recipe_name: str, run_id: str, tags: List[str] = []) -> Dict[str, Any]:
     """Cancel the specified run for the specified Sous Chef recipe."""
 
     tags += BASE_TAGS + [recipe_name]
@@ -242,7 +242,7 @@ async def resume_recipe_run(
 # Reconfiguring to construct the SousChefRecipe in this stage, validating before invoking prefect.
 async def start_recipe(
     recipe_name: str, tags: List[str] = [], parameters: Dict = {}
-) -> FlowRun:
+) -> Dict[str, Any]:
     """Handle orders for the requested recipe from the Sous Chef Kitchen, using SousChef v2 Recipes."""
     print(parameters)
 
@@ -336,8 +336,8 @@ async def validate_auth(auth_email: str, auth_key: str) -> SousChefKitchenAuthSt
     return status
 
 
-async def fetch_run_artifacts(run_id: str):
-    """Fetch all of the artifacts associated with a given run"""
+async def fetch_run_artifacts(run_id: str) -> List[Dict[str, Any]]:
+    """Fetch artifacts for a specific run."""
 
     id_filter = FlowRunFilter(id=FlowRunFilterId(any_=[run_id]))
 
