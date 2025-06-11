@@ -29,7 +29,7 @@ from sous_chef_kitchen.shared.models import (
 from sous_chef_kitchen.shared.recipe import get_recipe_folder
 
 BASE_TAGS = ["kitchen"]
-DEFAULT_PREFECT_WORK_POOL = "bly" # TODO: Change this back to Guerin
+DEFAULT_PREFECT_WORK_POOL = "bly" 
 PREFECT_ACTIVE_STATES = [StateType.RUNNING, StateType.SCHEDULED, StateType.PENDING]
 PREFECT_DEPLOYMENT = os.getenv("SC_PREFECT_DEPLOYMENT", "kitchen-base")
 PREFECT_WORK_POOL = os.getenv("SC_PREFECT_WORK_POOL", DEFAULT_PREFECT_WORK_POOL)
@@ -44,8 +44,8 @@ async def _auth_media_cloud(auth_email:str, auth_key:str) -> bool:
 
     mc_search = mediacloud.api.SearchApi(auth_key)
 
-     
-    auth_result = mc.user_profile()
+    #This call isn't working, but will be used instead of the approach below. 
+    auth_result = mc_search.user_profile()
     print(auth_result)
 
     try:

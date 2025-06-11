@@ -1,6 +1,4 @@
 parameters:
-    API_KEY_BLOCK:
-        type: str
     QUERY:
         type: str
     COLLECTIONS:
@@ -11,14 +9,12 @@ parameters:
         type: date
     NAME:
         type: str
-    S3_PREFIX:
-        type: str
         
 steps:
     #Discovery Block
     - QueryOnlineNews:
         params:
-            api_key_block: $API_KEY_BLOCK
+            api_key_block: 'mediacloud-api-key'
             query: $QUERY
             collections: $COLLECTIONS
             start_date: $START_DATE
@@ -60,5 +56,5 @@ steps:
                 - keyword_appearance_percent
             credentials_block: "aws-s3-credentials"
             bucket_name: "mediacloud-sous-chef-output"
-            object_name: "$S3_PREFIX/DATE/$NAME-keywords.csv"
+            object_name: "sc-kitchen/DATE/$NAME-keywords.csv"
             object_date_slug: true
