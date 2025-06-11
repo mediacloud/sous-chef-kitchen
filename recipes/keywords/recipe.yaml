@@ -49,6 +49,7 @@ steps:
 
     - CSVToS3:
         params:
+            restricted: True
             task_name: "keywords-export"
             columns:
                 - top_keywords

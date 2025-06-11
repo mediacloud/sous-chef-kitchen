@@ -21,7 +21,7 @@ PREFECT_DEPLOYMENT = os.getenv("SC_PREFECT_DEPLOYMENT", "kitchen-base")
 #In this pattern, sc schema validation happens in chef.py when the SousChefRecipe is constructed.
 #Therefore we just accept those parameters as a dict, and trust that it's correct. 
 @flow(name=PREFECT_DEPLOYMENT)
-def kitchen_base(recipe_name: str, tags: List[str] = [], parameters:Dict = {}) -> FlowRun:
+def kitchen_base(recipe_name: str, tags: List[str] = [], parameters:Dict = {}, restricted_access: bool = True) -> FlowRun:
     logger = get_run_logger()
     tags += BASE_TAGS + [recipe_name]
 
@@ -43,6 +43,7 @@ def kitchen_base(recipe_name: str, tags: List[str] = [], parameters:Dict = {}) -
     
     for task, output in run_data.items():
         key = re.sub('[^0-9a-zA-Z]+', '-', task.lower())
+        logger.info(output)
         create_table_artifact(
             key = flow_run_name+"-"+key,
             table = [output],
