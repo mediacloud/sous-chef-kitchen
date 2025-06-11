@@ -244,32 +244,37 @@ async def start_recipe(
     recipe_name: str, tags: List[str] = [], parameters: Dict = {}
 ) -> FlowRun:
     """Handle orders for the requested recipe from the Sous Chef Kitchen, using SousChef v2 Recipes."""
+    print(parameters)
 
     recipe_folder = get_recipe_folder(recipe_name)
     recipe_location = os.path.join(recipe_folder, "recipe.yaml")
+    try:
+        recipe = SousChefRecipe(recipe_location, parameters)
+    except Exception as e:
+        expected = SousChefRecipe.get_param_schema(recipe_location)["properties"]
+        raise ValueError(
+            f"Error validating parameters for '{recipe_name}' with {parameters}: \n {e} \n Expected schema like: {expected}"
+        )
 
-    recipe = SousChefRecipe(recipe_location, parameters)
-
-    tags += BASE_TAGS + [recipe_name]
-
+    tags += BASE_TAGS
     deployment_filter = DeploymentFilter(
         name=DeploymentFilterName(any_=[PREFECT_DEPLOYMENT])
     )
 
     active_runs = await fetch_active_runs(tags)
-    if active_runs:
-        raise RuntimeError(f"Recipe {recipe_name} is already running.")
+    if len(active_runs) > 0:
+        raise RuntimeError("Cannot start a new recipe run whiile another run is active")
 
     final_params = recipe.get_params()
 
     parameters = {"recipe_name": recipe_name, "tags": tags, "parameters": final_params}
-
     async with prefect.get_client() as client:
         response = await client.read_deployments(deployment_filter=deployment_filter)
         run = await client.create_flow_run_from_deployment(
             response[0].id, parameters=parameters, tags=tags
         )
-        return run
+    
+    return _run_to_dict(run)
 
 
 async def recipe_schema(recipe_name: str) -> Dict:

@@ -135,14 +135,18 @@ class SousChefKitchenAPIClient:
 
         expected_responses = {HTTPStatus.OK, HTTPStatus.FORBIDDEN}
         url = urllib.parse.urljoin(self.base_url, f"recipe/start")
-        params = {"recipe_name": recipe_name}  # TODO: Allow arbitrary recipe parameters
+        params = {"recipe_name": recipe_name}
 
-        # THIS IS BRITTLE, but I want to just get a demo active!!!
-
+        # Handle collections parameter if it exists
         if "COLLECTIONS" in recipe_parameters:
-            collections = json.loads(recipe_parameters["COLLECTIONS"])
-            collections = [str(c) for c in collections]
-            recipe_parameters["COLLECTIONS"] = collections
+            try:
+                collections = recipe_parameters["COLLECTIONS"]
+                if isinstance(collections, str):
+                    collections = json.loads(collections)
+                recipe_parameters["COLLECTIONS"] = [str(c) for c in collections]
+            except json.JSONDecodeError:
+                # If it's not valid JSON, assume it's a single collection ID
+                recipe_parameters["COLLECTIONS"] = [str(recipe_parameters["COLLECTIONS"])]
 
         response = self._session.post(
             url, params=params, json={"recipe_parameters": recipe_parameters}
