@@ -290,19 +290,31 @@ async def validate_auth(auth_email: str, auth_key: str) -> SousChefKitchenAuthSt
 
     status = SousChefKitchenAuthStatus()
     if not auth_email or not auth_key:
+        logger.warning("Missing auth credentials")
         return status
 
-    mc_search = mediacloud.api.SearchApi(auth_key)
-    auth_result = await mc_search.user_profile()
-
-    if auth_result["message"] == "User Not Found":
-        return status
-    else:
+    try:
+        mc_search = mediacloud.api.SearchApi(auth_key)
+        auth_result = await mc_search.user_profile()
+        
+        if "message" in auth_result and auth_result["message"] == "User Not Found":
+            logger.warning(f"User not found for email: {auth_email}")
+            return status
+            
         status.media_cloud_authorized = True
-
-    status.media_cloud_full_text_authorized = status["is_staff"]
-
-    status.sous_chef_authorized = True
+        status.media_cloud_full_text_authorized = auth_result.get("is_staff", False)
+        status.sous_chef_authorized = True
+        
+        logger.info(
+            f"Auth successful for {auth_email}: "
+            f"MC: {status.media_cloud_authorized}, "
+            f"MC-FT: {status.media_cloud_full_text_authorized}, "
+            f"SC: {status.sous_chef_authorized}"
+        )
+        
+    except Exception as e:
+        logger.error(f"Error validating auth for {auth_email}: {str(e)}")
+        return status
 
     return status
 
