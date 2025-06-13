@@ -43,7 +43,7 @@ def kitchen_base(
     # create_table_artifact(key=flow_run_name, table=[run_data])
 
     for _task, output in run_data.items():
-        key = re.sub("[^0-9a-zA-Z]+", "-", task.lower())
+        key = re.sub("[^0-9a-zA-Z]+", "-", _task.lower())
 
         if len(output) > 1:
             if output["restricted"] and not return_restricted_artifacts:
