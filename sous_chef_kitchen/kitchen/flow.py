@@ -7,7 +7,7 @@ import re
 from typing import Dict, List
 
 import prefect
-from prefect import flow, get_run_logger, task
+from prefect import flow, get_run_logger
 from prefect.artifacts import create_table_artifact
 from prefect.client.schemas.objects import FlowRun
 from prefect.context import FlowRunContext
@@ -51,7 +51,7 @@ def kitchen_base(
 
             else:
                 create_table_artifact(
-                    key=flow_run_name + "-" + key, table=[output], description=task
+                    key=flow_run_name + "-" + key, table=[output], description=_task
                 )
 
     return run_data
