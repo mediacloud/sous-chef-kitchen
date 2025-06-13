@@ -56,20 +56,13 @@ async def _auth_media_cloud(auth_email: str, auth_key: str) -> bool:
     """
 
     mc_search = mediacloud.api.SearchApi(auth_key)
+    auth_result = mc_search.user_profile()
 
-    try:
-        auth_result = mc_search.story_list(
-            "mediacloud",
-            start_date=date.today(),
-            end_date=date.today() - timedelta(1),
-            expanded=True,
-        )
-        logger.info(f"Auth result: {auth_result}")
-    except RuntimeError:
-        # TODO: Parse out the text of the runtime error for the "real" error
+    if auth_result["message"]=="User Not Found":
         return False
     else:
         return True
+    
 
 
 def _run_to_dict(run: FlowRun) -> Dict[str, Any]:
