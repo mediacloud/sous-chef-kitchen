@@ -295,7 +295,7 @@ async def validate_auth(auth_email: str, auth_key: str) -> SousChefKitchenAuthSt
 
     try:
         mc_search = mediacloud.api.SearchApi(auth_key)
-        auth_result = await mc_search.user_profile()
+        auth_result = mc_search.user_profile()
         
         if "message" in auth_result and auth_result["message"] == "User Not Found":
             logger.warning(f"User not found for email: {auth_email}")
