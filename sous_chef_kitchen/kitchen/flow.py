@@ -8,7 +8,7 @@ from typing import Dict, List
 
 import prefect
 from prefect import flow, get_run_logger, task
-from prefect.artifacts import create_markdown_artifact, create_table_artifact
+from prefect.artifacts import create_table_artifact
 from prefect.client.schemas.objects import FlowRun
 from prefect.context import FlowRunContext
 from sous_chef import RunPipeline, SousChefRecipe
@@ -26,6 +26,7 @@ def kitchen_base(
     recipe_name: str,
     tags: List[str] = [],
     parameters: Dict = {},
+    return_restricted_artifacts: bool = False,
 ) -> FlowRun:
     logger = get_run_logger()
     tags += BASE_TAGS + [recipe_name]
@@ -34,20 +35,23 @@ def kitchen_base(
     recipe_location = os.path.join(recipe_folder, "recipe.yaml")
 
     with prefect.tags(*tags):
+        logger.info("Starting Sous-Chef Pipeline")
         run_data = RunPipeline(SousChefRecipe(recipe_location, parameters))
-
-    # TODO: add task to cleanup return value (remove full_text [pending authentication test])
 
     flow_run_name = FlowRunContext.get().flow_run.dict().get("name")
 
-    create_table_artifact(key=flow_run_name, table=[run_data])
+    # create_table_artifact(key=flow_run_name, table=[run_data])
 
-    for task, output in run_data.items():
+    for _task, output in run_data.items():
         key = re.sub("[^0-9a-zA-Z]+", "-", task.lower())
 
         if len(output) > 1:
-            create_table_artifact(
-                key=flow_run_name + "-" + key, table=[output], description=task
-            )
+            if output["restricted"] and not return_restricted_artifacts:
+                pass
+
+            else:
+                create_table_artifact(
+                    key=flow_run_name + "-" + key, table=[output], description=task
+                )
 
     return run_data

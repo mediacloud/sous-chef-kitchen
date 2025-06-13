@@ -146,7 +146,9 @@ class SousChefKitchenAPIClient:
                 recipe_parameters["COLLECTIONS"] = [str(c) for c in collections]
             except json.JSONDecodeError:
                 # If it's not valid JSON, assume it's a single collection ID
-                recipe_parameters["COLLECTIONS"] = [str(recipe_parameters["COLLECTIONS"])]
+                recipe_parameters["COLLECTIONS"] = [
+                    str(recipe_parameters["COLLECTIONS"])
+                ]
 
         response = self._session.post(
             url, params=params, json={"recipe_parameters": recipe_parameters}

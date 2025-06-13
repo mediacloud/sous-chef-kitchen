@@ -48,23 +48,6 @@ PREFECT_WORK_POOL = os.getenv("SC_PREFECT_WORK_POOL", DEFAULT_PREFECT_WORK_POOL)
 logger = logging.getLogger(__name__)
 
 
-async def _auth_media_cloud(auth_email: str, auth_key: str) -> bool:
-    """Confirm the account has the necessary Media Cloud permissions.
-
-    Note: This is temporary and will be replaced by more formal permissions
-    when available. See the note under validate_auth() for further explanation.
-    """
-
-    mc_search = mediacloud.api.SearchApi(auth_key)
-    auth_result = mc_search.user_profile()
-
-    if auth_result["message"]=="User Not Found":
-        return False
-    else:
-        return True
-    
-
-
 def _run_to_dict(run: FlowRun) -> Dict[str, Any]:
     """Serialize a Prefect run into a dictionary."""
 
@@ -99,7 +82,9 @@ async def fetch_all_runs(tags: List[str] = []) -> List[Dict[str, Any]]:
         return [_run_to_dict(run) for run in runs]
 
 
-async def cancel_recipe_run(recipe_name: str, run_id: str, tags: List[str] = []) -> Dict[str, Any]:
+async def cancel_recipe_run(
+    recipe_name: str, run_id: str, tags: List[str] = []
+) -> Dict[str, Any]:
     """Cancel the specified run for the specified Sous Chef recipe."""
 
     tags += BASE_TAGS + [recipe_name]
@@ -234,7 +219,10 @@ async def resume_recipe_run(
 
 # Reconfiguring to construct the SousChefRecipe in this stage, validating before invoking prefect.
 async def start_recipe(
-    recipe_name: str, tags: List[str] = [], parameters: Dict = {}
+    recipe_name: str,
+    tags: List[str] = [],
+    parameters: Dict = {},
+    user_full_text_authorized: bool = False,
 ) -> Dict[str, Any]:
     """Handle orders for the requested recipe from the Sous Chef Kitchen, using SousChef v2 Recipes."""
     print(parameters)
@@ -260,13 +248,18 @@ async def start_recipe(
 
     final_params = recipe.get_params()
 
-    parameters = {"recipe_name": recipe_name, "tags": tags, "parameters": final_params}
+    parameters = {
+        "recipe_name": recipe_name,
+        "tags": tags,
+        "parameters": final_params,
+        "return_restricted_artifacts": user_full_text_authorized,
+    }
     async with prefect.get_client() as client:
         response = await client.read_deployments(deployment_filter=deployment_filter)
         run = await client.create_flow_run_from_deployment(
             response[0].id, parameters=parameters, tags=tags
         )
-    
+
     return _run_to_dict(run)
 
 
@@ -280,51 +273,36 @@ async def recipe_schema(recipe_name: str) -> Dict:
     return SousChefRecipe.get_param_schema(recipe_location)["properties"]
 
 
-async def store_credentials(auth_email: str, auth_key: str) -> Secret:
-    """Store user credentials as a secret block in Prefect."""
-
-    def get_user_name(email: str) -> str:
-        return re.sub("\W+", "", email.split("@")[0])
-
-    block_name = f"{get_user_name(auth_email)}-mc-api-secret"
-
-    async with prefect.get_client() as client:
-        try:
-            user_block = await client.read_block_document_by_name(
-                name=block_name, block_type_slug="secret"
-            )
-        except ObjectNotFound:
-            user_block = None
-
-        if not user_block:
-            user_block = Secret(name=block_name, value=auth_key)
-            await user_block.save(name=block_name)
-
-    return user_block
-
-
 async def validate_auth(auth_email: str, auth_key: str) -> SousChefKitchenAuthStatus:
     """Check whether the API key is authorized for Media Cloud and Sous Chef.
 
-    Note: This is temporary and will be replaced by more formal permissions
-    when available. For now, certain calls are used as proxies to gauge the
-    permissions available to the user.
+    More Formal Permissions approach, ideally:
+    Mediacloud API provides a user_profile method
+    1. If the result not a 403, the user is mediacloud_authorized
+    2. If the result has "full-text-access" in its groups, the user is media_cloud_full_text_authorized
+    3. If the result has "sous-chef-user" in its groups, then then the user is sous_chef_authorized
 
-    Media Cloud: A successful call to story_list() is used as an approximation
-    to demonstrate that the user has the permissions needed to make use of
-    Media Cloud within Sous Chef.
-
-    Sous Chef: Successfully connecting to Prefect and fetching and/or storing
-    credentials is enough to demonstrate that the user has the permissions
-    needed to make use of Prefect for Sous Chef.
+    The situation in fact, given that the response type and groups are not set up in mc yet:
+    1. If the result is not {"message": "User Not Found"}, the user is media_cloud_authorized
+    2. If the result has "is_staff==True", the user is media_cloud_full_text_authorized
+    3. If the user is media_cloud_authorized, the user is sous_chef_authorized
     """
 
     status = SousChefKitchenAuthStatus()
     if not auth_email or not auth_key:
         return status
 
-    status.media_cloud_authorized = await _auth_media_cloud(auth_email, auth_key)
-    status.sous_chef_authorized = bool(await store_credentials(auth_email, auth_key))
+    mc_search = mediacloud.api.SearchApi(auth_key)
+    auth_result = await mc_search.user_profile()
+
+    if auth_result["message"] == "User Not Found":
+        return status
+    else:
+        status.media_cloud_authorized = True
+
+    status.media_cloud_full_text_authorized = status["is_staff"]
+
+    status.sous_chef_authorized = True
 
     return status
 

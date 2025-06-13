@@ -10,6 +10,9 @@ class SousChefKitchenAuthStatus(BaseModel):
 
     media_cloud_authorized: bool = Field(False, title="Media Cloud Authorized")
     sous_chef_authorized: bool = Field(False, title="Sous Chef Authorized")
+    media_cloud_full_text_authorized: bool = Field(
+        False, title="Media Cloud Full Text Authorized"
+    )
 
     @computed_field
     @property

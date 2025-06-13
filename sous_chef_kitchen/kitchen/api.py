@@ -65,7 +65,11 @@ async def start_recipe(
     logger.info(f"Start recipe {recipe_name}")
 
     try:
-        return await chef.start_recipe(recipe_name, parameters=recipe_parameters)
+        return await chef.start_recipe(
+            recipe_name=recipe_name,
+            parameters=recipe_parameters,
+            user_full_text_authorized=auth_status.media_cloud_full_text_authorized,
+        )
     except Exception as e:
         if hasattr(e, "message"):
             raise HTTPException(
