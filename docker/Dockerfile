@@ -19,7 +19,6 @@ COPY buffet.py .
 COPY lint.py .
 COPY prefect.yaml .
 COPY pyproject.toml .
-COPY README.md .
 
 # Expose the port FastAPI will run on
 EXPOSE 8000
