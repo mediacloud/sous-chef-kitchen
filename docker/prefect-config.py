@@ -1,14 +1,11 @@
-# prefect-config.py
-
 import asyncio
 import time
 import httpx
 from prefect import get_client
-from prefect.client.schemas.objects import WorkPoolCreate
 from prefect.client.exceptions import ObjectNotFound
 
 PREFECT_API_URL = "http://prefect-server:4200/api"
-WORK_POOL_NAME = "default-agent-pool" #FROM AN ENVIRONMENT VARIABLE?
+WORK_POOL_NAME = "default-agent-pool"
 
 
 async def ensure_work_pool():
@@ -18,9 +15,7 @@ async def ensure_work_pool():
             print(f"✅ Work pool '{WORK_POOL_NAME}' already exists.")
         except ObjectNotFound:
             print(f"➕ Creating work pool '{WORK_POOL_NAME}'...")
-            await client.create_work_pool(
-                WorkPoolCreate(name=WORK_POOL_NAME, type="process")
-            )
+            await client.create_work_pool(name=WORK_POOL_NAME, type="process")
 
 
 def wait_for_api():
