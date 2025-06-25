@@ -1,11 +1,16 @@
 import asyncio
-import pathlib
 import time
 import os
 import httpx
 from prefect import get_client
 from prefect.server.schemas.actions import WorkPoolCreate
-from sous_chef.scripts.setup_secrets import setup_secret_blocks
+from prefect.blocks.system import Secret
+from prefect_aws import AwsCredentials
+from prefect_github import GitHubCredentials
+from prefect_email import EmailServerCredentials
+from prefect_docker import DockerRegistryCredentials
+from pydantic_settings import BaseSettings
+
 
 PREFECT_API_URL = "http://prefect-server:4200/api"
 WORK_POOL_NAME = os.environ("WORK_POOL_NAME", "default-work-pool") #From an env-var
@@ -41,11 +46,54 @@ def wait_for_api():
     raise TimeoutError("Prefect API did not become healthy in time.")
 
 
-def setup_secrets():
-    #Have to get the secret values from the environment...
-    setup_secret_blocks()
+class SousChefCredentials(BaseSettings):
+
+    ACCESS_KEY_ID:str
+    ACCESS_KEY_SECRET:str
+
+    DOCKER_USERNAME:str
+    DOCKER_PASSWORD:str
+
+    GMAIL_APP_USERNAME:str
+    GMAIL_APP_PASSWORD:str
+
+    GITHUB_RO_PAT:str
+
+    MEDIACLOUD_API_KEY:str
+
+def setup_secrets(overwrite=True):
+    config = SousChefCredentials()
+
+
+    AwsCredentials(
+        aws_access_key_id=config.ACCESS_KEY_ID,
+        aws_secret_access_key=config.ACCESS_KEY_SECRET
+        ).save("aws-s3-credentials", overwrite=overwrite)
+
+
+    DockerRegistryCredentials(
+        username=config.DOCKER_USERNAME,
+        password=config.DOCKER_PASSWORD,
+        registry_url="index.docker.io" #I think this is only ever hardcoded
+        ).save("docker-auth", overwrite=overwrite)
+
+
+    GitHubCredentials(token=config.GITHUB_RO_PAT
+        ).save("sous-chef-read-only", overwrite=overwrite)
+
+
+    EmailServerCredentials(
+        username=config.GMAIL_APP_USERNAME,
+        password=config.GMAIL_APP_PASSWORD
+        ).save("email-password", overwrite=overwrite)
+
+
+    Secret(value=config.MEDIACLOUD_API_KEY
+        ).save("mediacloud-api-key", overwrite=overwrite)
+
 
 if __name__ == "__main__":
     wait_for_api()
     asyncio.run(ensure_work_pool())
+    setup_secrets()
 
