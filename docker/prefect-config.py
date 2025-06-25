@@ -1,12 +1,14 @@
 import asyncio
 import pathlib
 import time
+import os
 import httpx
 from prefect import get_client
 from prefect.server.schemas.actions import WorkPoolCreate
+from sous_chef.scripts.setup_secrets import setup_secret_blocks
 
 PREFECT_API_URL = "http://prefect-server:4200/api"
-WORK_POOL_NAME = "default-agent-pool" #From an env-var
+WORK_POOL_NAME = os.environ("WORK_POOL_NAME", "default-work-pool") #From an env-var
 
 ##Utilities to setup the prefect environment via docker-compose
 
@@ -39,8 +41,11 @@ def wait_for_api():
     raise TimeoutError("Prefect API did not become healthy in time.")
 
 
+def setup_secrets():
+    #Have to get the secret values from the environment...
+    setup_secret_blocks()
 
 if __name__ == "__main__":
     wait_for_api()
     asyncio.run(ensure_work_pool())
-    leave_ready_check()
+

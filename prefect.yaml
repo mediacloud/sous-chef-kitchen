@@ -51,7 +51,7 @@ deployments:
   entrypoint: sous_chef_kitchen/kitchen/flow.py:kitchen_base
   parameters: {}
   work_pool:
-    name: bly
+    name: kitchen-work-pool
     work_queue_name:
     job_variables:
       image: '{{ build-image.image }}'
@@ -67,7 +67,7 @@ deployments:
     aws_credentials_block: aws-s3-credentials
     bucket_name: sous-chef-recipes
   work_pool:
-    name: bly
+    name: kitchen-work-pool
     work_queue_name:
     job_variables:
       image: '{{ build_image.image }}'

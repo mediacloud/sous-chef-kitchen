@@ -10,15 +10,19 @@ services:
       PREFECT_HOME: /data 
 
   prefect-config:
-    image: prefecthq/prefect:3-latest
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile  
     volumes:
       - ./prefect-config.py:/prefect-config.py
     depends_on:
       - prefect-server
     environment:
       - PREFECT_API_URL=http://prefect-server:4200/api
+      - WORK_POOL_NAME=kitchen-work-pool
+    env_file:
+      - ../sous-chef-config/.env #A hack to get a demo working. 
     entrypoint: ["python", "/prefect-config.py"]
-
 
 
   prefect-worker:
