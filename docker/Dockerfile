@@ -5,20 +5,16 @@ FROM python:3.11-slim
 WORKDIR /app
 
 # Install system dependencies (if needed)
-# RUN apt-get update && apt-get install -y build-essential
-
+RUN apt-get update && apt-get install -y build-essential
+RUN apt-get install -y git
 # Copy requirements and install
 COPY requirements-server.txt .
 RUN pip install --no-cache-dir -r requirements-server.txt
 
 # Copy your code
-COPY sous_chef_kitchen/ sous_chef_kitchen/
-COPY a_la_carte/ a_la_carte/
-COPY recipes/ recipes/
-COPY buffet.py .
-COPY lint.py .
-COPY prefect.yaml .
-COPY pyproject.toml .
+COPY ../sous_chef_kitchen/ sous_chef_kitchen/
+COPY ../recipes/ recipes/
+COPY ../prefect.yaml .
 
 # Expose the port FastAPI will run on
 EXPOSE 8000

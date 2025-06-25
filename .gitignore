@@ -2,6 +2,7 @@ __pycache__
 venv/
 *.csv
 .env
+*.env
 *.DS_Store
 Pipfile
 Pipfile.lock

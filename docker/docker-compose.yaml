@@ -19,10 +19,10 @@ services:
       - prefect-server
     # volumes, networks, etc. as needed
 
-  api:
+  kitchen-api:
     build:
-      context: .
-      dockerfile: Dockerfile  
+      context: ..
+      dockerfile: docker/Dockerfile  
     command: uvicorn sous_chef_kitchen.kitchen.api:app --host 0.0.0.0 --port 8000 --reload
     ports:
       - "8000:8000"
