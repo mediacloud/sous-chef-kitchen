@@ -43,3 +43,4 @@ def wait_for_api():
 if __name__ == "__main__":
     wait_for_api()
     asyncio.run(ensure_work_pool())
+    leave_ready_check()

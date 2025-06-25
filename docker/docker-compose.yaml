@@ -8,12 +8,6 @@ services:
       - "4200:4200"  # Prefect UI
     environment:
       PREFECT_HOME: /data 
-        #    healthcheck:
-        #test: ["CMD", "curl", "-f", "http://prefect-server:4200/api/health"]
-        #interval: 10s
-        #timeout: 5s
-        #retries: 5
-
 
   prefect-config:
     image: prefecthq/prefect:3-latest
@@ -34,9 +28,9 @@ services:
       - PREFECT_API_URL=http://prefect-server:4200/api
     depends_on:
       prefect-config:
-        condition: service-healthy
+        condition: service_completed_successfully
 
-  #Perhaps a kitchen-deploy step is also needed, to run `prefect deploy ...`
+  #Perhaps a kitchen-deploy step is also needed, to run `prefect deploy ...`, if we just do everything via docker compose. 
 
   kitchen-api:
     build:
@@ -49,7 +43,7 @@ services:
       ###Other Vars here too
       - PREFECT_API_URL=http://prefect-server:4200/api
     depends_on:
-      - prefect-config
+      - prefect-worker
     # volumes, networks, etc. as needed
 
 networks:
