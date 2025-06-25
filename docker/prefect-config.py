@@ -2,6 +2,7 @@ import asyncio
 import time
 import httpx
 from prefect import get_client
+from prefect.server.schemas.actions import WorkPoolCreate
 
 PREFECT_API_URL = "http://prefect-server:4200/api"
 WORK_POOL_NAME = "default-agent-pool"
@@ -14,7 +15,10 @@ async def ensure_work_pool():
             print(f"✅ Work pool '{WORK_POOL_NAME}' already exists.")
         else:
             print(f"➕ Creating work pool '{WORK_POOL_NAME}'...")
-            await client.create_work_pool(name=WORK_POOL_NAME, type="process")
+            work_pool = WorkPoolCreate(
+                name = WORK_POOL_NAME,
+                type="process")
+            await client.create_work_pool(work_pool)
 
 
 
