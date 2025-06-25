@@ -8,23 +8,23 @@ services:
       - "4200:4200"  # Prefect UI
     environment:
       PREFECT_HOME: /data 
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4200/api/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+        #    healthcheck:
+        #test: ["CMD", "curl", "-f", "http://prefect-server:4200/api/health"]
+        #interval: 10s
+        #timeout: 5s
+        #retries: 5
 
 
     # volumes, networks, etc. as needed
 
   prefect-worker:
     image: prefecthq/prefect:3-latest
-    command: prefect worker start 
+    command: prefect worker start --pool default-agent-pool 
     environment:
       - PREFECT_API_URL=http://prefect-server:4200/api
     depends_on:
-      prefect-server:
-        condition: service_healthy
+      - prefect-server
+        #    condition: service_healthy
     # volumes, networks, etc. as needed
 
   kitchen-api:
