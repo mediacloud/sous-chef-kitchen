@@ -24,6 +24,11 @@ services:
     environment:
       - PREFECT_API_URL=http://prefect-server:4200/api
     entrypoint: ["python", "/prefect-config.py"]
+    healthcheck:
+      test: ["CMD", "test", "-f", "/tmp/prefect_config_ready"]
+      interval: 5s
+      timeout: 2s
+      retries: 10
 
 
   prefect-worker:
@@ -32,7 +37,8 @@ services:
     environment:
       - PREFECT_API_URL=http://prefect-server:4200/api
     depends_on:
-      - prefect-config
+      prefect-config:
+        condition: service-healthy
 
 
   kitchen-api:

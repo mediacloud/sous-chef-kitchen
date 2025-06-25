@@ -1,12 +1,14 @@
 import asyncio
+import pathlib
 import time
 import httpx
 from prefect import get_client
 from prefect.server.schemas.actions import WorkPoolCreate
 
 PREFECT_API_URL = "http://prefect-server:4200/api"
-WORK_POOL_NAME = "default-agent-pool"
+WORK_POOL_NAME = "default-agent-pool" #From an env-var
 
+##Utilities to setup the prefect environment via docker-compose
 
 async def ensure_work_pool():
     async with get_client() as client:
@@ -18,7 +20,8 @@ async def ensure_work_pool():
             work_pool = WorkPoolCreate(
                 name = WORK_POOL_NAME,
                 type="process")
-            await client.create_work_pool(work_pool)
+            result =await client.create_work_pool(work_pool)
+            print(result)
 
 
 
@@ -35,6 +38,8 @@ def wait_for_api():
         time.sleep(2)
     raise TimeoutError("Prefect API did not become healthy in time.")
 
+def leave_ready_check():
+    pathlib.Path("/tmp/prefect_config_ready").touch()
 
 if __name__ == "__main__":
     wait_for_api()
