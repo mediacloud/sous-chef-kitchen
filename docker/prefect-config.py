@@ -38,8 +38,7 @@ def wait_for_api():
         time.sleep(2)
     raise TimeoutError("Prefect API did not become healthy in time.")
 
-def leave_ready_check():
-    pathlib.Path("/tmp/prefect_config_ready").touch()
+
 
 if __name__ == "__main__":
     wait_for_api()

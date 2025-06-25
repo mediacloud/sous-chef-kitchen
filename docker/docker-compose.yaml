@@ -24,11 +24,7 @@ services:
     environment:
       - PREFECT_API_URL=http://prefect-server:4200/api
     entrypoint: ["python", "/prefect-config.py"]
-    healthcheck:
-      test: ["CMD", "test", "-f", "/tmp/prefect_config_ready"]
-      interval: 5s
-      timeout: 2s
-      retries: 10
+
 
 
   prefect-worker:
@@ -40,6 +36,7 @@ services:
       prefect-config:
         condition: service-healthy
 
+  #Perhaps a kitchen-deploy step is also needed, to run `prefect deploy ...`
 
   kitchen-api:
     build:
