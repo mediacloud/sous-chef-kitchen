@@ -1,0 +1,38 @@
+version: "3.8"
+
+services:
+  prefect-server:
+    image: prefecthq/prefect:3-latest
+    command: prefect server start
+    ports:
+      - "4200:4200"  # Prefect UI
+    environment:
+      - PREFECT_SERVER_API_HOST=0.0.0.0
+    # volumes, networks, etc. as needed
+
+  prefect-worker:
+    image: prefecthq/prefect:2-latest
+    command: prefect worker start --pool default-agent-pool
+    environment:
+      - PREFECT_API_URL=http://prefect-server:4200/api
+    depends_on:
+      - prefect-server
+    # volumes, networks, etc. as needed
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile  
+    command: uvicorn sous_chef_kitchen.kitchen.api:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8000:8000"
+    environment:
+      ###Other Vars here too
+      - PREFECT_API_URL=http://prefect-server:4200/api
+    depends_on:
+      - prefect-server
+    # volumes, networks, etc. as needed
+
+networks:
+  default:
+    driver: bridge
