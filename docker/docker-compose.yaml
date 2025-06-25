@@ -15,7 +15,25 @@ services:
         #retries: 5
 
 
-    # volumes, networks, etc. as needed
+  prefect-config:
+    #This can be expanded upon down the line to do secret installation as well. 
+    image: prefecthq/prefect:3-latest
+    environment:
+      - PREFECT_API_URL=http://prefect-server:4200/api
+    entrypoint: >
+      sh -c "
+        until curl -s http://prefect-server:4200/api/health | grep true; do
+          echo 'Waiting for API...';
+          sleep 2;
+        done;
+        prefect work-pool inspect default-agent-pool || \
+        prefect work-pool create default-agent-pool --type process
+      "
+    #NB- the "default-agent-pool" is a value that will need to be templated to match the deployment in the prefect.yaml file also. 
+    #I suppose the deployment step might happen in a container too? 
+    depends_on:
+      - prefect-server
+
 
   prefect-worker:
     image: prefecthq/prefect:3-latest
@@ -23,9 +41,8 @@ services:
     environment:
       - PREFECT_API_URL=http://prefect-server:4200/api
     depends_on:
-      - prefect-server
-        #    condition: service_healthy
-    # volumes, networks, etc. as needed
+      - prefect-config
+
 
   kitchen-api:
     build:
@@ -38,7 +55,7 @@ services:
       ###Other Vars here too
       - PREFECT_API_URL=http://prefect-server:4200/api
     depends_on:
-      - prefect-server
+      - prefect-config
     # volumes, networks, etc. as needed
 
 networks:
