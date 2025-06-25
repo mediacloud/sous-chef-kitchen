@@ -13,7 +13,7 @@ from pydantic_settings import BaseSettings
 
 
 PREFECT_API_URL = "http://prefect-server:4200/api"
-WORK_POOL_NAME = os.environ("WORK_POOL_NAME", "default-work-pool") #From an env-var
+WORK_POOL_NAME = os.environ.get("WORK_POOL_NAME", "default-work-pool") #From an env-var
 
 ##Utilities to setup the prefect environment via docker-compose
 
