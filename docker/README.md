@@ -35,6 +35,7 @@ If everything is working, `sudo prefect work-pool ls` should show a work-pool na
 
 ### Deploy the flow to the prefect instance
 If the prefect server is up and our profile is correctly configured:
+
 `sudo prefect --no-prompt deploy --name kitchen-base` 
 
 ### Configure the buffet instance locally for testing the kitchen api 
