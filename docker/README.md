@@ -1,15 +1,14 @@
-## Demo Deployment Steps
+# Demo Deployment Steps
 This is how Paige set this up during dev. - Everything here is set up to be run from the project root.  
 
-1. ### Setup, Fetch secrets.
+### Setup, Fetch secrets.
 
 Later steps will require the client libraries installed, so `pip install -r requirements-client.txt` - masomenos however you manage your environments. 
 
 Secret values are stored in a private config repo, as in our other projects. Clone into the root directory
 `git clone git@github.com:mediacloud/sous-chef-config.git`
 
-
-2. ### docker-compose up
+### docker-compose up
 Run docker-compose to lift up the services- they are:
 1. `prefect-server`, unmodified from prefect
 2. `prefect-worker`, also out-of-the-box, pretty much
@@ -18,32 +17,38 @@ Run docker-compose to lift up the services- they are:
 
 `sudo docker-compose -f docker/docker-compose.yaml up -d`
 
-3. ### CLI setup and validation
+### CLI setup and validation
 Prefect has this notion of 'profiles'- we need to have the correct one set up before step 4. 
 
 `sudo prefect profile create kitchen-dev`
+
 `sudo prefect config set PREFECT_API_URL=http://localhost:4200/api`
+
 `sudo prefect profile use 'kitchen-dev'`
 
 (Obviously, the prefect_api_url needs to match what is configured in the docker-compose file- this is just the default)
 
 If everything is working, `sudo prefect work-pool ls` should show a work-pool named `kitchen-work-pool`
 
-4. ### Deploy the flow to the prefect instance
+### Deploy the flow to the prefect instance
 If the prefect server is up and our profile is correctly configured:
 `sudo prefect --no-prompt deploy --name kitchen-base` 
 
-5. Configure the buffet instance locally for testing the kitchen api 
+### Configure the buffet instance locally for testing the kitchen api 
 
 In the environment you're testing in, you need three environment variables set: 
-> SC_API_BASE_URL="http://localhost:8000/" 
+> SC_API_BASE_URL="http://localhost:8000/"
+> 
 > SC_API_AUTH_EMAIL=
+> 
 > SC_API_AUTH_KEY=
+>
+
 (as above, the base_url should match how the `kitchen-api` is actually deployed.)
 
 `python buffet.py auth` will sync the client to the kitchen (will interactively prompt for the email/key if not already provided in the environment)
 
-6. ### Test the kitchen
+### Test the kitchen
 This sample incantation runs a keyword extraction job. 
 
 `python buffet.py recipes start keywords QUERY seltzer COLLECTIONS ["34412234"] START_DATE 2025-05-01 END_DATE 2025-06-01 NAME kitchen_test`
