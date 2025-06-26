@@ -1,5 +1,5 @@
 # Demo Deployment Steps
-This is how Paige set this up during dev. - Everything here is set up to be run from the project root.  
+This a reproducable process for dev deployment. - Everything here is set up to be run from the project root.  
 
 ### Setup, Fetch secrets.
 
