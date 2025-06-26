@@ -11,8 +11,8 @@ build:
 - prefect_docker.deployments.steps.build_docker_image:
     id: build-image
     requires: prefect-docker>=0.3.1
-    image_name: docker.io/graceworthy/kitchen
-    tag: b2
+    image_name: docker.io/mcsystem/sc-kitchen
+    tag: latest
     dockerfile: auto
 
 # push section allows you to manage if and how this project is uploaded to remote locations
