@@ -46,6 +46,8 @@ services:
     environment:
       ###Other Vars here too
       - PREFECT_API_URL=http://prefect-server:4200/api
+      - SC_PREFECT_DEPLOYMENT=kitchen-base
+      - SC_PREFECT_WORK_POOL=kitchen-work-pool
     depends_on:
       - prefect-worker
     # volumes, networks, etc. as needed
