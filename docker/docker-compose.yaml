@@ -34,7 +34,16 @@ services:
       prefect-config:
         condition: service_completed_successfully
 
-  #Perhaps a kitchen-deploy step is also needed, to run `prefect deploy ...`, if we just do everything via docker compose. 
+
+  kitchen-deploy:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    command: prefect deploy --name kitchen-base #Perhaps also an interpolated value
+    depends_on:
+      prefect-config:
+        condition: service_completed_successfully
+
 
   kitchen-api:
     build:

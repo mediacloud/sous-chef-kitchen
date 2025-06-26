@@ -62,6 +62,7 @@ class SousChefCredentials(BaseSettings):
     MEDIACLOUD_API_KEY:str
 
 def setup_secrets(overwrite=True):
+    print("⏳ Waiting for Prefect Secret setup_secrets...")
     config = SousChefCredentials()
 
 
@@ -90,7 +91,7 @@ def setup_secrets(overwrite=True):
 
     Secret(value=config.MEDIACLOUD_API_KEY
         ).save("mediacloud-api-key", overwrite=overwrite)
-
+    print("✅ Prefect Sous-Chef Secrets Setup")
 
 if __name__ == "__main__":
     wait_for_api()
