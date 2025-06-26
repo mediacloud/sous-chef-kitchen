@@ -39,6 +39,8 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile
+    environment:
+      - PREFECT_API_URL=http://prefect-server:4200/api
     command: prefect deploy --name kitchen-base #Perhaps also an interpolated value
     depends_on:
       prefect-config:
