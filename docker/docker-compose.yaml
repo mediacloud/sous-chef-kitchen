@@ -27,7 +27,7 @@ services:
 
   prefect-worker:
     image: prefecthq/prefect:3-latest
-    command: prefect worker start --pool default-agent-pool 
+    command: prefect worker start --pool kitchen-work-pool 
     environment:
       - PREFECT_API_URL=http://prefect-server:4200/api
     depends_on:
