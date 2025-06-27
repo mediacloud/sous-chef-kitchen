@@ -15,6 +15,7 @@ RUN pip install --no-cache-dir -r requirements-server.txt
 COPY ../sous_chef_kitchen/ sous_chef_kitchen/
 COPY ../recipes/ recipes/
 COPY ../prefect.yaml .
+COPY ../docker/prefect-config.py .
 
 # Expose the port FastAPI will run on
 EXPOSE 8000

@@ -14,8 +14,6 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile  
-    volumes:
-      - ./prefect-config.py:/prefect-config.py
     depends_on:
       - prefect-server
     environment:
@@ -23,7 +21,7 @@ services:
       - WORK_POOL_NAME=kitchen-work-pool
     env_file:
       - ../sous-chef-config/.env #This gets the demo working. 
-    entrypoint: ["python", "/prefect-config.py"]
+    entrypoint: ["python", "/app/prefect-config.py"]
 
 
   prefect-worker:
