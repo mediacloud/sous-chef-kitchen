@@ -1,0 +1,68 @@
+version: "3.8"
+
+services:
+  prefect-server:
+    image: prefecthq/prefect:3-latest
+    command: prefect server start --host 0.0.0.0
+    ports:
+      - target: 4200
+        published: 4200
+        protocol: tcp
+        mode: ingress
+    environment:
+      PREFECT_HOME: /data
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    networks:
+      - default
+
+  prefect-config:
+    image: mcsystems/sc-kitchen:latest  # Replace with your built/pushed image
+    entrypoint: ["python", "/app/prefect-config.py"]
+    environment:
+      PREFECT_API_URL: http://prefect-server:4200/api
+      WORK_POOL_NAME: kitchen-work-pool
+    env_file:
+      - ../sous-chef-config/.env
+    deploy:
+      restart_policy:
+        condition: none  # Run once
+    networks:
+      - default
+
+  prefect-worker:
+    image: prefecthq/prefect:3-latest
+    command: prefect worker start --pool kitchen-work-pool
+    environment:
+      PREFECT_API_URL: http://prefect-server:4200/api
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    networks:
+      - default
+
+  kitchen-api:
+    image: mcsystems/sc-kitchen:latest  # Replace with your built/pushed image
+    command: uvicorn sous_chef_kitchen.kitchen.api:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - target: 8000
+        published: 8000
+        protocol: tcp
+        mode: ingress
+    environment:
+      PREFECT_API_URL: http://prefect-server:4200/api
+      SC_PREFECT_DEPLOYMENT: kitchen-base
+      SC_PREFECT_WORK_POOL: kitchen-work-pool
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    networks:
+      - default
+
+networks:
+  default:
+    driver: overlay
