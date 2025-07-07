@@ -19,7 +19,7 @@ services:
       - default
 
   prefect-config:
-    image: mcsystems/prefect-config:latest  # Replace with your built/pushed image
+    image: mcsystems/kitchen-image:latest  # Replace with your built/pushed image
     entrypoint: ["python", "/app/prefect-config.py"]
     environment:
       PREFECT_API_URL: http://prefect-server:4200/api
@@ -45,7 +45,7 @@ services:
       - default
 
   kitchen-api:
-    image: mcsystems/kitchen-api:latest  # Replace with your built/pushed image
+    image: mcsystems/kitchen-image:latest  # Replace with your built/pushed image
     command: uvicorn sous_chef_kitchen.kitchen.api:app --host 0.0.0.0 --port 8000 --reload
     ports:
       - target: 8000
