@@ -11,9 +11,7 @@ services:
 
 
   prefect-config:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile  
+    image: mcsystems/sc-kitchen:latest
     depends_on:
       - prefect-server
     environment:
@@ -35,9 +33,7 @@ services:
 
 
   kitchen-api:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile  
+    image: mcsystems/sc-kitchen:latest
     command: uvicorn sous_chef_kitchen.kitchen.api:app --host 0.0.0.0 --port 8000 --reload
     ports:
       - "8000:8000"
