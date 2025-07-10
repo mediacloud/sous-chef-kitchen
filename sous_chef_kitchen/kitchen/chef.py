@@ -302,7 +302,7 @@ async def validate_auth(auth_email: str, auth_key: str) -> SousChefKitchenAuthSt
             return status
             
         status.media_cloud_authorized = True
-        status.media_cloud_admin = auth_result.get("is_staff", False)
+        status.media_cloud_staff = auth_result.get("is_staff", False)
         status.media_cloud_full_text_authorized = auth_result.get("is_staff", False)
         status.sous_chef_authorized = True
         status.tag_slug = generate_tag_slug(auth_email, auth_key)
