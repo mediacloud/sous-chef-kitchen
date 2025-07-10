@@ -15,7 +15,7 @@ class SousChefKitchenAuthStatus(BaseModel):
     media_cloud_full_text_authorized: bool = Field(
         False, title="Media Cloud Full Text Authorized"
     )
-    tag_slug: str = Field("user-NAN-00000", title="Tag slug to track user tasks runs")
+    tag_slug: str = Field("user-NONE-00000", title="Tag slug to track user tasks runs")
 
     @computed_field
     @property

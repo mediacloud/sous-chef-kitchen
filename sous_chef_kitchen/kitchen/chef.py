@@ -321,7 +321,7 @@ async def validate_auth(auth_email: str, auth_key: str) -> SousChefKitchenAuthSt
     return status
 
 
-def generate_tag_slug(email:str, api_key:str):
+def generate_tag_slug(user_email:str, api_key:str):
     # Sanitize the email for readability
     base_slug = re.sub(r'[^a-zA-Z0-9]', '-', user_email.split('@')[0].lower())
 
