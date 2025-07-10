@@ -19,7 +19,7 @@ from sous_chef_kitchen.shared.models import (
 app = FastAPI()
 security = HTTPBearer()
 bearer = Annotated[HTTPAuthorizationCredentials, Depends(security)]
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("uvicorn.error")
 
 
 async def _validate_auth(

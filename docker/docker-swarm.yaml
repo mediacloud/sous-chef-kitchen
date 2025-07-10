@@ -46,7 +46,7 @@ services:
 
   kitchen-api:
     image: mcsystems/sc-kitchen:latest  # Replace with your built/pushed image
-    command: uvicorn sous_chef_kitchen.kitchen.api:app --host 0.0.0.0 --port 8000 --reload
+    command: uvicorn sous_chef_kitchen.kitchen.api:app --host 0.0.0.0 --port 8000 --reload --log-level info
     ports:
       - target: 8000
         published: 8000
