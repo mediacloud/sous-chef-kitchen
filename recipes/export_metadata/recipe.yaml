@@ -1,3 +1,4 @@
+#Export the raw public metadata for all stories returned by the query. 
 parameters:
     QUERY:
         type: str
@@ -10,7 +11,6 @@ parameters:
     NAME:
         type: str
         
-#Export the top 100 keywords found in the content returned by the query
 steps:
     #Discovery Block
     - QueryOnlineNews:
@@ -28,35 +28,17 @@ steps:
             url: url
             language: language
 
-
-    ##Keywords block
-    - ExtractKeywords:
-        inputs:
-            text: text
-            language: language
-        outputs:
-            keywords: keywords
-
-    - TopKeywords:
-        params:
-            top_n: 100
-            sort_by: "percentage"
-        inputs: 
-            keywords: keywords
-        outputs:
-            top_keywords: top_keywords
-            keyword_counts: keyword_counts
-            keyword_appearance_percent: keyword_appearance_percent
-
     - CSVToS3:
         params:
             restricted: False
-            task_name: "keywords-export"
+            task_name: "metadata-export"
             columns:
-                - top_keywords
-                - keyword_counts
-                - keyword_appearance_percent
+                - article_title
+                - domain
+                - pub_date
+                - url
+                - language
             credentials_block: "aws-s3-credentials"
             bucket_name: "mediacloud-sous-chef-output"
-            object_name: "sc-kitchen/DATE/$NAME-keywords.csv"
+            object_name: "sc-kitchen/DATE/$NAME-entities.csv"
             object_date_slug: true
