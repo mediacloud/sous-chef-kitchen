@@ -9,6 +9,7 @@ import re
 from datetime import date, timedelta
 from typing import Any, Dict, List
 from uuid import UUID
+import hashlib
 
 import mediacloud.api
 import prefect

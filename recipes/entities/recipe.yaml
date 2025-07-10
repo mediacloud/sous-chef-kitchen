@@ -50,7 +50,7 @@ steps:
             restricted: False
             task_name: "entities-export"
             columns:
-                - top_keywords
+                - top_entities
                 - entity_count
                 - entity_percent
             credentials_block: "aws-s3-credentials"
