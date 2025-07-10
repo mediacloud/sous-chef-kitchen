@@ -39,9 +39,6 @@ BRANCH=$(git branch --show-current)
 #    exit 3
 #fi
 
-# capture command line
-DEPLOYMENT_OPTIONS="$*"
-
 usage() {
     # NOTE! If you change something in this function, run w/ -h
     # and put updated output into README.md file!!!
@@ -99,13 +96,13 @@ run_as_login_user() {
     fi
 }
 
-# report dirty repo
+# function to report dirty repo
 dirty() {
     if [ "x$KITCHEN_ALLOW_DIRTY" = x ]; then
 	echo "$*" 1>&2
 	exit 1
     fi
-    echo "ignored: $*" 1>&2
+    echo "ignoring: $*" 1>&2
     IS_DIRTY=1
 }
 
@@ -113,15 +110,15 @@ if ! git diff --quiet; then
     dirty 'local changes not checked in' 1>&2
 fi
 
-# defaults for template variables that might change based on BRANCH/DEPLOY_TYPE
+# defaults for variables that might change based on BRANCH/DEPLOY_TYPE
 # (in alphabetical order):
 
 KITCHEN_PORT=8000		# native port
 PREFECT_PORT=4200		# native port
-STATSD_REALM="$BRANCH"
+#STATSD_REALM="$BRANCH"
 
 # depends on proxy running on tarbell
-STATSD_URL=statsd://stats.tarbell.angwin
+#STATSD_URL=statsd://stats.tarbell.angwin
 
 # set DEPLOY_TIME, check remotes up to date
 case "$BRANCH" in
@@ -144,7 +141,7 @@ prod|staging)
     ;;
 *)
     DEPLOY_TYPE=dev
-    STATSD_REALM=$LOGIN_USER
+    #STATSD_REALM=$LOGIN_USER
     REMOTE=origin
     ;;
 esac
@@ -199,30 +196,21 @@ if [ "x$IS_DIRTY" = x ]; then
     # in development this means old tagged images will pile up until removed
     IMAGE_TAG=$(echo $TAG | sed 's/[^a-zA-Z0-9_.-]/_/g')
 else
-    # _could_ include DATE_TIME, but old images can be easily pruned:
+    # _could_ include DATE_TIME, but this allows easy pruning:
+    # (if you're doing dirty deployments, you don't get tagging)
     IMAGE_TAG=$LOGIN_USER-dirty
-    # for use with git hash
-    DIRTY=-dirty
 fi
 
-# Set most variables here
+# Set most variables used in deploy.yaml here
 # PLEASE try to keep alphabetical to avoid duplicates/confusion!
 
-# figure out some way to have these interpolated into .yml file
-# (and appear as an attribute of the services?)
-DEPLOYMENT_BRANCH=$BRANCH
-DEPLOYMENT_DATE_TIME=$DATE_TIME
-DEPLOYMENT_GIT_HASH=$(git rev-parse HEAD)$DIRTY
-DEPLOYMENT_HOST=$HOSTNAME
-DEPLOYMENT_USER=$LOGIN_USER
-# also DEPLOYMENT_OPTIONS
-
-KITCHEN_IMAGE_REPO=mcsystems # XXX local unless production??
+KITCHEN_IMAGE_REPO=mcsystems # XXX local(host) unless production??
 KITCHEN_IMAGE_NAME=sc-kitchen
-KITCHEN_IMAGE_TAG=latest # XXX want $TAG
+# XXX want $IMAGE_TAG (latest will always be last thing built):
+KITCHEN_IMAGE_TAG=latest
 
 KITCHEN_IMAGE=$KITCHEN_IMAGE_REPO/$KITCHEN_IMAGE_NAME:$KITCHEN_IMAGE_TAG
-# calculate published port numbers using deployment-type bias:
+# calculate port published *on docker host* using deployment-type bias:
 KITCHEN_PORT_PUBLISHED=$(expr $KITCHEN_PORT + $PORT_BIAS)
 
 # allow multiple deploys on same swarm/cluster:
@@ -235,7 +223,7 @@ PREFECT_URL=http://$PREFECT_SERVER:$PREFECT_PORT/api
 PREFECT_WORK_POOL_NAME=kitchen-work-pool
 
 # Add new variables above this line,
-# PLEASE try to keep alphabetical to avoid duplicates/confusion!
+# PLEASE keep alphabetical to avoid duplicates/confusion!
 
 # some commands require compose.yml in the current working directory:
 cd $SCRIPT_DIR
@@ -273,7 +261,12 @@ dev)
     ;;
 esac
 
-# diaplay things that vary by stack type, from most to least interesting
+if [ ! -f "$PRIVATE_CONF_FILE" ]; then
+    echo PRIVATE_CONF_FILE $PRIVATE_CONF_FILE not found 1>&2
+    exit 1
+fi
+
+# display things that vary by stack type, from most to least interesting
 echo STACK_NAME $STACK_NAME
 echo PREFECT_URL $PREFECT_URL
 #echo STATSD_REALM $STATSD_REALM
@@ -310,19 +303,9 @@ exp() {
     fi
 }
 
-# NOTE! COULD pass DEPLOY_TYPE, but would rather
-# pass multiple variables that effect specific outcomes
-# (keep decision making in this file, and not template;
-#  don't ifdef C code based on platform name, but on features)
-
 # PLEASE keep in alphabetical order to avoid duplicates
-
-# experiment and see if can be subbed into 
-exp DEPLOYMENT_BRANCH		# for context
-exp DEPLOYMENT_DATE_TIME	# for context
-exp DEPLOYMENT_GIT_HASH		# for context
-exp DEPLOYMENT_HOST		# for context
-exp DEPLOYMENT_USER		# for context
+# NOTE! failure to export a variable may result in cryptic
+# error message "read: ..../docker is dir"
 
 exp KITCHEN_IMAGE
 exp KITCHEN_PORT int
@@ -333,22 +316,19 @@ exp NETWORK_NAME
 exp PREFECT_CONTAINERS
 exp PREFECT_PORT int
 exp PREFECT_PORT_PUBLISHED int
-exp PREFECT_SERVER		# container name
 exp PREFECT_URL
 exp PREFECT_WORK_POOL_NAME	# used multiple places
 
 exp PRIVATE_CONF_FILE
 
-exp STACK_NAME
 #exp STATSD_REALM
 #exp STATSD_URL
 
 # add new variables in alphabetical order ABOVE!
 
-echo "testing $COMPOSE_FILE" 1>&2
 DUMPFILE=$COMPOSE_FILE.$TAG
+echo "expanding $COMPOSE_FILE as $DUMPFILE" 1>&2
 rm -f $DUMPFILE
-#strace -f docker stack config -c $COMPOSE_FILE > $DUMPFILE
 docker stack config -c $COMPOSE_FILE > $DUMPFILE
 STATUS=$?
 if [ $STATUS != 0 ]; then
@@ -359,9 +339,6 @@ if [ $STATUS != 0 ]; then
     else
 	exit 3
     fi
-else
-    # maybe only keep if $DEBUG set??
-    echo "output (with variables interpolated) in $DUMPFILE" 1>&2
 fi
 
 # XXX check if on suitable server (right swarm?) for prod/staging??
@@ -377,12 +354,12 @@ if [ "x$IS_DIRTY" = x ]; then
     echo "Last commit:"
     git log -n1
 else
-    echo "dirty repo"
+    echo "dirty repo; no tags: you're driving a safety belt!"
 fi
 
 if [ "x$BUILD_ONLY" = x ]; then
     echo ''
-    echo -n "Deploy from branch $BRANCH stack $STACK_NAME? [no] "
+    echo -n "Deploy from branch $BRANCH as stack $STACK_NAME? [no] "
     read CONFIRM
     case "$CONFIRM" in
     [yY]|[yY][eE][sS]) ;;
@@ -447,7 +424,7 @@ if [ $STATUS != 0 ]; then
     echo docker compose build failed: $STATUS 1>&2
     exit 1
 fi
-# XXX apply $TAG to image?!
+# XXX apply $TAG ($IMAGE_TAG?) to image?!
 
 if [ "x$BUILD_ONLY" != x ]; then
     echo 'build done'
@@ -482,13 +459,16 @@ else
     NOTE="(dirty)"
 fi
 echo "$DATE_TIME $HOSTNAME $STACK_NAME $NOTE" >> deploy.log
-# XXX chown to LOGIN_USER?
+# XXX chown to LOGIN_USER? put in docker group??
 
 # optionally prune old images?
 
 # report deployment to airtable
+# this depends on sourcing PRIVATE_CONF file to get id & key
+# run inside stack to report when host/stack restarted
 #export AIRTABLE_API_KEY
 #export MEAG_BASE_ID
 #if [ "x$AIRTABLE_API_KEY" != x ]; then
-#    python3 -m mc-manage.airtable-deployment-update --codebase "story-indexer" --name $STACK_NAME --env $DEPLOYMENT_TYPE --version $IMAGE_TAG --hardware $HOSTNAME
+#    echo updating airtable
+#    python3 -m mc-manage.airtable-deployment-update --codebase "sous-chef-kitchen" --name $STACK_NAME --env $DEPLOY_TYPE --version $KITCHEN_IMAGE_TAG --hardware $HOSTNAME
 #fi
