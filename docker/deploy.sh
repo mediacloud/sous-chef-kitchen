@@ -8,8 +8,10 @@
 # Deploys from currently checked out branch: branches staging and prod are special.
 
 # Normally requires clean repo (all changes checked in), applies a git
-# tag, and pushes the tag to github.  That way, the deploy.sh script
-# and jinja2 template used are covered by the tag.
+# tag, and pushes the tag to github.  The deploy.sh script
+# and compose YAML file are covered by the tag.
+
+# works for users in docker group: su(do) not required!
 
 SCRIPT=$0
 SCRIPT_DIR=$(dirname $SCRIPT)
@@ -19,7 +21,7 @@ umask 077
 
 # stack name (suffix if not production)
 # indicates application for peaceful coexistence!!
-# used in stack service name and container names, so keep short-ish
+# used in stack service name and container names, so keep short
 BASE_STACK_NAME=kitchen
 COMPOSE_FILE=docker-swarm.yaml	# in SCRIPT_DIR
 
@@ -84,6 +86,9 @@ if [ "x$LOGIN_USER" = x ]; then
     exit 1
 fi
 
+# script works for users in docker group, as themselves, and under
+# su(do).  runs git commands as the logged in user, so root doesn't
+# need to have github ssh keys.
 WHOAMI=$(whoami)
 run_as_login_user() {
     if [ $WHOAMI = root ]; then
