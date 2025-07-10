@@ -202,12 +202,12 @@ else
 fi
 
 # Set most variables used in deploy.yaml here
-# PLEASE try to keep alphabetical to avoid duplicates/confusion!
+# PLEASE try to keep alphabetical to avoid duplicates/confusion,
+# and prefix with name of component the variable applies to!
 
 KITCHEN_IMAGE_REPO=mcsystems # XXX local(host) unless production??
-KITCHEN_IMAGE_NAME=sc-kitchen
-# XXX want $IMAGE_TAG (latest will always be last thing built):
-KITCHEN_IMAGE_TAG=latest
+KITCHEN_IMAGE_NAME=$STACK_NAME # per-user/deployment type
+KITCHEN_IMAGE_TAG=$IMAGE_TAG
 
 KITCHEN_IMAGE=$KITCHEN_IMAGE_REPO/$KITCHEN_IMAGE_NAME:$KITCHEN_IMAGE_TAG
 # calculate port published *on docker host* using deployment-type bias:
@@ -304,6 +304,10 @@ exp() {
 	echo ${VAR}=$VALUE
     fi
 }
+
+# Check and export variables interpolated in $COMPOSE_FILE.
+# Values should be set above here, and should be prefixed
+# with the name of the component they apply to!
 
 # PLEASE keep in alphabetical order to avoid duplicates
 # NOTE! failure to export a variable may result in cryptic
@@ -420,14 +424,14 @@ if [ "x$IS_DIRTY" = x ]; then
 fi
 
 
-echo compose build:
-docker compose build
+BUILD_COMMAND="docker compose -f ./$COMPOSE_FILE build"
+echo $BUILD_COMMAND in `pwd`
+$BUILD_COMMAND
 STATUS=$?
 if [ $STATUS != 0 ]; then
     echo docker compose build failed: $STATUS 1>&2
     exit 1
 fi
-# XXX apply $TAG ($IMAGE_TAG?) to image?!
 
 if [ "x$BUILD_ONLY" != x ]; then
     echo 'build done'

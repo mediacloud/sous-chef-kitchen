@@ -4,7 +4,8 @@
 version: "3.8"
 
 services:
-  # MUST match PREFECT_CONTAINER_NAME in swarm .yml file:
+  # MUST match PREFECT_CONTAINER_NAME in swarm .yml file
+  # (cannot be interpolated):
   prefect-server:
     image: $PREFECT_IMAGE
     command: prefect server start --host 0.0.0.0
@@ -21,6 +22,9 @@ services:
         condition: on-failure
     networks:
       - my-network
+    build:
+      # Docker file directory:
+      context: .
 
   prefect-config:
     image: $KITCHEN_IMAGE
