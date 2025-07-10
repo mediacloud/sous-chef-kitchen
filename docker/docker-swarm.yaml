@@ -6,7 +6,7 @@ version: "3.8"
 services:
   # MUST match PREFECT_CONTAINER_NAME in swarm .yml file:
   prefect-server:
-    image: prefecthq/prefect:3-latest
+    image: $PREFECT_IMAGE
     command: prefect server start --host 0.0.0.0
     ports:
       - target: $PREFECT_PORT
@@ -37,7 +37,7 @@ services:
       - my-network
 
   prefect-worker:
-    image: prefecthq/prefect:3-latest
+    image: $PREFECT_IMAGE
     command: prefect worker start --pool $PREFECT_WORK_POOL_NAME
     environment:
       PREFECT_API_URL: $PREFECT_URL

@@ -216,10 +216,12 @@ KITCHEN_PORT_PUBLISHED=$(expr $KITCHEN_PORT + $PORT_BIAS)
 # allow multiple deploys on same swarm/cluster:
 NETWORK_NAME=$STACK_NAME
 
+# used for multiple services:
+PREFECT_IMAGE=prefecthq/prefect:3-latest
 # calculate published port numbers using deployment-type bias:
 PREFECT_PORT_PUBLISHED=$(expr $PREFECT_PORT + $PORT_BIAS)
 PREFECT_URL=http://$PREFECT_SERVER:$PREFECT_PORT/api
-# might vary if using a shared prefect server?
+# used multiple places: might vary if multiple deployments sharing prefect server?
 PREFECT_WORK_POOL_NAME=kitchen-work-pool
 
 # Add new variables above this line,
@@ -314,6 +316,7 @@ exp KITCHEN_PORT_PUBLISHED int
 exp NETWORK_NAME
 
 exp PREFECT_CONTAINERS
+exp PREFECT_IMAGE
 exp PREFECT_PORT int
 exp PREFECT_PORT_PUBLISHED int
 exp PREFECT_URL
