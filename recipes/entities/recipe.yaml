@@ -28,7 +28,7 @@ steps:
             url: url
             language: language
 
-    - SpaceyNER:
+    - SpacyNER:
         inputs:
             text: text
         outputs:
