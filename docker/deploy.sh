@@ -447,6 +447,7 @@ if [ $STATUS != 0 ]; then
     echo docker compose build failed: $STATUS 1>&2
     exit 1
 fi
+# XXX apply $TAG to image?!
 
 if [ "x$BUILD_ONLY" != x ]; then
     echo 'build done'
