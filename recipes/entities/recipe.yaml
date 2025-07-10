@@ -42,8 +42,8 @@ steps:
             entities: entities
         outputs:
             top_entities: top_entities
-            entity_count: entity_counts
-            entitiy_appearance_percent: entity_percent
+            entity_counts: entity_counts
+            entity_appearance_percent: entity_percent
 
     - CSVToS3:
         params:
