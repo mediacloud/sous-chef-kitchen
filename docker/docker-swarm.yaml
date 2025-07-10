@@ -20,7 +20,7 @@ services:
       restart_policy:
         condition: on-failure
     networks:
-      - $NETWORK_NAME
+      - my-network
 
   prefect-config:
     image: $KITCHEN_IMAGE
@@ -34,7 +34,7 @@ services:
       restart_policy:
         condition: none  # Run once
     networks:
-      - $NETWORK_NAME
+      - my-network
 
   prefect-worker:
     image: prefecthq/prefect:3-latest
@@ -46,7 +46,7 @@ services:
       restart_policy:
         condition: on-failure
     networks:
-      - $NETWORK_NAME
+      - my-network
 
   kitchen-api:
     image: $KITCHEN_IMAGE
@@ -65,7 +65,7 @@ services:
       restart_policy:
         condition: on-failure
     networks:
-      - $NETWORK_NAME
+      - my-network
 
 networks:
   my-network:
