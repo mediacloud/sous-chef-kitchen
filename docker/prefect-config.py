@@ -51,13 +51,8 @@ class SousChefCredentials(BaseSettings):
     ACCESS_KEY_ID:str
     ACCESS_KEY_SECRET:str
 
-    DOCKER_USERNAME:str
-    DOCKER_PASSWORD:str
-
     GMAIL_APP_USERNAME:str
     GMAIL_APP_PASSWORD:str
-
-    GITHUB_RO_PAT:str
 
     MEDIACLOUD_API_KEY:str
 
@@ -65,22 +60,10 @@ def setup_secrets(overwrite=True):
     print("⏳ Waiting for Prefect Secret setup_secrets...")
     config = SousChefCredentials()
 
-
     AwsCredentials(
         aws_access_key_id=config.ACCESS_KEY_ID,
         aws_secret_access_key=config.ACCESS_KEY_SECRET
         ).save("aws-s3-credentials", overwrite=overwrite)
-
-
-    DockerRegistryCredentials(
-        username=config.DOCKER_USERNAME,
-        password=config.DOCKER_PASSWORD,
-        registry_url="index.docker.io" #I think this is only ever hardcoded
-        ).save("docker-auth", overwrite=overwrite)
-
-
-    GitHubCredentials(token=config.GITHUB_RO_PAT
-        ).save("sous-chef-read-only", overwrite=overwrite)
 
 
     EmailServerCredentials(
