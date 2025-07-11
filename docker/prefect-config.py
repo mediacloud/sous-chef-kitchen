@@ -77,10 +77,10 @@ def setup_secrets(overwrite=True):
     print("✅ Prefect Sous-Chef Secrets Setup")
 
 def run_prefect_deploy():
-    print("⏳ Waiting for Prefect Deploy to finish")
+    print("🖼️ Waiting for Prefect Deploy")
     #Feels a little hairbrained, but it gets the done job. 
     #Prefect has a python deployment pattern, but I think some deeper renovation would be needed to use it. 
-    subprocess.run(["prefect", "--no-prompt", "deploy", "--file", "../prefect.yaml", "--name", "kitchen-base"], check=True)
+    subprocess.run(["prefect", "--no-prompt", "deploy", "--file", "gitprefect.yaml", "--name", "kitchen-base"], check=True)
     print("✅ Prefect Sous-Chef Deployed")
 
 
@@ -88,4 +88,5 @@ if __name__ == "__main__":
     wait_for_api()
     asyncio.run(ensure_work_pool())
     setup_secrets()
+    print("This is happening...!")
     run_prefect_deploy()
