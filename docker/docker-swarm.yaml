@@ -24,7 +24,7 @@ services:
 
   prefect-config:
     image: $KITCHEN_IMAGE
-    entrypoint: ["python", "/app/prefect-config.py"]
+    entrypoint: ./app/prefect-config.sh
     environment:
       PREFECT_API_URL: $PREFECT_URL
       WORK_POOL_NAME: $PREFECT_WORK_POOL_NAME
