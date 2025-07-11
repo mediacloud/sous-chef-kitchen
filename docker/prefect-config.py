@@ -10,7 +10,7 @@ from prefect_github import GitHubCredentials
 from prefect_email import EmailServerCredentials
 from prefect_docker import DockerRegistryCredentials
 from pydantic_settings import BaseSettings
-
+import subprocess
 
 PREFECT_API_URL = "http://prefect-server:4200/api"
 WORK_POOL_NAME = os.environ.get("WORK_POOL_NAME", "default-work-pool") #From an env-var
@@ -76,8 +76,16 @@ def setup_secrets(overwrite=True):
         ).save("mediacloud-api-key", overwrite=overwrite)
     print("✅ Prefect Sous-Chef Secrets Setup")
 
+def run_prefect_deploy():
+    print("⏳ Waiting for Prefect Deploy to finish")
+    #Feels a little hairbrained, but it gets the done job. 
+    #Prefect has a python deployment pattern, but I think some deeper renovation would be needed to use it. 
+    subprocess.run(["prefect", "--no-prompt", "deploy", "--file", "../prefect.yaml", "--name", "kitchen-base"], check=True)
+    print("✅ Prefect Sous-Chef Deployed")
+
+
 if __name__ == "__main__":
     wait_for_api()
     asyncio.run(ensure_work_pool())
     setup_secrets()
-
+    run_prefect_deploy()
