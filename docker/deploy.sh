@@ -421,7 +421,7 @@ fi
 
 
 echo compose build:
-docker compose build
+docker compose build --no-cache
 STATUS=$?
 if [ $STATUS != 0 ]; then
     echo docker compose build failed: $STATUS 1>&2
