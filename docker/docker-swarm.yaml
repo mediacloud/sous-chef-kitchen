@@ -1,6 +1,9 @@
 # NOTE! This file expects to be run by deploy.sh
 #	which passes environment variables to be interpolated!!
 
+# Docker Compose version v2.29.2 complains:
+# "the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+
 version: "3.8"
 
 services:
@@ -23,8 +26,11 @@ services:
     networks:
       - my-network
     build:
-      # Docker file directory:
-      context: .
+      # root/default directory for access by COPY command
+      # relative to location of this file!
+      context: ..
+      # path to Dockerfile from context directory
+      dockerfile: docker/Dockerfile
 
   prefect-config:
     image: $KITCHEN_IMAGE
