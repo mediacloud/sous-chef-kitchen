@@ -23,10 +23,10 @@ umask 077
 # indicates application for peaceful coexistence!!
 # used in stack service name and container names, so keep short
 BASE_STACK_NAME=kitchen
-COMPOSE_FILE=docker-swarm.yaml	# in SCRIPT_DIR
+COMPOSE_FILE=$SCRIPT_DIR/docker-swarm.yaml
 
-if [ ! -f $SCRIPT_DIR/$COMPOSE_FILE ]; then
-    echo cannot find $SCRIPT_DIR/$COMPOSE_FILE 1>&2
+if [ ! -f $COMPOSE_FILE ]; then
+    echo cannot find COMPOSE_FILE $COMPOSE_FILE 1>&2
     exit 1
 fi
 
@@ -202,12 +202,12 @@ else
 fi
 
 # Set most variables used in deploy.yaml here
-# PLEASE try to keep alphabetical to avoid duplicates/confusion!
+# PLEASE try to keep alphabetical to avoid duplicates/confusion,
+# and prefix with name of component the variable applies to!
 
 KITCHEN_IMAGE_REPO=mcsystems # XXX local(host) unless production??
-KITCHEN_IMAGE_NAME=sc-kitchen
-# XXX want $IMAGE_TAG (latest will always be last thing built):
-KITCHEN_IMAGE_TAG=latest
+KITCHEN_IMAGE_NAME=$STACK_NAME # per-user/deployment type
+KITCHEN_IMAGE_TAG=$IMAGE_TAG
 
 KITCHEN_IMAGE=$KITCHEN_IMAGE_REPO/$KITCHEN_IMAGE_NAME:$KITCHEN_IMAGE_TAG
 # calculate port published *on docker host* using deployment-type bias:
@@ -227,13 +227,10 @@ PREFECT_WORK_POOL_NAME=kitchen-work-pool
 # Add new variables above this line,
 # PLEASE keep alphabetical to avoid duplicates/confusion!
 
-# some commands require compose.yml in the current working directory:
-cd $SCRIPT_DIR
-
-PRIVATE_CONF_DIR=private-conf$$
+PRIVATE_CONF_DIR=$SCRIPT_DIR/private-conf$$
 # clean up on exit unless debugging
 if [ "x$DEBUG" = x ]; then
-    trap "rm -f $CONFIG $COMPOSE; rm -rf $PRIVATE_CONF_DIR " 0
+    trap "rm -rf $PRIVATE_CONF_DIR $DUMPFILE" 0
 fi
 
 zzz() {
@@ -245,7 +242,9 @@ prod|staging|dev)		# TEMP! include dev!!!
     rm -rf $PRIVATE_CONF_DIR
     run_as_login_user mkdir $PRIVATE_CONF_DIR
     chmod go-rwx $PRIVATE_CONF_DIR
+    CWD=$(pwd)
     cd $PRIVATE_CONF_DIR
+    PRIVATE_CONF_ABS=$(pwd)
     CONFIG_REPO_PREFIX=$(zzz tvg@tvguho.pbz:zrqvnpybhq)
     CONFIG_REPO_NAME=$(zzz fbhf-purs-pbasvt)
     echo cloning $CONFIG_REPO_NAME repo 1>&2
@@ -253,13 +252,15 @@ prod|staging|dev)		# TEMP! include dev!!!
 	echo "FATAL: could not clone config repo" 1>&2
 	exit 1
     fi
-    PRIVATE_CONF_REPO=$(pwd)/$CONFIG_REPO_NAME
+    PRIVATE_CONF_REPO=$PRIVATE_CONF_ABS/$CONFIG_REPO_NAME
     PRIVATE_CONF_FILE=$PRIVATE_CONF_REPO/.env
-    cd ..
+    echo PRIVATE_CONF_REPO $PRIVATE_CONF_REPO
+    echo PRIVATE_CONF_FILE $PRIVATE_CONF_FILE
+    cd $CWD
     ;;
 dev)
-    # NOTE! in SCRIPT_DIR!
-    PRIVATE_CONF_FILE=./${LOGIN_USER}.env
+    # relative to COMPOSE_FILE:
+    PRIVATE_CONF_FILE=${LOGIN_USER}.env
     ;;
 esac
 
@@ -304,6 +305,10 @@ exp() {
 	echo ${VAR}=$VALUE
     fi
 }
+
+# Check and export variables interpolated in $COMPOSE_FILE.
+# Values should be set above here, and should be prefixed
+# with the name of the component they apply to!
 
 # PLEASE keep in alphabetical order to avoid duplicates
 # NOTE! failure to export a variable may result in cryptic
@@ -357,7 +362,9 @@ if [ "x$IS_DIRTY" = x ]; then
     echo "Last commit:"
     git log -n1
 else
-    echo "dirty repo; no tags: you're driving a safety belt!"
+    # the point of tagging every build is so if you break something
+    # you have something to look back at!
+    echo "dirty repo; no tags: YOU'RE DRIVING WITHOUT A SAFETY BELT!"
 fi
 
 if [ "x$BUILD_ONLY" = x ]; then
@@ -419,15 +426,14 @@ if [ "x$IS_DIRTY" = x ]; then
     fi
 fi
 
-
-echo compose build:
-docker compose build
+BUILD_COMMAND="docker compose -f $COMPOSE_FILE build"
+echo $BUILD_COMMAND
+$BUILD_COMMAND
 STATUS=$?
 if [ $STATUS != 0 ]; then
     echo docker compose build failed: $STATUS 1>&2
     exit 1
 fi
-# XXX apply $TAG ($IMAGE_TAG?) to image?!
 
 if [ "x$BUILD_ONLY" != x ]; then
     echo 'build done'
@@ -461,7 +467,7 @@ if [ "x$IS_DIRTY" = x ]; then
 else
     NOTE="(dirty)"
 fi
-echo "$DATE_TIME $HOSTNAME $STACK_NAME $NOTE" >> deploy.log
+echo "$DATE_TIME $HOSTNAME $STACK_NAME $NOTE" >> $SCRIPT_DIR/deploy.log
 # XXX chown to LOGIN_USER? put in docker group??
 
 # optionally prune old images?

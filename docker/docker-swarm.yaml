@@ -1,10 +1,14 @@
 # NOTE! This file expects to be run by deploy.sh
 #	which passes environment variables to be interpolated!!
 
+# Docker Compose version v2.29.2 complains:
+# "the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+
 version: "3.8"
 
 services:
-  # MUST match PREFECT_CONTAINER_NAME in swarm .yml file:
+  # MUST match PREFECT_CONTAINER_NAME in swarm .yml file
+  # (cannot be interpolated):
   prefect-server:
     image: $PREFECT_IMAGE
     command: prefect server start --host 0.0.0.0
@@ -24,6 +28,12 @@ services:
 
   prefect-config:
     image: $KITCHEN_IMAGE
+    build:
+      # root/default directory for access by COPY command
+      # relative to location of this file!
+      context: ..
+      # path to Dockerfile from context directory
+      dockerfile: docker/Dockerfile
     command: /app/prefect-config.sh
     environment:
       PREFECT_API_URL: $PREFECT_URL
