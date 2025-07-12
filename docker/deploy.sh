@@ -362,7 +362,9 @@ if [ "x$IS_DIRTY" = x ]; then
     echo "Last commit:"
     git log -n1
 else
-    echo "dirty repo; no tags: you're driving a safety belt!"
+    # the point of tagging every build is so if you break something
+    # you have something to look back at!
+    echo "dirty repo; no tags: YOU'RE DRIVING WITHOUT A SAFETY BELT!"
 fi
 
 if [ "x$BUILD_ONLY" = x ]; then
