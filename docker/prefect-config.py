@@ -76,8 +76,8 @@ def setup_secrets(overwrite=True):
         ).save("mediacloud-api-key", overwrite=overwrite)
     print("✅ Prefect Sous-Chef Secrets Setup")
 
+
 if __name__ == "__main__":
     wait_for_api()
     asyncio.run(ensure_work_pool())
     setup_secrets()
-
