@@ -424,11 +424,8 @@ if [ "x$IS_DIRTY" = x ]; then
     fi
 fi
 
-echo ================
-env | sort
-
-BUILD_COMMAND="docker compose -f ./$COMPOSE_FILE build"
-echo $BUILD_COMMAND in `pwd`
+BUILD_COMMAND="docker compose -f $COMPOSE_FILE build"
+echo $BUILD_COMMAND
 $BUILD_COMMAND
 STATUS=$?
 if [ $STATUS != 0 ]; then
