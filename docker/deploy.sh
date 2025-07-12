@@ -450,6 +450,7 @@ fi
 #fi
 
 echo 'docker stack deploy'
+echo '(Ignore message "Ignoring unsupported options: build")'
 # added explicit --detach to silence complaints
 # add --prune to remove old services?
 docker stack deploy -c $COMPOSE_FILE --detach $STACK_NAME
