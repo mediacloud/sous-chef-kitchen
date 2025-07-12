@@ -25,15 +25,15 @@ services:
         condition: on-failure
     networks:
       - my-network
+
+  prefect-config:
+    image: $KITCHEN_IMAGE
     build:
       # root/default directory for access by COPY command
       # relative to location of this file!
       context: ..
       # path to Dockerfile from context directory
       dockerfile: docker/Dockerfile
-
-  prefect-config:
-    image: $KITCHEN_IMAGE
     entrypoint: ["python", "/app/prefect-config.py"]
     environment:
       PREFECT_API_URL: $PREFECT_URL
