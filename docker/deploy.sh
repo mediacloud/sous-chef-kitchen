@@ -467,7 +467,7 @@ if [ "x$IS_DIRTY" = x ]; then
 else
     NOTE="(dirty)"
 fi
-echo "$DATE_TIME $HOSTNAME $STACK_NAME $NOTE" >> deploy.log
+echo "$DATE_TIME $HOSTNAME $STACK_NAME $NOTE" >> $SCRIPT_DIR/deploy.log
 # XXX chown to LOGIN_USER? put in docker group??
 
 # optionally prune old images?
