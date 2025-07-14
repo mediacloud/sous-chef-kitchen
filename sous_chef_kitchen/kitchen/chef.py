@@ -9,6 +9,7 @@ import re
 from datetime import date, timedelta
 from typing import Any, Dict, List
 from uuid import UUID
+import hashlib
 
 import mediacloud.api
 import prefect
@@ -302,8 +303,10 @@ async def validate_auth(auth_email: str, auth_key: str) -> SousChefKitchenAuthSt
             return status
             
         status.media_cloud_authorized = True
+        status.media_cloud_staff = auth_result.get("is_staff", False)
         status.media_cloud_full_text_authorized = auth_result.get("is_staff", False)
         status.sous_chef_authorized = True
+        status.tag_slug = generate_tag_slug(auth_email, auth_key)
         
         logger.info(
             f"Auth successful for {auth_email}: "
@@ -318,6 +321,18 @@ async def validate_auth(auth_email: str, auth_key: str) -> SousChefKitchenAuthSt
 
     return status
 
+
+def generate_tag_slug(user_email:str, api_key:str):
+    # Sanitize the email for readability
+    base_slug = re.sub(r'[^a-zA-Z0-9]', '-', user_email.split('@')[0].lower())
+
+    # Use part of a hash to ensure uniqueness
+    digest = hashlib.sha1(f"{user_email}:{api_key}".encode()).hexdigest()[:8]
+
+    # Join to create a tag-safe string
+    tag = f"user-{base_slug}-{digest}"
+    return tag
+    
 
 async def fetch_run_artifacts(run_id: str) -> List[Dict[str, Any]]:
     """Fetch artifacts for a specific run."""

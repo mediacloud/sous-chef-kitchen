@@ -3,6 +3,7 @@ Data models shared between the backend and client.
 """
 
 from pydantic import BaseModel, Field, computed_field
+import re
 
 
 class SousChefKitchenAuthStatus(BaseModel):
@@ -10,9 +11,11 @@ class SousChefKitchenAuthStatus(BaseModel):
 
     media_cloud_authorized: bool = Field(False, title="Media Cloud Authorized")
     sous_chef_authorized: bool = Field(False, title="Sous Chef Authorized")
+    media_cloud_staff: bool = Field(False, title="Media Cloud Staff")
     media_cloud_full_text_authorized: bool = Field(
         False, title="Media Cloud Full Text Authorized"
     )
+    tag_slug: str = Field("user-NONE-00000", title="Tag slug to track user tasks runs")
 
     @computed_field
     @property
@@ -20,6 +23,8 @@ class SousChefKitchenAuthStatus(BaseModel):
         """Whether the user is authorized with both Media Cloud and Sous Chef."""
 
         return self.media_cloud_authorized and self.sous_chef_authorized
+
+
 
 
 class SousChefKitchenSystemStatus(BaseModel):

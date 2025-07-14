@@ -19,7 +19,7 @@ from sous_chef_kitchen.shared.models import (
 app = FastAPI()
 security = HTTPBearer()
 bearer = Annotated[HTTPAuthorizationCredentials, Depends(security)]
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("uvicorn.error")
 
 
 async def _validate_auth(
@@ -68,6 +68,7 @@ async def start_recipe(
         return await chef.start_recipe(
             recipe_name=recipe_name,
             parameters=recipe_parameters,
+            tags=[auth_status.tag_slug],
             user_full_text_authorized=auth_status.media_cloud_full_text_authorized,
         )
     except Exception as e:
@@ -110,7 +111,7 @@ async def fetch_active_runs(
     if not auth_status.authorized:
         return auth_status
 
-    return await chef.fetch_active_runs()
+    return await chef.fetch_active_runs(tags=[])
 
 
 @app.post("/runs/cancel")
@@ -173,8 +174,8 @@ async def fetch_all_runs(
     auth_status = await _validate_auth(auth, request, response)
     if not auth_status.authorized:
         return auth_status
-
-    return await chef.fetch_all_runs()
+        
+    return await chef.fetch_all_runs(tags=[])
 
 
 @app.get("/run/{run_id}")

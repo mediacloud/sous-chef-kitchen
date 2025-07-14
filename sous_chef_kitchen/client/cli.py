@@ -209,7 +209,6 @@ def auth(validate: bool) -> None:
 @click.command("status")
 def system_status() -> None:
     """Check whether the Sous Chef Kitchen API is available and ready."""
-
     api_client = SousChefKitchenAPIClient()
     system_status = api_client.fetch_system_status()
     system_name = lambda k: SousChefKitchenSystemStatus.model_fields[k].title

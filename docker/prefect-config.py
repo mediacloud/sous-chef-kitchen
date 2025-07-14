@@ -50,7 +50,7 @@ class SousChefCredentials(BaseSettings):
 
     ACCESS_KEY_ID:str
     ACCESS_KEY_SECRET:str
-
+      
     GMAIL_APP_USERNAME:str
     GMAIL_APP_PASSWORD:str
 
@@ -64,7 +64,6 @@ def setup_secrets(overwrite=True):
         aws_access_key_id=config.ACCESS_KEY_ID,
         aws_secret_access_key=config.ACCESS_KEY_SECRET
         ).save("aws-s3-credentials", overwrite=overwrite)
-
 
     EmailServerCredentials(
         username=config.GMAIL_APP_USERNAME,
