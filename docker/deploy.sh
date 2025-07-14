@@ -44,23 +44,21 @@ usage() {
     # and put updated output into README.md file!!!
     echo "Usage: $SCRIPT [options]"
     echo "options:"
-    echo "  -a      allow-dirty; no dirty/push checks; no tags applied (for dev)"
     echo "  -b      build image but do not deploy"
     echo "  -B BR   dry run for specific branch BR (ie; staging or prod, for testing)"
     echo "  -d      enable debug output (show environment variables)"
     echo "  -h      output this help and exit"
-    echo "  -n      dry-run: do not deploy (implies -a)"
+    echo "  -n      dry-run: do not deploy"
     exit 1
 }
 
 # if you add an option here, add to usage function above!!!
 while getopts abB:dn OPT; do
    case "$OPT" in
-   a) KITCHEN_ALLOW_DIRTY=1;; # allow default from environment!
    b) BUILD_ONLY=1;;
-   B) NO_ACTION=1; AS_USER=1; KITCHEN_ALLOW_DIRTY=1; BRANCH=$OPTARG;;
+   B) NO_ACTION=1; AS_USER=1; BRANCH=$OPTARG;;
    d) DEBUG=1;;
-   n) NO_ACTION=1; AS_USER=1; KITCHEN_ALLOW_DIRTY=1;;
+   n) NO_ACTION=1; AS_USER=1;;
    ?) usage;;		# here on 'h' '?' or unhandled option
    esac
 done
@@ -96,14 +94,11 @@ run_as_login_user() {
     fi
 }
 
-# function to report dirty repo
+# report dirty repo
+# (used to allow dirty deploys, so this centralized that test)
 dirty() {
-    if [ "x$KITCHEN_ALLOW_DIRTY" = x ]; then
-	echo "$*" 1>&2
-	exit 1
-    fi
-    echo "ignoring: $*" 1>&2
-    IS_DIRTY=1
+    echo "$*" 1>&2
+    exit 1
 }
 
 if ! git diff --quiet; then
@@ -113,8 +108,8 @@ fi
 # defaults for variables that might change based on BRANCH/DEPLOY_TYPE
 # (in alphabetical order):
 
-KITCHEN_PORT=8000		# native port
-PREFECT_PORT=4200		# native port
+KITCHEN_PORT=8000		# native port (inside stack)
+PREFECT_PORT=4200		# native port (inside stack)
 #STATSD_REALM="$BRANCH"
 
 # depends on proxy running on tarbell
@@ -123,10 +118,6 @@ PREFECT_PORT=4200		# native port
 # set DEPLOY_TIME, check remotes up to date
 case "$BRANCH" in
 prod|staging)
-    if [ "x$KITCHEN_ALLOW_DIRTY" != x -a "x$NO_ACTION" = x ]; then
-	echo "dirty option not allowed on $BRANCH branch: ignoring" 1>&2
-	KITCHEN_ALLOW_DIRTY=
-    fi
     DEPLOY_TYPE="$BRANCH"
 
     # check if corresponding branch in mediacloud acct up to date
@@ -191,15 +182,9 @@ dev)
     ;;
 esac
 
-if [ "x$IS_DIRTY" = x ]; then
-    # use git tag for image tag.
-    # in development this means old tagged images will pile up until removed
-    IMAGE_TAG=$(echo $TAG | sed 's/[^a-zA-Z0-9_.-]/_/g')
-else
-    # _could_ include DATE_TIME, but this allows easy pruning:
-    # (if you're doing dirty deployments, you don't get tagging)
-    IMAGE_TAG=$LOGIN_USER-dirty
-fi
+# use git tag for image tag.
+# in development this means old tagged images will pile up until removed
+IMAGE_TAG=$(echo $TAG | sed 's/[^a-zA-Z0-9_.-]/_/g')
 
 # Set most variables used in deploy.yaml here
 # PLEASE try to keep alphabetical to avoid duplicates/confusion,
@@ -356,16 +341,10 @@ if [ "x$NO_ACTION" != x ]; then
     exit 0
 fi
 
-if [ "x$IS_DIRTY" = x ]; then
-    # XXX display all commits not currently deployed?
-    # use docker image tag running on stack as base??
-    echo "Last commit:"
-    git log -n1
-else
-    # the point of tagging every build is so if you break something
-    # you have something to look back at!
-    echo "dirty repo; no tags: YOU'RE DRIVING WITHOUT A SAFETY BELT!"
-fi
+# XXX display all commits not currently deployed?
+# use docker image tag running on stack as base??
+echo "Last commit:"
+git log -n1
 
 if [ "x$BUILD_ONLY" = x ]; then
     echo ''
@@ -389,40 +368,38 @@ fi
 
 # apply tags before deployment
 # (better to tag and not deploy, than to deploy and not tag)
-if [ "x$IS_DIRTY" = x ]; then
-    echo adding local git tag $TAG
-    if run_as_login_user git tag $TAG; then
+echo adding local git tag $TAG
+if run_as_login_user git tag $TAG; then
+    echo OK
+else
+    echo tag failed 1>&2
+    exit 1
+fi
+
+# push tag to upstream repos
+echo pushing git tag $TAG to $REMOTE
+if run_as_login_user git push $REMOTE $TAG; then
+    echo OK
+else
+    echo tag push failed 1>&2
+    exit 1
+fi
+
+# if config elsewhere, tag it too.
+if [ -d $PRIVATE_CONF_DIR -a -d "$PRIVATE_CONF_REPO" ]; then
+    echo tagging config repo
+    if (cd $PRIVATE_CONF_REPO; run_as_login_user git tag $TAG) >/dev/null 2>&1; then
 	echo OK
     else
-	echo tag failed 1>&2
+	echo Failed to tag $CONFIG_REPO_NAME 1>&2
 	exit 1
     fi
-
-    # push tag to upstream repos
-    echo pushing git tag $TAG to $REMOTE
-    if run_as_login_user git push $REMOTE $TAG; then
+    echo pushing config tag
+    if (cd $PRIVATE_CONF_REPO; run_as_login_user git push origin $TAG) >/dev/null 2>&1; then
 	echo OK
     else
-	echo tag push failed 1>&2
+	echo Failed to push tag to $CONFIG_REPO_NAME 1>&2
 	exit 1
-    fi
-
-    # if config elsewhere, tag it too.
-    if [ -d $PRIVATE_CONF_DIR -a -d "$PRIVATE_CONF_REPO" ]; then
-	echo tagging config repo
-	if (cd $PRIVATE_CONF_REPO; run_as_login_user git tag $TAG) >/dev/null 2>&1; then
-	    echo OK
-	else
-	    echo Failed to tag $CONFIG_REPO_NAME 1>&2
-	    exit 1
-	fi
-	echo pushing config tag
-	if (cd $PRIVATE_CONF_REPO; run_as_login_user git push origin $TAG) >/dev/null 2>&1; then
-	    echo OK
-	else
-	    echo Failed to push tag to $CONFIG_REPO_NAME 1>&2
-	    exit 1
-	fi
     fi
 fi
 
@@ -460,15 +437,7 @@ if [ $STATUS != 0 ]; then
     exit 1
 fi
 
-echo deployed stack $STACK
-
-# keep (private) record of deploys:
-if [ "x$IS_DIRTY" = x ]; then
-    NOTE="$REMOTE $TAG"
-else
-    NOTE="(dirty)"
-fi
-echo "$DATE_TIME $HOSTNAME $STACK_NAME $NOTE" >> $SCRIPT_DIR/deploy.log
+echo "$DATE_TIME $HOSTNAME $STACK_NAME $REMOTE TAG" >> $SCRIPT_DIR/deploy.log
 # XXX chown to LOGIN_USER? put in docker group??
 
 # optionally prune old images?
