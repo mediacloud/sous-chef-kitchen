@@ -29,7 +29,6 @@ pull:
 - prefect.deployments.steps.git_clone:
     id: clone-step
     repository: https://github.com/mediacloud/sous-chef-kitchen.git
-    #credentials: '{{ prefect.blocks.github-credentials.sous-chef-read-only }}'
 
 - prefect.deployments.steps.run_shell_script:
     id: update-build

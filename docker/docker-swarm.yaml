@@ -1,68 +1,83 @@
+# NOTE! This file expects to be run by deploy.sh
+#	which passes environment variables to be interpolated!!
+
+# Docker Compose version v2.29.2 complains:
+# "the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+
 version: "3.8"
 
 services:
+  # MUST match PREFECT_CONTAINER_NAME in swarm .yml file
+  # (cannot be interpolated):
   prefect-server:
-    image: prefecthq/prefect:3-latest
+    image: $PREFECT_IMAGE
     command: prefect server start --host 0.0.0.0
     ports:
-      - target: 4200
-        published: 4200
+      - target: $PREFECT_PORT
+        published: $PREFECT_PORT_PUBLISHED
         protocol: tcp
         mode: ingress
     environment:
       PREFECT_HOME: /data
     deploy:
-      replicas: 1
+      replicas: $PREFECT_CONTAINERS
       restart_policy:
         condition: on-failure
     networks:
-      - default
+      - my-network
 
   prefect-config:
-    image: mcsystems/sc-kitchen:latest  # Replace with your built/pushed image
-    entrypoint: ["python", "/app/prefect-config.py"]
+    image: $KITCHEN_IMAGE
+    build:
+      # root/default directory for access by COPY command
+      # relative to location of this file!
+      context: ..
+      # path to Dockerfile from context directory
+      dockerfile: docker/Dockerfile
+    command: /app/prefect-config.sh
     environment:
-      PREFECT_API_URL: http://prefect-server:4200/api
-      WORK_POOL_NAME: kitchen-work-pool
+      PREFECT_API_URL: $PREFECT_URL
+      WORK_POOL_NAME: $PREFECT_WORK_POOL_NAME
     env_file:
-      - ../sous-chef-config/.env
+      - $PRIVATE_CONF_FILE
     deploy:
       restart_policy:
         condition: none  # Run once
     networks:
-      - default
+      - my-network
 
   prefect-worker:
-    image: prefecthq/prefect:3-latest
-    command: prefect worker start --pool kitchen-work-pool
+    image: $PREFECT_IMAGE
+    command: prefect worker start --pool $PREFECT_WORK_POOL_NAME
     environment:
-      PREFECT_API_URL: http://prefect-server:4200/api
+      PREFECT_API_URL: $PREFECT_URL
     deploy:
       replicas: 1
       restart_policy:
         condition: on-failure
     networks:
-      - default
+      - my-network
 
   kitchen-api:
-    image: mcsystems/sc-kitchen:latest  # Replace with your built/pushed image
-    command: uvicorn sous_chef_kitchen.kitchen.api:app --host 0.0.0.0 --port 8000 --reload --log-level info
+    image: $KITCHEN_IMAGE
+    command: uvicorn sous_chef_kitchen.kitchen.api:app --host 0.0.0.0 --port $KITCHEN_PORT --reload
     ports:
-      - target: 8000
-        published: 8000
+      - target: $KITCHEN_PORT
+        published: $KITCHEN_PORT_PUBLISHED
         protocol: tcp
         mode: ingress
     environment:
-      PREFECT_API_URL: http://prefect-server:4200/api
+      PREFECT_API_URL: $PREFECT_URL
       SC_PREFECT_DEPLOYMENT: kitchen-base
-      SC_PREFECT_WORK_POOL: kitchen-work-pool
+      SC_PREFECT_WORK_POOL: $PREFECT_WORK_POOL_NAME
     deploy:
       replicas: 1
       restart_policy:
         condition: on-failure
     networks:
-      - default
+      - my-network
 
 networks:
-  default:
+  my-network:
     driver: overlay
+    name: $NETWORK_NAME
