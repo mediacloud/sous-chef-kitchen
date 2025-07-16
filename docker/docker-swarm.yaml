@@ -38,6 +38,7 @@ services:
     environment:
       PREFECT_API_URL: $PREFECT_URL
       WORK_POOL_NAME: $PREFECT_WORK_POOL_NAME
+      SC_PREFECT_DEPLOYMENT: $KITCHEN_DEPLOYMENT_NAME
     env_file:
       - $PRIVATE_CONF_FILE
     deploy:
