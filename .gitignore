@@ -1,3 +1,4 @@
+docker/prefect.yaml
 __pycache__
 venv/
 sous-chef-config/
