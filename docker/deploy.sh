@@ -189,6 +189,7 @@ IMAGE_TAG=$(echo $TAG | sed 's/[^a-zA-Z0-9_.-]/_/g')
 # Set most variables used in deploy.yaml here
 # PLEASE try to keep alphabetical to avoid duplicates/confusion,
 # and prefix with name of component the variable applies to!
+KITCHEN_DEPLOYMENT_NAME="kitchen-base" 
 
 KITCHEN_IMAGE_REPO=mcsystems # XXX local(host) unless production??
 KITCHEN_IMAGE_NAME=$STACK_NAME # per-user/deployment type
@@ -201,6 +202,9 @@ KITCHEN_PORT_PUBLISHED=$(expr $KITCHEN_PORT + $PORT_BIAS)
 # allow multiple deploys on same swarm/cluster:
 NETWORK_NAME=$STACK_NAME
 
+
+#Interpolated and then built into the kitchen image
+PREFECT_FILE='prefect.yaml'
 # used for multiple services:
 PREFECT_IMAGE=prefecthq/prefect:3-latest
 # calculate published port numbers using deployment-type bias:
@@ -208,6 +212,7 @@ PREFECT_PORT_PUBLISHED=$(expr $PREFECT_PORT + $PORT_BIAS)
 PREFECT_URL=http://$PREFECT_SERVER:$PREFECT_PORT/api
 # used multiple places: might vary if multiple deployments sharing prefect server?
 PREFECT_WORK_POOL_NAME=kitchen-work-pool
+
 
 # Add new variables above this line,
 # PLEASE keep alphabetical to avoid duplicates/confusion!
@@ -298,7 +303,7 @@ exp() {
 # PLEASE keep in alphabetical order to avoid duplicates
 # NOTE! failure to export a variable may result in cryptic
 # error message "read: ..../docker is dir"
-
+exp KITCHEN_DEPLOYMENT_NAME
 exp KITCHEN_IMAGE
 exp KITCHEN_PORT int
 exp KITCHEN_PORT_PUBLISHED int
@@ -402,6 +407,19 @@ if [ -d $PRIVATE_CONF_DIR -a -d "$PRIVATE_CONF_REPO" ]; then
 	exit 1
     fi
 fi
+
+###PREFECT INI CONFIGURATION
+
+#sub in the variable names
+#comment on their location in prefect.yaml
+#pipe the output to a new location, 
+#make sure that location is referenced by the compose_file
+#DEPLOYMENT_NAME - $STACK_NAME ...? Is it though? or is it just always 'kitchen-base'? the kitchen api depends on this. 
+#WORK_POOL_NAME - $PREFECT_WORK_POOL_NAME
+#GIT_TAG -> $TAG
+
+sed -e 's/DEPLOYMENT_NAME/$KITCHEN_DEPLOYMENT_NAME/g' -e 's/WORK_POOL_NAME/$PREFECT_WORK_POOL_NAME/g' -e 's/GIT_TAG/$TAG/g' prefect.yaml.in >> $PREFECT_FILE
+#And then interpolate the file into 
 
 BUILD_COMMAND="docker compose -f $COMPOSE_FILE build"
 echo $BUILD_COMMAND

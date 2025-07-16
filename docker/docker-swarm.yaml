@@ -68,7 +68,7 @@ services:
         mode: ingress
     environment:
       PREFECT_API_URL: $PREFECT_URL
-      SC_PREFECT_DEPLOYMENT: kitchen-base
+      SC_PREFECT_DEPLOYMENT: $KITCHEN_DEPLOYMENT_NAME
       SC_PREFECT_WORK_POOL: $PREFECT_WORK_POOL_NAME
     deploy:
       replicas: 1
