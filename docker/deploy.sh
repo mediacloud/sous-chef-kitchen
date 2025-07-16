@@ -408,20 +408,11 @@ if [ -d $PRIVATE_CONF_DIR -a -d "$PRIVATE_CONF_REPO" ]; then
     fi
 fi
 
-###PREFECT INI CONFIGURATION
-
-#sub in the variable names
-#comment on their location in prefect.yaml
-#pipe the output to a new location, 
-#make sure that location is referenced by the compose_file
-#DEPLOYMENT_NAME - $STACK_NAME ...? Is it though? or is it just always 'kitchen-base'? the kitchen api depends on this. 
-#WORK_POOL_NAME - $PREFECT_WORK_POOL_NAME
-#GIT_TAG -> $TAG
+echo "Interpolating prefect.yaml"
 SUB_KITCHEN_DEPLOY="s/DEPLOYMENT_NAME/$KITCHEN_DEPLOYMENT_NAME/g"
 SUB_PREFECT_WORK_POOL_NAME="s/WORK_POOL_NAME/$PREFECT_WORK_POOL_NAME/g"
 SUB_GIT_TAG="s/GIT_TAG/$TAG/g"
 
-echo "$SUB_GIT_TAG"
 sed -e "$SUB_KITCHEN_DEPLOY" \
     -e "$SUB_PREFECT_WORK_POOL_NAME" \
     -e "$SUB_GIT_TAG" \
