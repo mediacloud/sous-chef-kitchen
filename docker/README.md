@@ -7,6 +7,7 @@ This a reproducable process for dev deployment. - Everything here is set up to b
 ### Configure the buffet instance locally for testing the kitchen api 
 We have a staging instance live at `https://kitchen-staging.tarbell.mediacloud.org` - this is the default endpoint for the moment, so no dns configuration needed. 
 
+The following assumes you have cloned this repository, have set up a virtual environment, and have run `pip install -r requirements-client.txt` for all of the local packages. 
 
 ### Test the kitchen
 
