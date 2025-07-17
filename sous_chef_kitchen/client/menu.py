@@ -18,7 +18,7 @@ from sous_chef_kitchen.shared.models import (
     SousChefKitchenSystemStatus,
 )
 
-DEFAULT_API_BASE_URL = "https://souschef.ddns.net/api/"
+DEFAULT_API_BASE_URL = "https://kitchen-staging.tarbell.mediacloud.org"
 DEFAULT_API_USER_AGENT = "Sous Chef Kitchen"
 
 API_AUTH_EMAIL = os.getenv("SC_API_AUTH_EMAIL")
