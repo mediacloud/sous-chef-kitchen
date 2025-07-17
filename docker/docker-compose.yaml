@@ -1,9 +1,6 @@
 # NOTE! This file expects to be run by deploy.sh
 #	which passes environment variables to be interpolated!!
 
-# Docker Compose version v2.29.2 complains:
-# "the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
-
 services:
   # MUST match PREFECT_CONTAINER_NAME in swarm .yml file
   # (cannot be interpolated):
