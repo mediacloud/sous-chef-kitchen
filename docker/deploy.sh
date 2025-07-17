@@ -23,7 +23,7 @@ umask 077
 # indicates application for peaceful coexistence!!
 # used in stack service name and container names, so keep short
 BASE_STACK_NAME=kitchen
-COMPOSE_FILE=$SCRIPT_DIR/docker-swarm.yaml
+COMPOSE_FILE=$SCRIPT_DIR/docker-compose.yaml
 
 if [ ! -f $COMPOSE_FILE ]; then
     echo cannot find COMPOSE_FILE $COMPOSE_FILE 1>&2
