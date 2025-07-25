@@ -164,9 +164,9 @@ class SousChefKitchenAPIClient:
         if "SOURCES" in recipe_parameters:
             try:
                 sources = recipe_parameters["SOURCES"]
-                if isinstance(collections, str):
-                    sources = json.loads(collections)
-                recipe_parameters["SOURCES"] = [str(c) for c in collections]
+                if isinstance(sources, str):
+                    sources = json.loads(sources)
+                recipe_parameters["SOURCES"] = [str(c) for c in sources]
             except json.JSONDecodeError:
                 # If it's not valid JSON, assume it's a single collection ID
                 recipe_parameters["SOURCES"] = [
@@ -179,7 +179,7 @@ class SousChefKitchenAPIClient:
         if response.status_code in expected_responses:
             return response.json()
         self._raise_for_status_with_detail(response)
-        
+
     def cancel_recipe(self, recipe_name: str, run_id: UUID | str) -> Dict[str, Any]:
         """Cancel a Sous Chef recipe run."""
 
