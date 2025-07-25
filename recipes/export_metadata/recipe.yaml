@@ -3,9 +3,9 @@ parameters:
     QUERY:
         type: str
     COLLECTIONS:
-        type: List[str] 
+        type: Optional[List[str]]
     SOURCES:
-        type: List[str]
+        type: Optional[List[str]]
     START_DATE:
         type: date
     END_DATE:
