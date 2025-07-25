@@ -5,7 +5,7 @@ parameters:
     COLLECTIONS:
         type: List[str] 
     SOURCES:
-        type: Optional[List[str]]
+        type: List[str]
     START_DATE:
         type: date
     END_DATE:
