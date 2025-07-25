@@ -56,5 +56,5 @@ steps:
                 - language
             credentials_block: "aws-s3-credentials"
             bucket_name: "mediacloud-sous-chef-output"
-            object_name: "sc-kitchen/DATE/$NAME-metadata.csv"
+            object_name: "sc-kitchen/DATE/$NAME-full-metadata.csv"
             object_date_slug: true
