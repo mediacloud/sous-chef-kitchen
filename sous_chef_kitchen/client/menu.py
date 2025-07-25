@@ -46,6 +46,17 @@ class SousChefKitchenAPIClient:
 
         self._session = self._init_session()
 
+    def _raise_for_status_with_detail(self, response):
+        try:
+            response.raise_for_status()
+        except requests.HTTPError as e:
+            print("Status code:", e.response.status_code)
+            try:
+                print("Detail message:", e.response.json()["detail"])
+            except Exception:
+                print("Raw response:", e.response.text)
+            raise
+
     def _init_session(self) -> requests.Session:
         """Initialize a session with the API."""
 
@@ -150,13 +161,25 @@ class SousChefKitchenAPIClient:
                     str(recipe_parameters["COLLECTIONS"])
                 ]
 
+        if "SOURCES" in recipe_parameters:
+            try:
+                sources = recipe_parameters["SOURCES"]
+                if isinstance(collections, str):
+                    sources = json.loads(collections)
+                recipe_parameters["SOURCES"] = [str(c) for c in collections]
+            except json.JSONDecodeError:
+                # If it's not valid JSON, assume it's a single collection ID
+                recipe_parameters["SOURCES"] = [
+                    str(recipe_parameters["SOURCES"])
+                ]
+
         response = self._session.post(
             url, params=params, json={"recipe_parameters": recipe_parameters}
         )
         if response.status_code in expected_responses:
             return response.json()
-        response.raise_for_status()
-
+        self._raise_for_status_with_detail(response)
+        
     def cancel_recipe(self, recipe_name: str, run_id: UUID | str) -> Dict[str, Any]:
         """Cancel a Sous Chef recipe run."""
 
