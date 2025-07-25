@@ -88,7 +88,7 @@ async def cancel_recipe_run(
 ) -> Dict[str, Any]:
     """Cancel the specified run for the specified Sous Chef recipe."""
 
-    tags += BASE_TAGS + [recipe_name]
+    tags += BASE_TAGS# + [recipe_name]
     all_runs = {run["id"]: run for run in await fetch_all_runs(tags)}
     recipe_run = all_runs.get(run_id)
 
