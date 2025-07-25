@@ -3,9 +3,11 @@ parameters:
     QUERY:
         type: str
     COLLECTIONS:
-        type: Optional[List[str]]
+        type: List[str]
+        default: []
     SOURCES:
-        type: Optional[List[str]]
+        type: List[str]
+        default: []
     START_DATE:
         type: date
     END_DATE:
