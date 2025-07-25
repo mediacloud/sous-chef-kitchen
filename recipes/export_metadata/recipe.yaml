@@ -4,6 +4,8 @@ parameters:
         type: str
     COLLECTIONS:
         type: List[str] 
+    SOURCES:
+        type: Optional[List[str]]
     START_DATE:
         type: date
     END_DATE:
@@ -18,6 +20,7 @@ steps:
             api_key_block: 'mediacloud-api-key'
             query: $QUERY
             collections: $COLLECTIONS
+            sources: $SOURCES
             start_date: $START_DATE
             end_date: $END_DATE
         outputs:
