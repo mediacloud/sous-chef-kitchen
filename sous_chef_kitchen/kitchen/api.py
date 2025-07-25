@@ -9,6 +9,7 @@ from uuid import UUID
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi import status as http_status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi.middleware.cors import CORSMiddleware
 
 from sous_chef_kitchen.kitchen import chef
 from sous_chef_kitchen.shared.models import (
@@ -21,6 +22,13 @@ security = HTTPBearer()
 bearer = Annotated[HTTPAuthorizationCredentials, Depends(security)]
 logger = logging.getLogger("uvicorn.error")
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True, 
+    allow_methods=["*"],
+    allow_headers=["*"]
+    )
 
 async def _validate_auth(
     auth: bearer, request: Request, response: Response
