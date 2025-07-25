@@ -189,7 +189,7 @@ async def get_system_status() -> SousChefKitchenSystemStatus:
 async def pause_recipe_run(recipe_name: str, run_id: str, tags: List[str] = []) -> None:
     """Pause the specified run for the specified Sous Chef recipe."""
 
-    tags += BASE_TAGS + [recipe_name]
+    tags += BASE_TAGS# + [recipe_name]
     active_runs = {run["id"]: run for run in await fetch_active_runs(tags)}
     recipe_run = active_runs.get(run_id)
 
@@ -206,7 +206,7 @@ async def resume_recipe_run(
 ) -> None:
     """Resume the specified run for the specified Sous Chef recipe."""
 
-    tags += BASE_TAGS + [recipe_name]
+    tags += BASE_TAGS# + [recipe_name]
     paused_runs = {run["id"]: run for run in await fetch_paused_runs(tags)}
     recipe_run = paused_runs.get(run_id)
 
