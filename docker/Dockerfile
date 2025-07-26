@@ -13,7 +13,7 @@ WORKDIR ${APP}
 # Install system dependencies (if needed)
 RUN apt-get update && apt-get install -y build-essential
 RUN apt-get install -y git
-# Copy requirements and install
+# Copy pyproject file and install requirements
 COPY pyproject.toml ${APP}/pyproject.toml
 RUN pip install --no-cache-dir --editable '.[server,sous-chef]'
 
