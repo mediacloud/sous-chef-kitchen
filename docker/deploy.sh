@@ -149,7 +149,7 @@ fi
 
 # defaults for staging/dev:
 # MUST match compose file container name (cannot be interpolated)!!
-PREFECT_CONTAINER_NAME=prefect-server 
+PREFECT_CONTAINER_NAME=prefect-server
 PREFECT_SERVER=$PREFECT_CONTAINER_NAME
 PREFECT_CONTAINERS=1
 
@@ -189,7 +189,7 @@ IMAGE_TAG=$(echo $TAG | sed 's/[^a-zA-Z0-9_.-]/_/g')
 # Set most variables used in deploy.yaml here
 # PLEASE try to keep alphabetical to avoid duplicates/confusion,
 # and prefix with name of component the variable applies to!
-KITCHEN_DEPLOYMENT_NAME="kitchen-base" 
+KITCHEN_DEPLOYMENT_NAME="kitchen-base"
 
 KITCHEN_IMAGE_REPO=mcsystems # XXX local(host) unless production??
 KITCHEN_IMAGE_NAME=$STACK_NAME # per-user/deployment type
@@ -408,9 +408,14 @@ if [ -d $PRIVATE_CONF_DIR -a -d "$PRIVATE_CONF_REPO" ]; then
     fi
 fi
 
+# get non-ssh URL for repo
+GIT_REPO=$(git remote get-url $REMOTE | sed 's#git@github.com:#http://github.com/#')
+echo GIT_REPO $GIT_REPO
+
 echo "Interpolating prefect.yaml"
 sed -e "s/DEPLOYMENT_NAME/$KITCHEN_DEPLOYMENT_NAME/g" \
     -e "s/WORK_POOL_NAME/$PREFECT_WORK_POOL_NAME/g" \
+    -e "s@GIT_REPO@$GIT_REPO@g" \
     -e "s/GIT_TAG/$TAG/g" \
     $SCRIPT_DIR/prefect.yaml.in  > $PREFECT_FILE
 
