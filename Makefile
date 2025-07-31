@@ -23,7 +23,7 @@ lint:	$(VENVDONE)
 # --editable skips installing project sources in venv
 # pre-commit is in dev optional-requirements
 install $(VENVDONE): $(VENVDIR) Makefile pyproject.toml
-	$(VENVBIN)/python3 -m pip install --editable '.[dev]'
+	$(VENVBIN)/python3 -m pip install --editable '.[dev,client]'
 	$(VENVBIN)/pre-commit install
 	touch $(VENVDONE)
 
