@@ -274,7 +274,7 @@ async def recipe_schema(recipe_name: str) -> Dict:
     return SousChefRecipe.get_param_schema(recipe_location)["properties"]
 
 
-async def list_recipes() -> Dict:
+async def recipe_list() -> Dict:
     try:
       recipe_info = {
             recipe_path: get_recipe_info(recipe_path)
