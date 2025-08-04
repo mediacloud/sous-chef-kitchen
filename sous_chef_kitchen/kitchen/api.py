@@ -118,7 +118,7 @@ async def recipe_list(
     if not auth_status.authorized:
         return auth_status
 
-    return chef.recipe_list()
+    return await chef.recipe_list()
 
 
 @app.get("/runs/active")
