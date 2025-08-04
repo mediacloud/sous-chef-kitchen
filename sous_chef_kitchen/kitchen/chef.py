@@ -226,7 +226,6 @@ async def start_recipe(
     user_full_text_authorized: bool = False,
 ) -> Dict[str, Any]:
     """Handle orders for the requested recipe from the Sous Chef Kitchen, using SousChef v2 Recipes."""
-    print(parameters)
 
     recipe_folder = get_recipe_folder(recipe_name)
     recipe_location = os.path.join(recipe_folder, "recipe.yaml")
@@ -275,6 +274,7 @@ async def recipe_schema(recipe_name: str) -> Dict:
 
 
 async def recipe_list() -> Dict:
+    logger.info("In Recipe List")
     try:
       recipe_info = {
             recipe_path: get_recipe_info(recipe_path)
@@ -282,8 +282,8 @@ async def recipe_list() -> Dict:
         }
     except ValueError:
         return None
+    logger.info(f"Got {recipe_list}")
 
-    print(recipe_info)
     return recipe_info
 
 
