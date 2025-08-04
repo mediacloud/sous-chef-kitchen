@@ -90,7 +90,7 @@ async def start_recipe(
             )
 
 
-@app.post("/recipe/schema")
+@app.get("/recipe/schema")
 async def recipe_schema(
     auth: bearer, request: Request, response: Response
 ) -> Dict[str, Any]:
@@ -109,7 +109,7 @@ async def recipe_schema(
         return
 
 
-@app.post("/recipe/list")
+@app.get("/recipe/list")
 async def recipe_list(
     auth:bearer, request: Request, response: Response
 ) -> Dict[str, Any] | SousChefKitchenAuthStatus:
