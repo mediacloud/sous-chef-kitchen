@@ -130,7 +130,7 @@ class SousChefKitchenAPIClient:
             return SousChefKitchenSystemStatus()
 
     def recipe_list(self) -> Dict[str, Any]:
-        expected_responses = {HTTPStatus.OK, HTTPStatus.FORBIDDEN}
+        expected_responses = {HTTPStatus.OK}
         url = urllib.parse.urljoin(self.base_url, f"recipe/list")
 
         response = self._session.post(url)

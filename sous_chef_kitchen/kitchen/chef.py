@@ -282,6 +282,8 @@ async def recipe_list() -> Dict:
         }
     except ValueError:
         return None
+
+    print(recipe_info)
     return recipe_info
 
 
