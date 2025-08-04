@@ -134,6 +134,7 @@ class SousChefKitchenAPIClient:
         url = urllib.parse.urljoin(self.base_url, f"recipe/list")
 
         response = self._session.post(url)
+        print(response.status_code)
         if response.status_code in expected_responses:
             return response.json()
         response.raise_for_status()
