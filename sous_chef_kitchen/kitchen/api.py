@@ -185,6 +185,19 @@ async def fetch_all_runs(
         
     return await chef.fetch_all_runs(tags=[])
 
+@app.get("/runs/list")
+async def fetch_user_runs(
+    auth: bearer, request: Request, response: Response
+) -> List[Dict[str, Any]] | SousChefKitchenAuthStatus:
+    """ Fetch all Sous Chef Kitchen runs from Prefect, filtering based on generated auth slug. """
+
+    auth_status = await _validate_auth(auth, request, response)
+    if not auth_status.authorized:
+        return auth_status
+
+    return await chef.fetch_all_runs(tags=[auth_status.tag_slug])
+
+
 
 @app.get("/run/{run_id}")
 async def fetch_run_by_id(
