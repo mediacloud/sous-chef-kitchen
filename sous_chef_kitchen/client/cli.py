@@ -39,7 +39,7 @@ def recipes_list() -> None:
 
     result = api_client.recipe_list()
 
-    recipe_rows = ((name, info[0]) for (name, info) in result.items())
+    recipe_rows = ((name, info) for (name, info) in result.items())
     click.echo(tabulate(recipe_rows, headers=["Recipe Name", "Description"]))
 
 
