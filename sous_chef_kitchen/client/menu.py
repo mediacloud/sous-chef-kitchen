@@ -133,7 +133,7 @@ class SousChefKitchenAPIClient:
         expected_responses = {HTTPStatus.OK}
         url = urllib.parse.urljoin(self.base_url, f"recipe/list")
 
-        response = self._session.post(url)
+        response = self._session.get(url)
         print(response.status_code)
         if response.status_code in expected_responses:
             return response.json()
@@ -147,7 +147,7 @@ class SousChefKitchenAPIClient:
         url = urllib.parse.urljoin(self.base_url, f"recipe/schema")
         params = {"recipe_name": recipe_name}
 
-        response = self._session.post(url, params=params)
+        response = self._session.get(url, params=params)
         if response.status_code in expected_responses:
             return response.json()
         response.raise_for_status()
