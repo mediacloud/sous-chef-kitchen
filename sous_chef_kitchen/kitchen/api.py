@@ -109,6 +109,18 @@ async def recipe_schema(
         return
 
 
+@app.post("/recipe/list")
+async def recipe_list(
+    auth:bearer, request: Request, response: Response
+) -> Dict[str, Any] | SousChefKitchenAuthStatus:
+
+    auth_status = await _validate_auth(auth, request, response)
+    if not auth_status.authorized:
+        return auth_status
+
+    return chef.recipe_list()
+
+
 @app.get("/runs/active")
 async def fetch_active_runs(
     auth: bearer, request: Request, response: Response

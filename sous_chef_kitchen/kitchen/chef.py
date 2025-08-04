@@ -274,6 +274,17 @@ async def recipe_schema(recipe_name: str) -> Dict:
     return SousChefRecipe.get_param_schema(recipe_location)["properties"]
 
 
+async def list_recipes() -> Dict:
+    try:
+      recipe_info = {
+            recipe_path: get_recipe_info(recipe_path)
+            for recipe_path in get_recipe_folders()
+        }
+    except ValueError:
+        return None
+    return recipe_info
+
+
 async def validate_auth(auth_email: str, auth_key: str) -> SousChefKitchenAuthStatus:
     """Check whether the API key is authorized for Media Cloud and Sous Chef.
 
