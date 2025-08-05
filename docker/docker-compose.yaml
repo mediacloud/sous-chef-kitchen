@@ -56,7 +56,7 @@ services:
 
   kitchen-api:
     image: $KITCHEN_IMAGE
-    command: uvicorn sous_chef_kitchen.kitchen.api:app --host 0.0.0.0 --port $KITCHEN_PORT --reload --log-level trace
+    command: uvicorn sous_chef_kitchen.kitchen.api:app --host 0.0.0.0 --port $KITCHEN_PORT --reload 
     ports:
       - target: $KITCHEN_PORT
         published: $KITCHEN_PORT_PUBLISHED
