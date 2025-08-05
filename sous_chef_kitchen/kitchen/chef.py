@@ -282,7 +282,7 @@ async def recipe_list() -> Dict:
     logger.info("In Recipe List")
     try:
         recipe_info = {
-            recipe_path: get_recipe_info(recipe_path)
+            str(recipe_path.name): get_recipe_info(recipe_path)
             for recipe_path in get_recipe_folders()
         }
         logger.info(f"Got {len(recipe_info)} recipes")

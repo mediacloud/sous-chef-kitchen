@@ -142,7 +142,7 @@ async def recipe_list(
         )
     logger.info("Fetching recipe list")
     recipe_list_result = await chef.recipe_list()
-    logger.info(f"Recipe list fetched successfully: {len(recipe_list_result.get('recipes', []))} recipes found")
+    logger.info(f"Recipe list fetched successfully: {len(recipe_list_result)} recipes found")
     return recipe_list_result
 
 
