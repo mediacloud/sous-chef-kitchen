@@ -20,7 +20,7 @@ from sous_chef_kitchen.shared.models import (
 app = FastAPI()
 security = HTTPBearer()
 bearer = Annotated[HTTPAuthorizationCredentials, Depends(security)]
-logger = logging.getLogger("uvicorn.info")
+logger = logging.getLogger("uvicorn.error")
 
 
 app.add_middleware(
