@@ -1,0 +1,13 @@
+[flake8]
+# PB: was 88 but generated MANY complaints:
+max-line-length = 128
+extend-ignore = E203
+exclude =
+    .git,
+    __pycache__,
+    build,
+    dist,
+    venv
+
+per-file-ignores =
+    __init__.py: F401

@@ -11,6 +11,11 @@ from typing import Any, Dict, List
 from uuid import UUID
 import hashlib
 
+from sous_chef_kitchen.kitchen.logging_config import setup_logging
+
+# Setup logging
+setup_logging()
+
 import mediacloud.api
 import prefect
 from prefect.artifacts import Artifact
@@ -39,14 +44,14 @@ from sous_chef_kitchen.shared.models import (
     SousChefKitchenAuthStatus,
     SousChefKitchenSystemStatus,
 )
-from sous_chef_kitchen.shared.recipe import get_recipe_folder
+from sous_chef_kitchen.shared.recipe import get_recipe_folder, get_recipe_folders, get_recipe_info
 
 BASE_TAGS = ["kitchen"]
 DEFAULT_PREFECT_WORK_POOL = "bly"
 PREFECT_ACTIVE_STATES = [StateType.RUNNING, StateType.SCHEDULED, StateType.PENDING]
 PREFECT_DEPLOYMENT = os.getenv("SC_PREFECT_DEPLOYMENT", "kitchen-base")
 PREFECT_WORK_POOL = os.getenv("SC_PREFECT_WORK_POOL", DEFAULT_PREFECT_WORK_POOL)
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("sous_chef_kitchen.chef")
 
 
 def _run_to_dict(run: FlowRun) -> Dict[str, Any]:
@@ -226,7 +231,6 @@ async def start_recipe(
     user_full_text_authorized: bool = False,
 ) -> Dict[str, Any]:
     """Handle orders for the requested recipe from the Sous Chef Kitchen, using SousChef v2 Recipes."""
-    print(parameters)
 
     recipe_folder = get_recipe_folder(recipe_name)
     recipe_location = os.path.join(recipe_folder, "recipe.yaml")
@@ -274,6 +278,20 @@ async def recipe_schema(recipe_name: str) -> Dict:
     return SousChefRecipe.get_param_schema(recipe_location)["properties"]
 
 
+async def recipe_list() -> Dict:
+    logger.info("In Recipe List")
+    try:
+        recipe_info = {
+            str(recipe_path.name): get_recipe_info(recipe_path)
+            for recipe_path in get_recipe_folders()
+        }
+        logger.info(f"Got {len(recipe_info)} recipes")
+        return recipe_info
+    except ValueError as e:
+        logger.error(f"Error getting recipe list: {e}")
+        return {"recipes": [], "error": str(e)}
+
+
 async def validate_auth(auth_email: str, auth_key: str) -> SousChefKitchenAuthStatus:
     """Check whether the API key is authorized for Media Cloud and Sous Chef.
 
@@ -289,14 +307,19 @@ async def validate_auth(auth_email: str, auth_key: str) -> SousChefKitchenAuthSt
     3. If the user is media_cloud_authorized, the user is sous_chef_authorized
     """
 
+    logger.info(f"Starting auth validation for email: {auth_email}")
     status = SousChefKitchenAuthStatus()
+    
     if not auth_email or not auth_key:
-        logger.warning("Missing auth credentials")
+        logger.warning(f"Missing auth credentials - email: {auth_email}, key present: {bool(auth_key)}")
         return status
 
     try:
+        logger.info(f"Creating MediaCloud SearchApi instance for {auth_email}")
         mc_search = mediacloud.api.SearchApi(auth_key)
+        logger.info(f"Calling user_profile() for {auth_email}")
         auth_result = mc_search.user_profile()
+        logger.info(f"MediaCloud API response for {auth_email}: {auth_result}")
         
         if "message" in auth_result and auth_result["message"] == "User Not Found":
             logger.warning(f"User not found for email: {auth_email}")
@@ -312,13 +335,15 @@ async def validate_auth(auth_email: str, auth_key: str) -> SousChefKitchenAuthSt
             f"Auth successful for {auth_email}: "
             f"MC: {status.media_cloud_authorized}, "
             f"MC-FT: {status.media_cloud_full_text_authorized}, "
-            f"SC: {status.sous_chef_authorized}"
+            f"SC: {status.sous_chef_authorized}, "
+            f"Tag: {status.tag_slug}"
         )
         
     except Exception as e:
-        logger.error(f"Error validating auth for {auth_email}: {str(e)}")
+        logger.error(f"Error validating auth for {auth_email}: {str(e)}", exc_info=True)
         return status
 
+    logger.info(f"Final auth status for {auth_email}: {status}")
     return status
 
 
