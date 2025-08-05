@@ -12,15 +12,19 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.middleware.cors import CORSMiddleware
 
 from sous_chef_kitchen.kitchen import chef
+from sous_chef_kitchen.kitchen.logging_config import setup_logging
 from sous_chef_kitchen.shared.models import (
     SousChefKitchenAuthStatus,
     SousChefKitchenSystemStatus,
 )
 
+# Setup logging
+setup_logging()
+
 app = FastAPI()
 security = HTTPBearer()
 bearer = Annotated[HTTPAuthorizationCredentials, Depends(security)]
-logger = logging.getLogger("uvicorn.error")
+logger = logging.getLogger("sous_chef_kitchen.api")
 
 
 app.add_middleware(
@@ -39,11 +43,15 @@ async def _validate_auth(
     auth_email = request.headers.get("mediacloud-email")
     auth_key = auth.credentials
 
+    logger.info(f"Validating auth for email: {auth_email}")
+    
     # This also needs some work to return a more fine-grained auth status.
     auth_status = await chef.validate_auth(auth_email, auth_key)
     if not auth_status.authorized:
+        logger.warning(f"Authentication failed for {auth_email}: {auth_status}")
         response.status_code = http_status.HTTP_403_FORBIDDEN
-    logger.info(f"Auth status {auth_status}")
+    else:
+        logger.info(f"Authentication successful for {auth_email}: {auth_status}")
     return auth_status
 
 
@@ -59,12 +67,16 @@ def get_root(response: Response) -> None:
 @app.post("/recipe/start")
 async def start_recipe(
     auth: bearer, request: Request, response: Response
-) -> Dict[str, Any] | SousChefKitchenAuthStatus:
+) -> Dict[str, Any]:
     """Fetch all Sous Chef Kitchen runs from Prefect."""
 
     auth_status = await _validate_auth(auth, request, response)
     if not auth_status.authorized:
-        return auth_status
+        logger.warning(f"Unauthorized access attempt to start recipe: {auth_status}")
+        raise HTTPException(
+            status_code=http_status.HTTP_403_FORBIDDEN,
+            detail="Authentication failed"
+        )
 
     # TODO: Fix bearer token vs function signature issue
     recipe_name = request.query_params["recipe_name"]
@@ -99,7 +111,11 @@ async def recipe_schema(
 
     auth_status = await _validate_auth(auth, request, response)
     if not auth_status.authorized:
-        return auth_status
+        logger.warning(f"Unauthorized access attempt to get recipe schema: {auth_status}")
+        raise HTTPException(
+            status_code=http_status.HTTP_403_FORBIDDEN,
+            detail="Authentication failed"
+        )
 
     # TODO: Fix bearer token vs function signature issue
     recipe_name = request.query_params["recipe_name"]
@@ -114,25 +130,35 @@ async def recipe_schema(
 @app.get("/recipe/list")
 async def recipe_list(
     auth: bearer, request: Request, response: Response
-) -> Dict[str, Any] | SousChefKitchenAuthStatus:
-    logger.info("Recipe list??")
+) -> Dict[str, Any]:
+    logger.info("Recipe list endpoint called")
     auth_status = await _validate_auth(auth, request, response)
 
     if not auth_status.authorized:
-        return auth_status
-    logger.info(await chef.recipe_list())
-    return await chef.recipe_list()
+        logger.warning(f"Unauthorized access attempt to recipe list: {auth_status}")
+        raise HTTPException(
+            status_code=http_status.HTTP_403_FORBIDDEN,
+            detail="Authentication failed"
+        )
+    logger.info("Fetching recipe list")
+    recipe_list_result = await chef.recipe_list()
+    logger.info(f"Recipe list fetched successfully: {len(recipe_list_result.get('recipes', []))} recipes found")
+    return recipe_list_result
 
 
 @app.get("/runs/active")
 async def fetch_active_runs(
     auth: bearer, request: Request, response: Response
-) -> List[Dict[str, Any]] | SousChefKitchenAuthStatus:
+) -> List[Dict[str, Any]]:
     """Fetch any active or upcoming Sous Chef Kitchen runs from Prefect."""
 
     auth_status = await _validate_auth(auth, request, response)
     if not auth_status.authorized:
-        return auth_status
+        logger.warning(f"Unauthorized access attempt to fetch active runs: {auth_status}")
+        raise HTTPException(
+            status_code=http_status.HTTP_403_FORBIDDEN,
+            detail="Authentication failed"
+        )
 
     return await chef.fetch_active_runs(tags=[])
 
@@ -140,12 +166,16 @@ async def fetch_active_runs(
 @app.post("/runs/cancel")
 async def cancel_recipe_run(
     auth: bearer, request: Request, response: Response
-) -> List[Dict[str, Any]] | SousChefKitchenAuthStatus:
+) -> List[Dict[str, Any]]:
     """Cancel the specified Sous Chef Kitchen run."""
 
     auth_status = await _validate_auth(auth, request, response)
     if not auth_status.authorized:
-        return auth_status
+        logger.warning(f"Unauthorized access attempt to cancel recipe run: {auth_status}")
+        raise HTTPException(
+            status_code=http_status.HTTP_403_FORBIDDEN,
+            detail="Authentication failed"
+        )
 
     # TODO: Fix bearer token vs function signature issue
     recipe_name = request.query_params["recipe_name"]
@@ -157,12 +187,16 @@ async def cancel_recipe_run(
 @app.post("/runs/pause")
 async def pause_recipe_run(
     auth: bearer, request: Request, response: Response
-) -> List[Dict[str, Any]] | SousChefKitchenAuthStatus:
+) -> List[Dict[str, Any]]:
     """Pause the specified Sous Chef Kitchen run."""
 
     auth_status = await _validate_auth(auth, request, response)
     if not auth_status.authorized:
-        return auth_status
+        logger.warning(f"Unauthorized access attempt to pause recipe run: {auth_status}")
+        raise HTTPException(
+            status_code=http_status.HTTP_403_FORBIDDEN,
+            detail="Authentication failed"
+        )
 
     # TODO: Fix bearer token vs function signature issue
     recipe_name = request.query_params["recipe_name"]
@@ -174,12 +208,16 @@ async def pause_recipe_run(
 @app.post("/runs/resume")
 async def resume_recipe_run(
     auth: bearer, request: Request, response: Response
-) -> List[Dict[str, Any]] | SousChefKitchenAuthStatus:
+) -> List[Dict[str, Any]]:
     """Resume the specified Sous Chef Kitchen run."""
 
     auth_status = await _validate_auth(auth, request, response)
     if not auth_status.authorized:
-        return auth_status
+        logger.warning(f"Unauthorized access attempt to resume recipe run: {auth_status}")
+        raise HTTPException(
+            status_code=http_status.HTTP_403_FORBIDDEN,
+            detail="Authentication failed"
+        )
 
     # TODO: Fix bearer token vs function signature issue
     recipe_name = request.query_params["recipe_name"]
@@ -191,24 +229,32 @@ async def resume_recipe_run(
 @app.get("/runs/all")
 async def fetch_all_runs(
     auth: bearer, request: Request, response: Response
-) -> List[Dict[str, Any]] | SousChefKitchenAuthStatus:
+) -> List[Dict[str, Any]]:
     """Fetch all Sous Chef Kitchen runs from Prefect."""
 
     auth_status = await _validate_auth(auth, request, response)
     if not auth_status.authorized:
-        return auth_status
+        logger.warning(f"Unauthorized access attempt to fetch all runs: {auth_status}")
+        raise HTTPException(
+            status_code=http_status.HTTP_403_FORBIDDEN,
+            detail="Authentication failed"
+        )
         
     return await chef.fetch_all_runs(tags=[])
 
 @app.get("/runs/list")
 async def fetch_user_runs(
     auth: bearer, request: Request, response: Response
-) -> List[Dict[str, Any]] | SousChefKitchenAuthStatus:
+) -> List[Dict[str, Any]]:
     """ Fetch all Sous Chef Kitchen runs from Prefect, filtering based on generated auth slug. """
 
     auth_status = await _validate_auth(auth, request, response)
     if not auth_status.authorized:
-        return auth_status
+        logger.warning(f"Unauthorized access attempt to fetch user runs: {auth_status}")
+        raise HTTPException(
+            status_code=http_status.HTTP_403_FORBIDDEN,
+            detail="Authentication failed"
+        )
 
     return await chef.fetch_all_runs(tags=[auth_status.tag_slug])
 
@@ -217,12 +263,16 @@ async def fetch_user_runs(
 @app.get("/run/{run_id}")
 async def fetch_run_by_id(
     run_id: str, auth: bearer, request: Request, response: Response
-) -> Dict[str, Any] | SousChefKitchenAuthStatus:
+) -> Dict[str, Any]:
     """Fetch a specific Sous Chef Kitchen run from Prefect by its ID."""
 
     auth_status = await _validate_auth(auth, request, response)
     if not auth_status.authorized:
-        return auth_status
+        logger.warning(f"Unauthorized access attempt to fetch run by ID: {auth_status}")
+        raise HTTPException(
+            status_code=http_status.HTTP_403_FORBIDDEN,
+            detail="Authentication failed"
+        )
 
     try:
         return await chef.fetch_run_by_id(run_id)
@@ -234,12 +284,16 @@ async def fetch_run_by_id(
 @app.get("/run/{run_id}/artifacts")
 async def fetch_run_artifacts(
     run_id: str, auth: bearer, request: Request, response: Response
-) -> List[Dict[str, Any]] | SousChefKitchenAuthStatus:
+) -> List[Dict[str, Any]]:
     """Fetch artifacts for a specific run."""
 
     auth_status = await _validate_auth(auth, request, response)
     if not auth_status.authorized:
-        return auth_status
+        logger.warning(f"Unauthorized access attempt to fetch run artifacts: {auth_status}")
+        raise HTTPException(
+            status_code=http_status.HTTP_403_FORBIDDEN,
+            detail="Authentication failed"
+        )
 
     try:
         return await chef.fetch_run_artifacts(run_id)
