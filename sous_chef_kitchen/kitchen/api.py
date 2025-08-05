@@ -20,7 +20,8 @@ from sous_chef_kitchen.shared.models import (
 app = FastAPI()
 security = HTTPBearer()
 bearer = Annotated[HTTPAuthorizationCredentials, Depends(security)]
-logger = logging.getLogger("uvicorn.error")
+logger = logging.getLogger("uvicorn.info")
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -44,6 +45,7 @@ async def _validate_auth(
         response.status_code = http_status.HTTP_403_FORBIDDEN
     logger.info(f"Auth status {auth_status}")
     return auth_status
+
 
 
 @app.get("/")
@@ -111,13 +113,14 @@ async def recipe_schema(
 
 @app.get("/recipe/list")
 async def recipe_list(
-    auth:bearer, request: Request, response: Response
+    auth: bearer, request: Request, response: Response
 ) -> Dict[str, Any] | SousChefKitchenAuthStatus:
-
+    logger.info("Recipe list??")
     auth_status = await _validate_auth(auth, request, response)
+
     if not auth_status.authorized:
         return auth_status
-
+    logger.info(await chef.recipe_list())
     return await chef.recipe_list()
 
 

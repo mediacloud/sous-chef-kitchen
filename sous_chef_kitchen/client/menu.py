@@ -132,7 +132,7 @@ class SousChefKitchenAPIClient:
     def recipe_list(self) -> Dict[str, Any]:
         expected_responses = {HTTPStatus.OK}
         url = urllib.parse.urljoin(self.base_url, f"recipe/list")
-
+        print(url)
         response = self._session.get(url)
         print(response.status_code)
         if response.status_code in expected_responses:

@@ -46,7 +46,7 @@ DEFAULT_PREFECT_WORK_POOL = "bly"
 PREFECT_ACTIVE_STATES = [StateType.RUNNING, StateType.SCHEDULED, StateType.PENDING]
 PREFECT_DEPLOYMENT = os.getenv("SC_PREFECT_DEPLOYMENT", "kitchen-base")
 PREFECT_WORK_POOL = os.getenv("SC_PREFECT_WORK_POOL", DEFAULT_PREFECT_WORK_POOL)
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("uvicorn.info")
 
 
 def _run_to_dict(run: FlowRun) -> Dict[str, Any]:
