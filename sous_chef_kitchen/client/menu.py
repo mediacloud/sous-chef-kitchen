@@ -81,6 +81,17 @@ class SousChefKitchenAPIClient:
             return response.json()
         response.raise_for_status()
 
+    def fetch_user_runs(self) -> Dict[str, Any] | SousChefKitchenAuthStatus:
+        """Fetch all Sous Chef Kitchen runs from Prefect."""
+
+        expected_responses = {HTTPStatus.OK, HTTPStatus.FORBIDDEN}
+        url = urllib.parse.urljoin(self.base_url, "runs/list")
+
+        response = self._session.get(url)
+        if response.status_code in expected_responses:
+            return response.json()
+        response.raise_for_status()
+
     def fetch_active_runs(self) -> Dict[str, Any] | SousChefKitchenAuthStatus:
         """Fetch any active or upcoming Sous Chef Kitchen runs from Prefect."""
 
@@ -129,6 +140,17 @@ class SousChefKitchenAPIClient:
         except ConnectionError as e:
             return SousChefKitchenSystemStatus()
 
+    def recipe_list(self) -> Dict[str, Any]:
+        expected_responses = {HTTPStatus.OK}
+        url = urllib.parse.urljoin(self.base_url, f"recipe/list")
+        print(url)
+        response = self._session.get(url)
+        print(response.status_code)
+        if response.status_code in expected_responses:
+            return response.json()
+        response.raise_for_status()
+
+
     def recipe_schema(self, recipe_name: str) -> Dict[str, Any]:
         """Return the expected parameter values for a given recipe"""
 
@@ -136,7 +158,7 @@ class SousChefKitchenAPIClient:
         url = urllib.parse.urljoin(self.base_url, f"recipe/schema")
         params = {"recipe_name": recipe_name}
 
-        response = self._session.post(url, params=params)
+        response = self._session.get(url, params=params)
         if response.status_code in expected_responses:
             return response.json()
         response.raise_for_status()

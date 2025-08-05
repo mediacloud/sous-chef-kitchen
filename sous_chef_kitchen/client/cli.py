@@ -35,12 +35,11 @@ def recipes() -> None:
 def recipes_list() -> None:
     """List available recipes."""
 
-    recipe_info = [
-        recipe.get_recipe_info(recipe_path)
-        for recipe_path in recipe.get_recipe_folders()
-    ]
+    api_client = SousChefKitchenAPIClient()
 
-    recipe_rows = ((name, info[0]) for (name, info) in recipe_info)
+    result = api_client.recipe_list()
+
+    recipe_rows = ((name, info) for (name, info) in result.items())
     click.echo(tabulate(recipe_rows, headers=["Recipe Name", "Description"]))
 
 

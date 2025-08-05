@@ -56,7 +56,7 @@ services:
 
   kitchen-api:
     image: $KITCHEN_IMAGE
-    command: uvicorn sous_chef_kitchen.kitchen.api:app --host 0.0.0.0 --port $KITCHEN_PORT --reload
+    command: uvicorn sous_chef_kitchen.kitchen.api:app --host 0.0.0.0 --port $KITCHEN_PORT --reload --log-level trace
     ports:
       - target: $KITCHEN_PORT
         published: $KITCHEN_PORT_PUBLISHED
@@ -66,6 +66,7 @@ services:
       PREFECT_API_URL: $PREFECT_URL
       SC_PREFECT_DEPLOYMENT: $KITCHEN_DEPLOYMENT_NAME
       SC_PREFECT_WORK_POOL: $PREFECT_WORK_POOL_NAME
+      LOG_LEVEL: DEBUG
     deploy:
       replicas: 1
       restart_policy:

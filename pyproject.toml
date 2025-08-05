@@ -1,9 +1,66 @@
+[project]
+name = "sous-chef-kitchen"
+version = "0.0.1"
+description = 'Job API around Prefect for driving Sous-Chef'
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+    {name = "Paige Gulley", email = "nano3.14@gmail.com"},
+]
 
+# empty, so not picked up by requirements-flow.txt etc?
+dependencies = [
+]
 
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project.optional-dependencies]
+# NOTE! run "make requirements" to build requirements*.txt files!!
+
+# from requirements-client.txt; If you add/update here,
+client = [
+    # CLI Client Requirements
+    "click ~= 8.2.0",
+    "requests",			# unpinned
+    "tabulate ~= 0.9.0",
+
+    # Web Client Requirements
+    "streamlit ~= 1.47.0",
+    "streamlit-modal ~= 0.1.0",
+    "streamlit-tags ~= 1.2.0",
+]
+
+common = [
+    # client & server requirements
+    "pydantic ~= 2.11.0",
+    "python-dotenv ~= 1.1.0",
+    "ruamel.yaml ~= 0.18.0"
+]
+
+# for pre-commit, make requirements
+dev = [
+    "pip-tools ~= 7.4.0",
+    "pre-commit ~= 4.2.0"
+]
+
+# From requirements-server.txt, Used in Dockerfile
+server = [
+    # Kitchen Requirements
+    "fastapi[standard]",
+    "mediacloud",
+    "prefect[github,docker]",
+]
+
+# used for requirements-flow.txt, in Dockerfile
+sous-chef = [
+    "sous-chef @ git+https://github.com/mediacloud/sous-chef@v2.2.5",
+]
 
 [tool.black]
 line-length = 88
-target-version = ['py38']
+target-version = ['py310']
 include = '\.pyi?$'
 
 [tool.isort]
@@ -12,15 +69,19 @@ multi_line_output = 3
 line_length = 88
 
 [tool.flake8]
-max-line-length = 88
-extend-ignore = "E203"
-exclude = [
-    ".git",
-    "__pycache__",
-    "build",
-    "dist",
-    "venv",
-]
-per-file-ignores = [
-    "__init__.py: F401",
-] 
+# flake8 does not honor pyproject.toml! see .flake8
+
+[tool.pip-tools]
+allow-unsafe = true
+quiet = true
+resolver = "backtracking"
+upgrade = true
+# To enable Hash-Checking-Mode uncomment the following line
+# generate-hashes = true
+
+# https://setuptools.pypa.io/en/latest/userguide/package_discovery.html#custom-discovery
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["indexer*"]
+exclude = ["indexer.tests*"]
+namespaces = false
