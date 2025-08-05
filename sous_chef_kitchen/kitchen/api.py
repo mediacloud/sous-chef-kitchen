@@ -94,6 +94,7 @@ async def start_recipe(
             user_full_text_authorized=auth_status.media_cloud_full_text_authorized,
         )
     except Exception as e:
+        logger.error(f"Error starting recipe: {e}")
         if hasattr(e, "message"):
             raise HTTPException(
                 status_code=http_status.HTTP_400_BAD_REQUEST, detail=e.message
