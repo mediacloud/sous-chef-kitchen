@@ -41,7 +41,7 @@ common = [
 
 # for pre-commit, make requirements
 dev = [
-    "pip-tools ~= 7.4.0",
+    "pip-tools >= 7.5.2",  # 7.5.2+ fixes compatibility with pip >= 25.3 (removes use_pep517 dependency)
     "pre-commit ~= 4.2.0"
 ]
 
@@ -55,7 +55,10 @@ server = [
 
 # used for requirements-flow.txt, in Dockerfile
 sous-chef = [
-    "sous-chef @ git+https://github.com/mediacloud/sous-chef@v2.3.1",
+    "sous-chef @ git+https://github.com/mediacloud/sous-chef@feature/sous-chef-two",
+    # Pin torch explicitly to prevent TORCH_LIBRARY registration conflicts
+    # when both transformers and spacy are loaded
+    "torch>=2.0.0,<3.0.0",
 ]
 
 [tool.black]

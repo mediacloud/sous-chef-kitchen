@@ -1,3 +1,13 @@
+"""
+DEPRECATED: This module uses the old YAML recipe system (SousChefRecipe, RunPipeline)
+which no longer exists in sous-chef v3 (feature/sous-chef-two branch).
+
+This module is still referenced in prefect.yaml deployments but will need to be
+updated to use the new flow registry system or removed if no longer needed.
+
+For now, this code will fail if used with the new sous-chef branch.
+"""
+
 import argparse
 import json
 import traceback
@@ -8,7 +18,10 @@ from email_flows import send_run_summary_email
 from prefect import flow, get_run_logger
 from prefect.runtime import flow_run
 from prefect_aws import AwsCredentials, S3Bucket
-from sous_chef import RunPipeline, SousChefRecipe
+
+# TODO: Update to use flow registry instead of YAML recipes
+# from sous_chef import get_flow, list_flows
+from sous_chef import RunPipeline, SousChefRecipe  # This will fail with new branch
 
 
 def generate_run_name_folder():

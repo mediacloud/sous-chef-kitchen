@@ -1,7 +1,9 @@
 docker/prefect.yaml
+prefect.yaml.local
 __pycache__
 venv/
 sous-chef-config/
+sous_chef_kitchen.egg-info/
 *.csv
 .env
 *.env
