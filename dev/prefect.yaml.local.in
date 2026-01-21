@@ -3,7 +3,7 @@
 # with your current git branch interpolated
 #
 # Usage:
-#   make local-deploy-prep  # Generate prefect.yaml.local from this template
+#   make local-deploy-prep  # Generate prefect.yaml.local from this template (in dev/)
 #   make local-deploy        # Deploy using the generated config
 #
 # Prerequisites:
@@ -26,6 +26,13 @@ pull:
     id: update-build
     script: |
       pip install --upgrade pip setuptools wheel flit packaging
+
+# uninstall any local sous-chef, so the most recent version is guaranteed in next step
+- prefect.deployments.steps.run_shell_script:
+    id: uninstall-local-sous-chef
+    stream_output: true
+    script: |
+      pip uninstall -y sous-chef
 
 - prefect.deployments.steps.pip_install_requirements:
     directory: '{{ clone-step.directory }}'

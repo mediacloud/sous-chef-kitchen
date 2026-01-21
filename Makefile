@@ -49,8 +49,8 @@ clean:
 
 ## prepare local deployment configuration
 local-deploy-prep:
-	@chmod +x scripts/prepare-local-deployment.sh
-	@./scripts/prepare-local-deployment.sh
+	@chmod +x dev/prepare-local-deployment.sh
+	@./dev/prepare-local-deployment.sh
 
 ## deploy to Prefect using local configuration
 local-deploy: prefect.yaml.local
