@@ -149,6 +149,11 @@ def _create_artifacts(
         else:
             table = [{"value": data}]
 
-        create_table_artifact(
-            key=f"{flow_run_name}-{key}", table=table, description=task_name
-        )
+        try:
+            create_table_artifact(
+                key=f"{flow_run_name}-{key}", table=table, description=task_name
+            )
+        except Exception as e:
+            print(
+                f"Warning! Failed to generate artifact: {key}. Error: {e}. continuing "
+            )
