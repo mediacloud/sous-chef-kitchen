@@ -53,6 +53,7 @@ class SousChefCredentials(BaseSettings):
     ACCESS_KEY_SECRET: str
 
     B2_S3_ENDPOINT: str
+    B2_REGION: str
     B2_KEY_ID: str
     B2_APP_KEY: str
 
@@ -74,6 +75,7 @@ def setup_secrets(overwrite=True):
     AwsCredentials(
         aws_access_key_id=config.B2_KEY_ID,
         aws_secret_access_key=config.B2_APP_KEY,
+        region_name=config.B2_REGION,
         aws_client_parameters=AwsClientParameters(endpoint_url=config.B2_S3_ENDPOINT),
     ).save("b2-s3-credentials", overwrite=overwrite)
 
