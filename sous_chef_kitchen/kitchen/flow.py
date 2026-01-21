@@ -29,7 +29,7 @@ BASE_TAGS = ["kitchen"]
 PREFECT_DEPLOYMENT = os.getenv("SC_PREFECT_DEPLOYMENT", "kitchen-base")
 
 
-@flow(name=PREFECT_DEPLOYMENT)
+@flow(name=PREFECT_DEPLOYMENT, log_prints=True)
 def kitchen_base(
     recipe_name: str,
     tags: List[str] = [],
@@ -138,7 +138,8 @@ def _create_artifacts(
     for task_name, output in formatted_data.items():
         key = re.sub("[^0-9a-zA-Z]+", "-", task_name.lower())
         data = output["data"]
-
+        print(key)
+        print(data)
         # Handle different data formats
         if isinstance(data, list):
             table = data
