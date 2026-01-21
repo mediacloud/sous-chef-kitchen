@@ -12,6 +12,7 @@ import os
 import re
 from typing import Any, Dict, List
 
+import pandas as pd
 import prefect
 from prefect import flow, get_run_logger
 from prefect.artifacts import create_table_artifact
@@ -143,6 +144,8 @@ def _create_artifacts(
             table = data
         elif isinstance(data, dict):
             table = [data]
+        elif isinstance(data, pd.DataFrame):
+            table = [data.to_json()]
         else:
             table = [{"value": data}]
 
