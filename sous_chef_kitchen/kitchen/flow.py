@@ -145,7 +145,7 @@ def _create_artifacts(
         elif isinstance(data, dict):
             table = [data]
         elif isinstance(data, pd.DataFrame):
-            table = data.to_json()
+            table = [data.to_json()]
         else:
             table = [{"value": data}]
 
