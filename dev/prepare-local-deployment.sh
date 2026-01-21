@@ -6,7 +6,7 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-TEMPLATE_FILE="$PROJECT_ROOT/prefect.yaml.local.in"
+TEMPLATE_FILE="$SCRIPT_DIR/prefect.yaml.local.in"
 OUTPUT_FILE="$PROJECT_ROOT/prefect.yaml.local"
 
 # Get current git branch
