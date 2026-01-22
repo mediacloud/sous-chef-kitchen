@@ -206,7 +206,7 @@ NETWORK_NAME=$STACK_NAME
 #Interpolated and then built into the kitchen image
 PREFECT_FILE=$SCRIPT_DIR/prefect.yaml
 # used for multiple services:
-PREFECT_IMAGE=prefecthq/prefect:3-latest
+PREFECT_IMAGE=prefecthq/prefect:3-python3.14
 # calculate published port numbers using deployment-type bias:
 PREFECT_PORT_PUBLISHED=$(expr $PREFECT_PORT + $PORT_BIAS)
 PREFECT_URL=http://$PREFECT_SERVER:$PREFECT_PORT/api
