@@ -71,6 +71,10 @@ def setup_secrets(overwrite=True):
         aws_secret_access_key=config.ACCESS_KEY_SECRET,
     ).save("aws-s3-credentials", overwrite=overwrite)
 
+    print("Setting up B2 with the following credentials:")
+    print(
+        f"KEY_ID: {config.B2_KEY_ID}, APP_KEY: {config.B2_APP_KEY}, endpoint: {config.B2_S3_ENDPOINT}"
+    )
     AwsCredentials(
         aws_access_key_id=config.B2_KEY_ID,
         aws_secret_access_key=config.B2_APP_KEY,
