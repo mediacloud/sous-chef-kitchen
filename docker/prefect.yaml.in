@@ -34,6 +34,7 @@ pull:
 - prefect.deployments.steps.run_shell_script:
     id: update-build
     script: |
+      apt-get update && apt-get install -y libxml2-dev libxslt1-dev
       pip install --upgrade pip setuptools wheel flit packaging
 
 # uninstall any local sous-chef, so the most recent version is guaranteed in next step
@@ -42,6 +43,7 @@ pull:
     stream_output: true
     script: |
       pip uninstall -y sous-chef
+
 
 - prefect.deployments.steps.pip_install_requirements:
     directory: '{{ clone-step.directory }}'
