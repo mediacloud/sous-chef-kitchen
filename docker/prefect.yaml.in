@@ -35,7 +35,7 @@ pull:
     id: update-build
     script: |
       apt-get update
-      apt-get install -y libxml2-dev libxslt1-dev
+      apt-get install -y libxml2-dev libxslt1-dev zlib1g-dev gcc
       pip install --upgrade pip setuptools wheel flit packaging
 
 # uninstall any local sous-chef, so the most recent version is guaranteed in next step
