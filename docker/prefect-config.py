@@ -66,6 +66,15 @@ def setup_secrets(overwrite=True):
     print("⏳ Waiting for Prefect Secret setup_secrets...")
     config = SousChefCredentials()
 
+    def strip_quotes(value: str) -> str:
+        """Strip surrounding quotes from environment variable values."""
+        if isinstance(value, str) and len(value) >= 2:
+            if (value.startswith('"') and value.endswith('"')) or (
+                value.startswith("'") and value.endswith("'")
+            ):
+                return value[1:-1]
+        return value
+
     # AwsCredentials(
     #    aws_access_key_id=config.ACCESS_KEY_ID,
     #    aws_secret_access_key=config.ACCESS_KEY_SECRET,
@@ -82,7 +91,8 @@ def setup_secrets(overwrite=True):
     ).save("b2-s3-credentials", overwrite=overwrite)
 
     EmailServerCredentials(
-        username=config.GMAIL_APP_USERNAME, password=config.GMAIL_APP_PASSWORD
+        username=config.GMAIL_APP_USERNAME,
+        password=strip_quotes(config.GMAIL_APP_PASSWORD),
     ).save("email-password", overwrite=overwrite)
 
     Secret(value=config.MEDIACLOUD_API_KEY).save(
