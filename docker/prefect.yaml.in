@@ -67,20 +67,3 @@ deployments:
     job_variables:
       image: '{{ build-image.image }}'
   schedules: []
-
-- name: alacarte-base
-  version:
-  tags:
-  - alacarte
-  description: Sous Chef A La Carte (for recipes that aren't on the core menu)
-  entrypoint: a_la_carte/flow.py:alacarte_base
-  parameters:
-    aws_credentials_block: aws-s3-credentials
-    bucket_name: sous-chef-recipes
-  work_pool:
-    name: WORK_POOL_NAME
-    work_queue_name:
-    job_variables:
-      image: '{{ build_image.image }}'
-  schedules: []
-  concurrency_limit:

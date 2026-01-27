@@ -5,7 +5,6 @@ This module provides backward-compatible functions that map to the new
 flow registry system, replacing the old YAML recipe discovery.
 """
 
-from pathlib import Path
 from typing import List, Tuple
 
 from sous_chef import get_flow, list_flows
@@ -26,24 +25,3 @@ def get_recipe_info(flow_name: str) -> Tuple[str, List[str]]:
         raise ValueError(f"No flow found named {flow_name}.")
     description = flow.get("description") or flow.get("doc") or ""
     return (flow["name"], [description])
-
-
-def get_recipe_folder(flow_name: str) -> Path:
-    """Backward compat function - flows don't have folders.
-
-    This function is kept for backward compatibility but flows don't
-    have filesystem folders. Returns a dummy path for validation purposes.
-    """
-    flow = get_flow(flow_name)
-    if not flow:
-        raise ValueError(f"No flow found named {flow_name}.")
-    # Return dummy path - this is only used for validation in some code paths
-    return Path("/dummy")
-
-
-def get_recipe_folders() -> List[Path]:
-    """Backward compat - flows don't have folders.
-
-    Returns empty list since flows are registered in memory, not filesystem.
-    """
-    return []

@@ -18,7 +18,6 @@ COPY pyproject.toml ${APP}/pyproject.toml
 RUN pip install --no-cache-dir --editable '.[server,sous-chef]'
 
 COPY sous_chef_kitchen/ ${APP}/sous_chef_kitchen/
-COPY recipes/ ${APP}/recipes/
 COPY docker/prefect.yaml ${APP}
 COPY docker/prefect-config.sh ${APP}
 COPY docker/prefect-config.py ${APP}
