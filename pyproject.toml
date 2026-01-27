@@ -36,7 +36,6 @@ common = [
     # client & server requirements
     "pydantic ~= 2.11.0",
     "python-dotenv ~= 1.1.0",
-    "ruamel.yaml ~= 0.18.0"
 ]
 
 # for pre-commit, make requirements
