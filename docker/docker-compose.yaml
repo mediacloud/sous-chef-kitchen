@@ -46,6 +46,7 @@ services:
     image: $PREFECT_IMAGE
     command: prefect worker start --pool $PREFECT_WORK_POOL_NAME
     environment:
+      LOG_LEVEL: DEBUG
       PREFECT_API_URL: $PREFECT_URL
     deploy:
       replicas: 1

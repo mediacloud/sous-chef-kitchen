@@ -3,23 +3,16 @@ Field requests from the Sous Chef Kitchen API to the Prefect or Media Cloud
 backends and cook up the results.
 """
 
+import hashlib
 import logging
 import os
 import re
-from datetime import date, timedelta
 from typing import Any, Dict, List
 from uuid import UUID
-import hashlib
-
-from sous_chef_kitchen.kitchen.logging_config import setup_logging
-
-# Setup logging
-setup_logging()
 
 import mediacloud.api
 import prefect
 from prefect.artifacts import Artifact
-from prefect.blocks.system import Secret
 from prefect.client.schemas.filters import (
     DeploymentFilter,
     DeploymentFilterName,
@@ -38,13 +31,23 @@ from prefect.client.schemas.objects import (
 from prefect.exceptions import ObjectNotFound
 from prefect.server.schemas.responses import SetStateStatus
 from prefect.server.schemas.states import State
-from sous_chef import SousChefRecipe
+from sous_chef import get_flow, get_flow_schema, list_flows
 
+from sous_chef_kitchen.kitchen.logging_config import setup_logging
 from sous_chef_kitchen.shared.models import (
     SousChefKitchenAuthStatus,
     SousChefKitchenSystemStatus,
 )
-from sous_chef_kitchen.shared.recipe import get_recipe_folder, get_recipe_folders, get_recipe_info
+from sous_chef_kitchen.shared.recipe import get_recipe_info
+
+# Import flows to trigger registration
+try:
+    from sous_chef.flows import *  # noqa: F403, F401 # This triggers @register_flow decorators
+except ImportError:
+    pass  # Flows may not be available in all environments
+
+# Setup logging
+setup_logging()
 
 BASE_TAGS = ["kitchen"]
 DEFAULT_PREFECT_WORK_POOL = "bly"
@@ -93,7 +96,7 @@ async def cancel_recipe_run(
 ) -> Dict[str, Any]:
     """Cancel the specified run for the specified Sous Chef recipe."""
 
-    tags += BASE_TAGS# + [recipe_name]
+    tags += BASE_TAGS  # + [recipe_name]
     all_runs = {run["id"]: run for run in await fetch_all_runs(tags)}
     recipe_run = all_runs.get(run_id)
 
@@ -117,17 +120,6 @@ async def fetch_active_runs(tags: List[str] = []) -> List[Dict[str, Any]]:
     return await fetch_runs_by_state(tags, PREFECT_ACTIVE_STATES)
 
 
-async def fetch_all_runs(tags: List[str] = []) -> List[Dict[str, Any]]:
-    """Fetch all Sous Chef Kitchen runs from Prefect."""
-
-    tags += BASE_TAGS
-    tags_filter = FlowRunFilter(tags=FlowRunFilterTags(all_=tags))
-
-    async with prefect.get_client() as client:
-        runs = await client.read_flow_runs(flow_run_filter=tags_filter)
-        return [_run_to_dict(run) for run in runs]
-
-
 async def fetch_paused_runs(tags: List[str] = []) -> List[Dict[str, Any]]:
     """Fetch any paused Sous Chef Kitchen runs from Prefect."""
 
@@ -140,7 +132,7 @@ async def fetch_run_by_id(run_id: UUID | str) -> Dict[str, Any]:
     if type(run_id) is str:
         try:
             run_id = UUID(run_id)
-        except:
+        except ValueError:
             raise ValueError(f"Failed to parse the string as a UUID for {run_id}.")
 
     async with prefect.get_client() as client:
@@ -194,7 +186,7 @@ async def get_system_status() -> SousChefKitchenSystemStatus:
 async def pause_recipe_run(recipe_name: str, run_id: str, tags: List[str] = []) -> None:
     """Pause the specified run for the specified Sous Chef recipe."""
 
-    tags += BASE_TAGS# + [recipe_name]
+    tags += BASE_TAGS  # + [recipe_name]
     active_runs = {run["id"]: run for run in await fetch_active_runs(tags)}
     recipe_run = active_runs.get(run_id)
 
@@ -211,7 +203,7 @@ async def resume_recipe_run(
 ) -> None:
     """Resume the specified run for the specified Sous Chef recipe."""
 
-    tags += BASE_TAGS# + [recipe_name]
+    tags += BASE_TAGS  # + [recipe_name]
     paused_runs = {run["id"]: run for run in await fetch_paused_runs(tags)}
     recipe_run = paused_runs.get(run_id)
 
@@ -223,24 +215,38 @@ async def resume_recipe_run(
     await prefect.resume_flow_run(flow_run_id=recipe_run["id"])
 
 
-# Reconfiguring to construct the SousChefRecipe in this stage, validating before invoking prefect.
 async def start_recipe(
     recipe_name: str,
     tags: List[str] = [],
     parameters: Dict = {},
     user_full_text_authorized: bool = False,
 ) -> Dict[str, Any]:
-    """Handle orders for the requested recipe from the Sous Chef Kitchen, using SousChef v2 Recipes."""
+    """Handle orders for the requested flow from the Sous Chef Kitchen, using the flow registry."""
 
-    recipe_folder = get_recipe_folder(recipe_name)
-    recipe_location = os.path.join(recipe_folder, "recipe.yaml")
-    try:
-        recipe = SousChefRecipe(recipe_location, parameters)
-    except Exception as e:
-        expected = SousChefRecipe.get_param_schema(recipe_location)["properties"]
-        raise ValueError(
-            f"Error validating parameters for '{recipe_name}' with {parameters}: \n {e} \n Expected schema like: {expected}"
-        )
+    # Get flow from registry
+    flow_meta = get_flow(recipe_name)
+    if not flow_meta:
+        raise ValueError(f"Flow '{recipe_name}' not found")
+
+    # Validate parameters using flow's params model
+    params_model = flow_meta.get("params_model")
+    if params_model:
+        try:
+            validated_params = params_model(**parameters)
+            # Convert Pydantic model to dict for serialization
+            if hasattr(validated_params, "model_dump"):
+                final_params = validated_params.model_dump()
+            elif hasattr(validated_params, "dict"):
+                final_params = validated_params.dict()
+            else:
+                final_params = parameters
+        except Exception as e:
+            schema = get_flow_schema(recipe_name)
+            raise ValueError(
+                f"Error validating parameters for '{recipe_name}' with {parameters}: \n {e} \n Expected schema: {schema}"
+            )
+    else:
+        final_params = parameters
 
     tags += BASE_TAGS
     deployment_filter = DeploymentFilter(
@@ -249,11 +255,9 @@ async def start_recipe(
 
     active_runs = await fetch_active_runs(tags)
     if len(active_runs) > 0:
-        raise RuntimeError("Cannot start a new recipe run whiile another run is active")
+        raise RuntimeError("Cannot start a new recipe run while another run is active")
 
-    final_params = recipe.get_params()
-
-    parameters = {
+    prefect_parameters = {
         "recipe_name": recipe_name,
         "tags": tags,
         "parameters": final_params,
@@ -262,32 +266,29 @@ async def start_recipe(
     async with prefect.get_client() as client:
         response = await client.read_deployments(deployment_filter=deployment_filter)
         run = await client.create_flow_run_from_deployment(
-            response[0].id, parameters=parameters, tags=tags
+            response[0].id, parameters=prefect_parameters, tags=tags
         )
 
     return _run_to_dict(run)
 
 
 async def recipe_schema(recipe_name: str) -> Dict:
-    try:
-        recipe_folder = get_recipe_folder(recipe_name)
-    except ValueError:
-        return None
-
-    recipe_location = os.path.join(recipe_folder, "recipe.yaml")
-    return SousChefRecipe.get_param_schema(recipe_location)["properties"]
+    """Get parameter schema for a flow."""
+    schema = get_flow_schema(recipe_name)
+    if not schema:
+        return {}
+    return schema  # Already returns properties dict
 
 
 async def recipe_list() -> Dict:
+    """List available flows from the flow registry."""
     logger.info("In Recipe List")
     try:
-        recipe_info = {
-            str(recipe_path.name): get_recipe_info(recipe_path)
-            for recipe_path in get_recipe_folders()
-        }
-        logger.info(f"Got {len(recipe_info)} recipes")
+        flows = list_flows()
+        recipe_info = {name: get_recipe_info(name) for name in flows.keys()}
+        logger.info(f"Got {len(recipe_info)} flows")
         return recipe_info
-    except ValueError as e:
+    except Exception as e:
         logger.error(f"Error getting recipe list: {e}")
         return {"recipes": [], "error": str(e)}
 
@@ -309,9 +310,11 @@ async def validate_auth(auth_email: str, auth_key: str) -> SousChefKitchenAuthSt
 
     logger.info(f"Starting auth validation for email: {auth_email}")
     status = SousChefKitchenAuthStatus()
-    
+
     if not auth_email or not auth_key:
-        logger.warning(f"Missing auth credentials - email: {auth_email}, key present: {bool(auth_key)}")
+        logger.warning(
+            f"Missing auth credentials - email: {auth_email}, key present: {bool(auth_key)}"
+        )
         return status
 
     try:
@@ -320,17 +323,17 @@ async def validate_auth(auth_email: str, auth_key: str) -> SousChefKitchenAuthSt
         logger.info(f"Calling user_profile() for {auth_email}")
         auth_result = mc_search.user_profile()
         logger.info(f"MediaCloud API response for {auth_email}: {auth_result}")
-        
+
         if "message" in auth_result and auth_result["message"] == "User Not Found":
             logger.warning(f"User not found for email: {auth_email}")
             return status
-            
+
         status.media_cloud_authorized = True
         status.media_cloud_staff = auth_result.get("is_staff", False)
         status.media_cloud_full_text_authorized = auth_result.get("is_staff", False)
         status.sous_chef_authorized = True
         status.tag_slug = generate_tag_slug(auth_email, auth_key)
-        
+
         logger.info(
             f"Auth successful for {auth_email}: "
             f"MC: {status.media_cloud_authorized}, "
@@ -338,7 +341,7 @@ async def validate_auth(auth_email: str, auth_key: str) -> SousChefKitchenAuthSt
             f"SC: {status.sous_chef_authorized}, "
             f"Tag: {status.tag_slug}"
         )
-        
+
     except Exception as e:
         logger.error(f"Error validating auth for {auth_email}: {str(e)}", exc_info=True)
         return status
@@ -347,9 +350,9 @@ async def validate_auth(auth_email: str, auth_key: str) -> SousChefKitchenAuthSt
     return status
 
 
-def generate_tag_slug(user_email:str, api_key:str):
+def generate_tag_slug(user_email: str, api_key: str):
     # Sanitize the email for readability
-    base_slug = re.sub(r'[^a-zA-Z0-9]', '-', user_email.split('@')[0].lower())
+    base_slug = re.sub(r"[^a-zA-Z0-9]", "-", user_email.split("@")[0].lower())
 
     # Use part of a hash to ensure uniqueness
     digest = hashlib.sha1(f"{user_email}:{api_key}".encode()).hexdigest()[:8]
@@ -357,7 +360,7 @@ def generate_tag_slug(user_email:str, api_key:str):
     # Join to create a tag-safe string
     tag = f"user-{base_slug}-{digest}"
     return tag
-    
+
 
 async def fetch_run_artifacts(run_id: str) -> List[Dict[str, Any]]:
     """Fetch artifacts for a specific run."""
