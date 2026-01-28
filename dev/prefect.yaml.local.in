@@ -1,0 +1,55 @@
+# Prefect deployment configuration for LOCAL development and testing
+# This file is a template - use 'make local-deploy-prep' to generate prefect.yaml.local
+# with your current git branch interpolated
+#
+# Usage:
+#   make local-deploy-prep  # Generate prefect.yaml.local from this template (in dev/)
+#   make local-deploy        # Deploy using the generated config
+#
+# Prerequisites:
+#   1. Installed dependencies: pip install -e '.[server,sous-chef]'
+#   2. Created work pool: prefect work-pool create --type process kitchen-work-pool
+#   3. Started worker: prefect worker start --pool kitchen-work-pool
+#   4. Set PREFECT_API_URL if using Prefect Cloud
+
+name: kitchen-base
+prefect-version: 3.2.0
+
+# pull section - clones from git using current branch
+pull:
+- prefect.deployments.steps.git_clone:
+    id: clone-step
+    repository: GIT_REPO
+    branch: GIT_BRANCH
+
+- prefect.deployments.steps.run_shell_script:
+    id: update-build
+    script: |
+      pip install --upgrade pip setuptools wheel flit packaging
+
+# uninstall any local sous-chef, so the most recent version is guaranteed in next step
+- prefect.deployments.steps.run_shell_script:
+    id: uninstall-local-sous-chef
+    stream_output: true
+    script: |
+      pip uninstall -y sous-chef
+
+- prefect.deployments.steps.pip_install_requirements:
+    directory: '{{ clone-step.directory }}'
+    requirements_file: requirements-flow.txt
+    stream_output: true
+
+# Deployments section
+deployments:
+- name: kitchen-base
+  version: null
+  tags:
+  - kitchen
+  - local-dev
+  description: Sous Chef Kitchen (api managed flows) - LOCAL DEVELOPMENT
+  entrypoint: sous_chef_kitchen/kitchen/flow.py:kitchen_base
+  parameters: {}
+  work_pool:
+    name: kitchen-work-pool
+    work_queue_name: default
+  schedules: []

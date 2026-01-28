@@ -137,12 +137,12 @@ class SousChefKitchenAPIClient:
             if response.status_code in expected_responses:
                 return SousChefKitchenSystemStatus.model_validate(response.json())
             response.raise_for_status()
-        except ConnectionError as e:
+        except ConnectionError:
             return SousChefKitchenSystemStatus()
 
     def recipe_list(self) -> Dict[str, Any]:
         expected_responses = {HTTPStatus.OK}
-        url = urllib.parse.urljoin(self.base_url, f"recipe/list")
+        url = urllib.parse.urljoin(self.base_url, "recipe/list")
         print(url)
         response = self._session.get(url)
         print(response.status_code)
@@ -150,12 +150,11 @@ class SousChefKitchenAPIClient:
             return response.json()
         response.raise_for_status()
 
-
     def recipe_schema(self, recipe_name: str) -> Dict[str, Any]:
         """Return the expected parameter values for a given recipe"""
 
         expected_responses = {HTTPStatus.OK, HTTPStatus.FORBIDDEN}
-        url = urllib.parse.urljoin(self.base_url, f"recipe/schema")
+        url = urllib.parse.urljoin(self.base_url, "recipe/schema")
         params = {"recipe_name": recipe_name}
 
         response = self._session.get(url, params=params)
@@ -167,33 +166,47 @@ class SousChefKitchenAPIClient:
         """Start a Sous Chef recipe."""
 
         expected_responses = {HTTPStatus.OK, HTTPStatus.FORBIDDEN}
-        url = urllib.parse.urljoin(self.base_url, f"recipe/start")
+        url = urllib.parse.urljoin(self.base_url, "recipe/start")
         params = {"recipe_name": recipe_name}
 
-        # Handle collections parameter if it exists
-        if "COLLECTIONS" in recipe_parameters:
-            try:
-                collections = recipe_parameters["COLLECTIONS"]
-                if isinstance(collections, str):
-                    collections = json.loads(collections)
-                recipe_parameters["COLLECTIONS"] = [str(c) for c in collections]
-            except json.JSONDecodeError:
-                # If it's not valid JSON, assume it's a single collection ID
-                recipe_parameters["COLLECTIONS"] = [
-                    str(recipe_parameters["COLLECTIONS"])
-                ]
+        # Attempt to generically handle any array-type parameters based on the recipe schema
+        try:
+            schema = self.recipe_schema(recipe_name)
+            # Schema may either be a flat dict of field definitions or a JSON Schema with "properties"
+            if isinstance(schema, dict):
+                properties = schema.get("properties", schema)
+            else:
+                properties = {}
 
-        if "SOURCES" in recipe_parameters:
-            try:
-                sources = recipe_parameters["SOURCES"]
-                if isinstance(sources, str):
-                    sources = json.loads(sources)
-                recipe_parameters["SOURCES"] = [str(c) for c in sources]
-            except json.JSONDecodeError:
-                # If it's not valid JSON, assume it's a single collection ID
-                recipe_parameters["SOURCES"] = [
-                    str(recipe_parameters["SOURCES"])
-                ]
+            # Collect all parameters declared as arrays
+            array_params = [
+                param_name
+                for param_name, param_def in properties.items()
+                if isinstance(param_def, dict) and param_def.get("type") == "array"
+            ]
+        except Exception:
+            # If we can't fetch/parse the schema, fall back to known array params
+            array_params = ["COLLECTIONS", "SOURCES"]
+
+        # Normalize all array-type parameters:
+        # - If value is a JSON string, parse it
+        # - If not a list, wrap in a list
+        # - Convert all items to strings for transport
+        for param_name in array_params:
+            if param_name in recipe_parameters:
+                try:
+                    value = recipe_parameters[param_name]
+                    if isinstance(value, str):
+                        # Try JSON-parsing string values like "[1, 2, 3]"
+                        value = json.loads(value)
+
+                    if not isinstance(value, list):
+                        value = [value]
+
+                    recipe_parameters[param_name] = [str(item) for item in value]
+                except json.JSONDecodeError:
+                    # If it's not valid JSON, assume it's a single value and coerce to a single-item list
+                    recipe_parameters[param_name] = [str(recipe_parameters[param_name])]
 
         response = self._session.post(
             url, params=params, json={"recipe_parameters": recipe_parameters}
@@ -206,7 +219,7 @@ class SousChefKitchenAPIClient:
         """Cancel a Sous Chef recipe run."""
 
         expected_responses = {HTTPStatus.OK, HTTPStatus.FORBIDDEN}
-        url = urllib.parse.urljoin(self.base_url, f"runs/cancel")
+        url = urllib.parse.urljoin(self.base_url, "runs/cancel")
         params = {"recipe_name": recipe_name, "run_id": run_id}
 
         response = self._session.post(url, params=params)
@@ -218,7 +231,7 @@ class SousChefKitchenAPIClient:
         """Pause a Sous Chef recipe run."""
 
         expected_responses = {HTTPStatus.OK, HTTPStatus.FORBIDDEN}
-        url = urllib.parse.urljoin(self.base_url, f"runs/pause")
+        url = urllib.parse.urljoin(self.base_url, "runs/pause")
         params = {"recipe_name": recipe_name, "run_id": run_id}
 
         response = self._session.post(url, params=params)
@@ -230,7 +243,7 @@ class SousChefKitchenAPIClient:
         """Resume a Sous Chef recipe run."""
 
         expected_responses = {HTTPStatus.OK, HTTPStatus.FORBIDDEN}
-        url = urllib.parse.urljoin(self.base_url, f"runs/resume")
+        url = urllib.parse.urljoin(self.base_url, "runs/resume")
         params = {"recipe_name": recipe_name, "run_id": run_id}
 
         response = self._session.post(url, params=params)

@@ -34,7 +34,17 @@ pull:
 - prefect.deployments.steps.run_shell_script:
     id: update-build
     script: |
+      apt-get update
+      apt-get install -y libxml2-dev libxslt1-dev zlib1g-dev gcc
       pip install --upgrade pip setuptools wheel flit packaging
+
+# uninstall any local sous-chef, so the most recent version is guaranteed in next step
+- prefect.deployments.steps.run_shell_script:
+    id: uninstall-local-sous-chef
+    stream_output: true
+    script: |
+      pip uninstall -y sous-chef
+
 
 - prefect.deployments.steps.pip_install_requirements:
     directory: '{{ clone-step.directory }}'
@@ -57,20 +67,3 @@ deployments:
     job_variables:
       image: '{{ build-image.image }}'
   schedules: []
-
-- name: alacarte-base
-  version:
-  tags:
-  - alacarte
-  description: Sous Chef A La Carte (for recipes that aren't on the core menu)
-  entrypoint: a_la_carte/flow.py:alacarte_base
-  parameters:
-    aws_credentials_block: aws-s3-credentials
-    bucket_name: sous-chef-recipes
-  work_pool:
-    name: WORK_POOL_NAME
-    work_queue_name:
-    job_variables:
-      image: '{{ build_image.image }}'
-  schedules: []
-  concurrency_limit:

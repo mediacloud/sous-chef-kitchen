@@ -1,6 +1,6 @@
 [project]
 name = "sous-chef-kitchen"
-version = "0.0.1"
+version = "1.0.0"
 description = 'Job API around Prefect for driving Sous-Chef'
 readme = "README.md"
 requires-python = ">=3.10"
@@ -36,12 +36,11 @@ common = [
     # client & server requirements
     "pydantic ~= 2.11.0",
     "python-dotenv ~= 1.1.0",
-    "ruamel.yaml ~= 0.18.0"
 ]
 
 # for pre-commit, make requirements
 dev = [
-    "pip-tools ~= 7.4.0",
+    "pip-tools >= 7.5.2",  # 7.5.2+ fixes compatibility with pip >= 25.3 (removes use_pep517 dependency)
     "pre-commit ~= 4.2.0"
 ]
 
@@ -55,7 +54,10 @@ server = [
 
 # used for requirements-flow.txt, in Dockerfile
 sous-chef = [
-    "sous-chef @ git+https://github.com/mediacloud/sous-chef@v2.3.1",
+    "sous-chef @ git+https://github.com/mediacloud/sous-chef@v3.0.0",
+    # Pin torch explicitly to prevent TORCH_LIBRARY registration conflicts
+    # when both transformers and spacy are loaded
+    "torch>=2.0.0,<3.0.0",
 ]
 
 [tool.black]
