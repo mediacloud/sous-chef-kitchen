@@ -54,7 +54,7 @@ server = [
 
 # used for requirements-flow.txt, in Dockerfile
 sous-chef = [
-    "sous-chef @ git+https://github.com/mediacloud/sous-chef@v3.0.2",
+    "sous-chef @ git+https://github.com/mediacloud/sous-chef@v3.0.3",
     # Pin torch explicitly to prevent TORCH_LIBRARY registration conflicts
     # when both transformers and spacy are loaded
     "torch>=2.0.0,<3.0.0",

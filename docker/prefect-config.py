@@ -6,6 +6,7 @@ import httpx
 from dotenv import load_dotenv
 from prefect import get_client
 from prefect.blocks.system import Secret
+from prefect.variables import Variable
 from prefect.server.schemas.actions import WorkPoolCreate
 from prefect_aws import AwsClientParameters, AwsCredentials
 from prefect_email import EmailServerCredentials
@@ -55,6 +56,7 @@ class SousChefCredentials(BaseSettings):
     B2_S3_ENDPOINT: str
     B2_KEY_ID: str
     B2_APP_KEY: str
+    B2_BUCKET: str
 
     GMAIL_APP_USERNAME: str
     GMAIL_APP_PASSWORD: str
@@ -75,20 +77,13 @@ def setup_secrets(overwrite=True):
                 return value[1:-1]
         return value
 
-    # AwsCredentials(
-    #    aws_access_key_id=config.ACCESS_KEY_ID,
-    #    aws_secret_access_key=config.ACCESS_KEY_SECRET,
-    # ).save("aws-s3-credentials", overwrite=overwrite)
-
-    print("Setting up B2 with the following credentials:")
-    print(
-        f"KEY_ID: {config.B2_KEY_ID}, APP_KEY: {config.B2_APP_KEY}, endpoint: {config.B2_S3_ENDPOINT}"
-    )
     AwsCredentials(
         aws_access_key_id=config.B2_KEY_ID,
         aws_secret_access_key=config.B2_APP_KEY,
         aws_client_parameters=AwsClientParameters(endpoint_url=config.B2_S3_ENDPOINT),
     ).save("b2-s3-credentials", overwrite=overwrite)
+
+    Variable.set("b2-bucket-name", config.B2_BUCKET)
 
     EmailServerCredentials(
         username=config.GMAIL_APP_USERNAME,
