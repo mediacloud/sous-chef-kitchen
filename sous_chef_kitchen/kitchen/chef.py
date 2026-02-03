@@ -100,6 +100,9 @@ async def fetch_all_runs(tags: List[str] = [], parent_only: bool = True) -> List
         if parent_only:
             runs = [run for run in runs if getattr(run, 'parent_task_run_id', None) is None]
         
+        # Sort by most recent first (descending order) using the 'created' field
+        runs = sorted(runs, key=lambda run: run.created, reverse=True)
+        
         return [_run_to_dict(run) for run in runs]
 
 
