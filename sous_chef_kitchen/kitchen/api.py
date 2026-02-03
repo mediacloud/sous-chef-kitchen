@@ -433,12 +433,14 @@ async def fetch_user_runs(
     auth: bearer, 
     request: Request, 
     response: Response,
-    parent_only: bool = True
+    parent_only: bool = True,
+    all_users: bool = False
 ) -> List[Dict[str, Any]]:
     """ Fetch all Sous Chef Kitchen runs from Prefect, filtering based on generated auth slug. 
     
     By default, only returns parent runs (excludes child/subflow runs).
     Set parent_only=false to include all runs including child runs.
+    For admin users (media_cloud_staff=True), set all_users=true to see all runs in the system.
     """
 
     auth_status = await _validate_auth(auth, request, response)
@@ -449,8 +451,21 @@ async def fetch_user_runs(
             detail="Authentication failed"
         )
 
+    # Check if user is requesting all runs and is authorized to do so
+    if all_users:
+        if not auth_status.media_cloud_staff:
+            raise HTTPException(
+                status_code=http_status.HTTP_403_FORBIDDEN,
+                detail="Only admin users can view all runs. Set all_users=false or omit the parameter."
+            )
+        # Admin viewing all runs - only filter by BASE_TAGS (no user tag)
+        tags_to_use = []
+    else:
+        # Regular user or admin viewing their own runs - filter by user tag
+        tags_to_use = [auth_status.tag_slug]
+
     try:
-        return await chef.fetch_all_runs(tags=[auth_status.tag_slug], parent_only=parent_only)
+        return await chef.fetch_all_runs(tags=tags_to_use, parent_only=parent_only)
     except Exception as e:
         logger.error(f"Error fetching user runs: {e}", exc_info=True)
         raise HTTPException(

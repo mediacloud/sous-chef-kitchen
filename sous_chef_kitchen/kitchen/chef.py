@@ -289,7 +289,7 @@ async def start_recipe(
 
     active_runs = await fetch_active_runs(tags)
     if len(active_runs) > 0:
-        raise RuntimeError("Cannot start a new recipe run while another run is active")
+        raise RuntimeError("Cannot start a new recipe run while you have another active run. Please wait for your current run to complete or cancel it before starting a new one.")
 
     prefect_parameters = {
         "recipe_name": recipe_name,
