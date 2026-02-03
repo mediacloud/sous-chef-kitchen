@@ -131,8 +131,10 @@ async def cancel_recipe_run(
         )
 
     async with prefect.get_client() as client:
+        # Create state without state_details to avoid validation error
+        cancel_state = State(type=StateType.CANCELLING, state_details=None)
         result = await client.set_flow_run_state(
-            run_dict["id"], State(type=StateType.CANCELLING)
+            run_dict["id"], cancel_state
         )
 
     if result.status == SetStateStatus.ABORT:
