@@ -96,8 +96,9 @@ async def fetch_all_runs(tags: List[str] = [], parent_only: bool = True) -> List
         runs = await client.read_flow_runs(flow_run_filter=tags_filter)
         
         # Filter out child runs if parent_only is True
+        # Child runs (subflows) have parent_task_run_id set, parent runs have it as None
         if parent_only:
-            runs = [run for run in runs if run.parent_run_id is None]
+            runs = [run for run in runs if getattr(run, 'parent_task_run_id', None) is None]
         
         return [_run_to_dict(run) for run in runs]
 
