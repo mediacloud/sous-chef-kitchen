@@ -111,17 +111,28 @@ async def cancel_recipe_run(
 ) -> Dict[str, Any]:
     """Cancel the specified run for the specified Sous Chef recipe."""
 
-    tags += BASE_TAGS  # + [recipe_name]
-    # Include child runs when searching by ID to allow canceling any run
-    all_runs = {run["id"]: run for run in await fetch_all_runs(tags, parent_only=False)}
-    recipe_run = all_runs.get(run_id)
+    # Fetch the run directly by ID instead of filtering by tags
+    try:
+        run_dict = await fetch_run_by_id(run_id)
+    except Exception as e:
+        raise ValueError(f"Unable to find a run {run_id} for recipe {recipe_name}: {str(e)}")
 
-    if not recipe_run:
-        raise ValueError(f"Unable to find a run {run_id} for recipe {recipe_name}.")
+    # Verify the run has the required tags for authorization
+    # If tags are provided (user's tag), verify the run has them
+    # If no tags provided (admin viewing all runs), just verify it has BASE_TAGS
+    required_tags = tags + BASE_TAGS if tags else BASE_TAGS
+    run_tags = run_dict.get("tags", [])
+    
+    # Check if run has all required tags
+    if not all(tag in run_tags for tag in required_tags):
+        raise ValueError(
+            f"Run {run_id} does not have the required tags. "
+            f"Required: {required_tags}, Run has: {run_tags}"
+        )
 
     async with prefect.get_client() as client:
         result = await client.set_flow_run_state(
-            recipe_run["id"], State(type=StateType.CANCELLING)
+            run_dict["id"], State(type=StateType.CANCELLING)
         )
 
     if result.status == SetStateStatus.ABORT:

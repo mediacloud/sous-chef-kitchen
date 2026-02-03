@@ -296,7 +296,10 @@ async def cancel_recipe_run(
         )
 
     try:
-        return await chef.cancel_recipe_run(recipe_name, run_id)
+        # For regular users, pass their tag for authorization check
+        # For admins, pass empty tags (will only check BASE_TAGS)
+        user_tags = [] if auth_status.media_cloud_staff else [auth_status.tag_slug]
+        return await chef.cancel_recipe_run(recipe_name, run_id, tags=user_tags)
     except ValueError as e:
         logger.warning(f"Error canceling recipe run {run_id}: {e}")
         raise HTTPException(
