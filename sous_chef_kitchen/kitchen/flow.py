@@ -53,7 +53,9 @@ def kitchen_base(
     if not flow_meta:
         raise ValueError(f"Flow '{recipe_name}' not found")
 
-    flow_func = flow_meta["func"]
+    flow_func = flow_meta.get("func")
+    if not flow_func:
+        raise ValueError(f"Flow '{recipe_name}' is missing required 'func' attribute")
     params_model = flow_meta.get("params_model")
 
     # Validate and instantiate parameters
@@ -78,7 +80,14 @@ def kitchen_base(
     )
 
     # Create artifacts
-    flow_run_name = FlowRunContext.get().flow_run.dict().get("name")
+    try:
+        flow_run_context = FlowRunContext.get()
+        if flow_run_context and flow_run_context.flow_run:
+            flow_run_name = flow_run_context.flow_run.dict().get("name")
+        else:
+            flow_run_name = "unknown"
+    except Exception:
+        flow_run_name = "unknown"
     _create_artifacts(filtered_data, flow_run_name)
 
     return filtered_data

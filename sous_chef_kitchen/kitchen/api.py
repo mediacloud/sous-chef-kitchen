@@ -2,7 +2,9 @@
 Field requests to the Sous Chef Kitchen API.
 """
 
+import json
 import logging
+import re
 from typing import Annotated, Any, Dict, List
 from uuid import UUID
 
@@ -34,6 +36,39 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"]
     )
+
+
+def _parse_validation_error(error_msg: str) -> Dict[str, List[str]]:
+    """
+    Parse validation error messages to extract field-specific errors.
+    
+    Attempts to extract field names and error messages from error strings.
+    Returns a dictionary mapping field names to lists of error messages.
+    """
+    errors = {}
+    
+    # Try to match patterns like "field_name: error message" or "field_name -> error"
+    # Common patterns from Pydantic errors
+    patterns = [
+        r"(\w+):\s*([^\n]+)",  # "field: error message"
+        r"'(\w+)':\s*([^\n]+)",  # "'field': error message"
+        r"(\w+)\s*->\s*([^\n]+)",  # "field -> error"
+    ]
+    
+    for pattern in patterns:
+        matches = re.finditer(pattern, error_msg)
+        for match in matches:
+            field_name = match.group(1)
+            error_message = match.group(2).strip()
+            if field_name not in errors:
+                errors[field_name] = []
+            errors[field_name].append(error_message)
+    
+    # If no structured errors found, return general error
+    if not errors:
+        errors["_general"] = [error_msg]
+    
+    return errors
 
 async def _validate_auth(
     auth: bearer, request: Request, response: Response
@@ -79,11 +114,36 @@ async def start_recipe(
         )
 
     # TODO: Fix bearer token vs function signature issue
-    recipe_name = request.query_params["recipe_name"]
-    recipe_parameters = await request.json()
-    recipe_parameters = recipe_parameters[
-        "recipe_parameters"
-    ]  # all hail King King the Kingth
+    recipe_name = request.query_params.get("recipe_name")
+    if not recipe_name:
+        raise HTTPException(
+            status_code=http_status.HTTP_400_BAD_REQUEST,
+            detail="Missing required query parameter: recipe_name"
+        )
+    
+    # Parse and validate request body
+    try:
+        recipe_parameters = await request.json()
+    except json.JSONDecodeError as e:
+        logger.error(f"Invalid JSON in request body: {e}")
+        raise HTTPException(
+            status_code=http_status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid JSON in request body: {str(e)}"
+        )
+    
+    if not isinstance(recipe_parameters, dict):
+        raise HTTPException(
+            status_code=http_status.HTTP_400_BAD_REQUEST,
+            detail="Request body must be a JSON object"
+        )
+    
+    if "recipe_parameters" not in recipe_parameters:
+        raise HTTPException(
+            status_code=http_status.HTTP_400_BAD_REQUEST,
+            detail="Missing required field: recipe_parameters"
+        )
+    
+    recipe_parameters = recipe_parameters["recipe_parameters"]
     logger.info(f"Start recipe {recipe_name}")
 
     try:
@@ -93,16 +153,37 @@ async def start_recipe(
             tags=[auth_status.tag_slug],
             user_full_text_authorized=auth_status.media_cloud_full_text_authorized,
         )
-    except Exception as e:
-        logger.error(f"Error starting recipe: {e}")
-        if hasattr(e, "message"):
+    except ValueError as e:
+        logger.error(f"Validation error starting recipe {recipe_name}: {e}")
+        error_msg = str(e)
+        
+        # Try to parse validation errors for structured response
+        if "Error validating parameters" in error_msg or "Parameter validation failed" in error_msg:
+            parsed_errors = _parse_validation_error(error_msg)
             raise HTTPException(
-                status_code=http_status.HTTP_400_BAD_REQUEST, detail=e.message
+                status_code=http_status.HTTP_400_BAD_REQUEST,
+                detail={
+                    "message": "Parameter validation failed",
+                    "errors": parsed_errors
+                }
             )
         else:
             raise HTTPException(
-                status_code=http_status.HTTP_400_BAD_REQUEST, detail=str(e)
+                status_code=http_status.HTTP_400_BAD_REQUEST,
+                detail=error_msg
             )
+    except RuntimeError as e:
+        logger.error(f"Runtime error starting recipe {recipe_name}: {e}")
+        raise HTTPException(
+            status_code=http_status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error starting recipe {recipe_name}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred while starting the recipe"
+        )
 
 
 @app.get("/recipe/schema")
@@ -119,13 +200,21 @@ async def recipe_schema(
         )
 
     # TODO: Fix bearer token vs function signature issue
-    recipe_name = request.query_params["recipe_name"]
+    recipe_name = request.query_params.get("recipe_name")
+    if not recipe_name:
+        raise HTTPException(
+            status_code=http_status.HTTP_400_BAD_REQUEST,
+            detail="Missing required query parameter: recipe_name"
+        )
     logger.info(f"Get recipe schema for {recipe_name}")
     try:
         return await chef.recipe_schema(recipe_name)
-    except ValueError:
-        response.status_code = http_status.HTTP_404_NOT_FOUND
-        return
+    except ValueError as e:
+        logger.warning(f"Recipe schema not found for {recipe_name}: {e}")
+        raise HTTPException(
+            status_code=http_status.HTTP_404_NOT_FOUND,
+            detail=f"Recipe '{recipe_name}' not found"
+        )
 
 
 @app.get("/recipe/list")
@@ -142,9 +231,16 @@ async def recipe_list(
             detail="Authentication failed"
         )
     logger.info("Fetching recipe list")
-    recipe_list_result = await chef.recipe_list()
-    logger.info(f"Recipe list fetched successfully: {len(recipe_list_result)} recipes found")
-    return recipe_list_result
+    try:
+        recipe_list_result = await chef.recipe_list()
+        logger.info(f"Recipe list fetched successfully: {len(recipe_list_result)} recipes found")
+        return recipe_list_result
+    except Exception as e:
+        logger.error(f"Error fetching recipe list: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An error occurred while fetching the recipe list"
+        )
 
 
 @app.get("/runs/active")
@@ -161,7 +257,14 @@ async def fetch_active_runs(
             detail="Authentication failed"
         )
 
-    return await chef.fetch_active_runs(tags=[])
+    try:
+        return await chef.fetch_active_runs(tags=[])
+    except Exception as e:
+        logger.error(f"Error fetching active runs: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An error occurred while fetching active runs"
+        )
 
 
 @app.post("/runs/cancel")
@@ -179,10 +282,39 @@ async def cancel_recipe_run(
         )
 
     # TODO: Fix bearer token vs function signature issue
-    recipe_name = request.query_params["recipe_name"]
-    run_id = request.query_params["run_id"]
+    recipe_name = request.query_params.get("recipe_name")
+    run_id = request.query_params.get("run_id")
+    if not recipe_name:
+        raise HTTPException(
+            status_code=http_status.HTTP_400_BAD_REQUEST,
+            detail="Missing required query parameter: recipe_name"
+        )
+    if not run_id:
+        raise HTTPException(
+            status_code=http_status.HTTP_400_BAD_REQUEST,
+            detail="Missing required query parameter: run_id"
+        )
 
-    return await chef.cancel_recipe_run(recipe_name, run_id)
+    try:
+        return await chef.cancel_recipe_run(recipe_name, run_id)
+    except ValueError as e:
+        logger.warning(f"Error canceling recipe run {run_id}: {e}")
+        raise HTTPException(
+            status_code=http_status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except RuntimeError as e:
+        logger.error(f"Runtime error canceling recipe run {run_id}: {e}")
+        raise HTTPException(
+            status_code=http_status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error canceling recipe run {run_id}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An error occurred while canceling the recipe run"
+        )
 
 
 @app.post("/runs/pause")
@@ -200,10 +332,33 @@ async def pause_recipe_run(
         )
 
     # TODO: Fix bearer token vs function signature issue
-    recipe_name = request.query_params["recipe_name"]
-    run_id = request.query_params["run_id"]
+    recipe_name = request.query_params.get("recipe_name")
+    run_id = request.query_params.get("run_id")
+    if not recipe_name:
+        raise HTTPException(
+            status_code=http_status.HTTP_400_BAD_REQUEST,
+            detail="Missing required query parameter: recipe_name"
+        )
+    if not run_id:
+        raise HTTPException(
+            status_code=http_status.HTTP_400_BAD_REQUEST,
+            detail="Missing required query parameter: run_id"
+        )
 
-    return await chef.pause_recipe_run(recipe_name, run_id)
+    try:
+        return await chef.pause_recipe_run(recipe_name, run_id)
+    except ValueError as e:
+        logger.warning(f"Error pausing recipe run {run_id}: {e}")
+        raise HTTPException(
+            status_code=http_status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error pausing recipe run {run_id}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An error occurred while pausing the recipe run"
+        )
 
 
 @app.post("/runs/resume")
@@ -221,10 +376,33 @@ async def resume_recipe_run(
         )
 
     # TODO: Fix bearer token vs function signature issue
-    recipe_name = request.query_params["recipe_name"]
-    run_id = request.query_params["run_id"]
+    recipe_name = request.query_params.get("recipe_name")
+    run_id = request.query_params.get("run_id")
+    if not recipe_name:
+        raise HTTPException(
+            status_code=http_status.HTTP_400_BAD_REQUEST,
+            detail="Missing required query parameter: recipe_name"
+        )
+    if not run_id:
+        raise HTTPException(
+            status_code=http_status.HTTP_400_BAD_REQUEST,
+            detail="Missing required query parameter: run_id"
+        )
 
-    return await chef.resume_recipe_run(recipe_name, run_id)
+    try:
+        return await chef.resume_recipe_run(recipe_name, run_id)
+    except ValueError as e:
+        logger.warning(f"Error resuming recipe run {run_id}: {e}")
+        raise HTTPException(
+            status_code=http_status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error resuming recipe run {run_id}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An error occurred while resuming the recipe run"
+        )
 
 
 @app.get("/runs/all")
@@ -241,13 +419,27 @@ async def fetch_all_runs(
             detail="Authentication failed"
         )
         
-    return await chef.fetch_all_runs(tags=[])
+    try:
+        return await chef.fetch_all_runs(tags=[])
+    except Exception as e:
+        logger.error(f"Error fetching all runs: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An error occurred while fetching runs"
+        )
 
 @app.get("/runs/list")
 async def fetch_user_runs(
-    auth: bearer, request: Request, response: Response
+    auth: bearer, 
+    request: Request, 
+    response: Response,
+    parent_only: bool = True
 ) -> List[Dict[str, Any]]:
-    """ Fetch all Sous Chef Kitchen runs from Prefect, filtering based on generated auth slug. """
+    """ Fetch all Sous Chef Kitchen runs from Prefect, filtering based on generated auth slug. 
+    
+    By default, only returns parent runs (excludes child/subflow runs).
+    Set parent_only=false to include all runs including child runs.
+    """
 
     auth_status = await _validate_auth(auth, request, response)
     if not auth_status.authorized:
@@ -257,7 +449,14 @@ async def fetch_user_runs(
             detail="Authentication failed"
         )
 
-    return await chef.fetch_all_runs(tags=[auth_status.tag_slug])
+    try:
+        return await chef.fetch_all_runs(tags=[auth_status.tag_slug], parent_only=parent_only)
+    except Exception as e:
+        logger.error(f"Error fetching user runs: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An error occurred while fetching user runs"
+        )
 
 
 
@@ -277,9 +476,12 @@ async def fetch_run_by_id(
 
     try:
         return await chef.fetch_run_by_id(run_id)
-    except ValueError:
-        response.status_code = http_status.HTTP_400_BAD_REQUEST
-        return None
+    except ValueError as e:
+        logger.warning(f"Invalid run ID {run_id}: {e}")
+        raise HTTPException(
+            status_code=http_status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
 
 
 @app.get("/run/{run_id}/artifacts")
@@ -298,9 +500,18 @@ async def fetch_run_artifacts(
 
     try:
         return await chef.fetch_run_artifacts(run_id)
-    except Exception:
-        logger.error("Failed to fetch run artifacts")
-        raise
+    except ValueError as e:
+        logger.warning(f"Invalid run ID for artifacts {run_id}: {e}")
+        raise HTTPException(
+            status_code=http_status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid run ID: {str(e)}"
+        )
+    except Exception as e:
+        logger.error(f"Failed to fetch run artifacts for {run_id}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An error occurred while fetching run artifacts"
+        )
 
 
 @app.get("/auth/validate", response_model=SousChefKitchenAuthStatus)

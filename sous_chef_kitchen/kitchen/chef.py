@@ -28,6 +28,7 @@ from prefect.client.schemas.objects import (
     WorkerStatus,
     WorkPoolStatus,
 )
+from pydantic import ValidationError
 from prefect.exceptions import ObjectNotFound
 from prefect.server.schemas.responses import SetStateStatus
 from prefect.server.schemas.states import State
@@ -80,14 +81,24 @@ def _artifact_to_dict(artifact: Artifact) -> Dict[str, Any]:
     }
 
 
-async def fetch_all_runs(tags: List[str] = []) -> List[Dict[str, Any]]:
-    """Fetch all Sous Chef Kitchen runs from Prefect."""
+async def fetch_all_runs(tags: List[str] = [], parent_only: bool = True) -> List[Dict[str, Any]]:
+    """Fetch all Sous Chef Kitchen runs from Prefect.
+    
+    Args:
+        tags: List of tags to filter runs by
+        parent_only: If True, only return parent runs (exclude child/subflow runs). Defaults to True.
+    """
 
     tags += BASE_TAGS
     tags_filter = FlowRunFilter(tags=FlowRunFilterTags(all_=tags))
 
     async with prefect.get_client() as client:
         runs = await client.read_flow_runs(flow_run_filter=tags_filter)
+        
+        # Filter out child runs if parent_only is True
+        if parent_only:
+            runs = [run for run in runs if run.parent_run_id is None]
+        
         return [_run_to_dict(run) for run in runs]
 
 
@@ -97,7 +108,8 @@ async def cancel_recipe_run(
     """Cancel the specified run for the specified Sous Chef recipe."""
 
     tags += BASE_TAGS  # + [recipe_name]
-    all_runs = {run["id"]: run for run in await fetch_all_runs(tags)}
+    # Include child runs when searching by ID to allow canceling any run
+    all_runs = {run["id"]: run for run in await fetch_all_runs(tags, parent_only=False)}
     recipe_run = all_runs.get(run_id)
 
     if not recipe_run:
@@ -240,6 +252,24 @@ async def start_recipe(
                 final_params = validated_params.dict()
             else:
                 final_params = parameters
+        except ValidationError as e:
+            # Format Pydantic validation errors in a user-friendly way
+            schema = get_flow_schema(recipe_name)
+            error_messages = []
+            field_errors = {}
+            
+            for error in e.errors():
+                # Get field path (handles nested fields)
+                field_path = " -> ".join(str(loc) for loc in error["loc"])
+                error_msg = error["msg"]
+                field_errors[field_path] = error_msg
+                error_messages.append(f"{field_path}: {error_msg}")
+            
+            # Create a formatted error message
+            formatted_errors = "\n".join(error_messages)
+            raise ValueError(
+                f"Parameter validation failed for '{recipe_name}':\n{formatted_errors}\n\nExpected schema: {schema}"
+            )
         except Exception as e:
             schema = get_flow_schema(recipe_name)
             raise ValueError(
@@ -265,6 +295,12 @@ async def start_recipe(
     }
     async with prefect.get_client() as client:
         response = await client.read_deployments(deployment_filter=deployment_filter)
+        if not response:
+            raise ValueError(
+                f"No deployment found matching '{PREFECT_DEPLOYMENT}'. "
+                "The deployment may not be registered in Prefect. "
+                "Please check that the Prefect deployment exists and is available."
+            )
         run = await client.create_flow_run_from_deployment(
             response[0].id, parameters=prefect_parameters, tags=tags
         )
@@ -352,7 +388,11 @@ async def validate_auth(auth_email: str, auth_key: str) -> SousChefKitchenAuthSt
 
 def generate_tag_slug(user_email: str, api_key: str):
     # Sanitize the email for readability
-    base_slug = re.sub(r"[^a-zA-Z0-9]", "-", user_email.split("@")[0].lower())
+    if "@" not in user_email:
+        logger.warning(f"Invalid email format: {user_email}")
+        base_slug = re.sub(r"[^a-zA-Z0-9]", "-", user_email.lower())
+    else:
+        base_slug = re.sub(r"[^a-zA-Z0-9]", "-", user_email.split("@")[0].lower())
 
     # Use part of a hash to ensure uniqueness
     digest = hashlib.sha1(f"{user_email}:{api_key}".encode()).hexdigest()[:8]
