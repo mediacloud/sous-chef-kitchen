@@ -146,12 +146,16 @@ async def start_recipe(
     recipe_parameters = recipe_parameters["recipe_parameters"]
     logger.info(f"Start recipe {recipe_name}")
 
+    # Extract authenticated user's email from request headers
+    auth_email = request.headers.get("mediacloud-email")
+
     try:
         return await chef.start_recipe(
             recipe_name=recipe_name,
             parameters=recipe_parameters,
             tags=[auth_status.tag_slug],
             user_full_text_authorized=auth_status.media_cloud_full_text_authorized,
+            auth_email=auth_email,
         )
     except ValueError as e:
         logger.error(f"Validation error starting recipe {recipe_name}: {e}")

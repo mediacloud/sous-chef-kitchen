@@ -7,7 +7,7 @@ import hashlib
 import logging
 import os
 import re
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 from uuid import UUID
 
 import mediacloud.api
@@ -249,6 +249,7 @@ async def start_recipe(
     tags: List[str] = [],
     parameters: Dict = {},
     user_full_text_authorized: bool = False,
+    auth_email: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Handle orders for the requested flow from the Sous Chef Kitchen, using the flow registry."""
 
@@ -294,6 +295,29 @@ async def start_recipe(
             )
     else:
         final_params = parameters
+
+    # Inject authenticated user's email into email_to param if the flow supports it
+    if auth_email and params_model:
+        # Check if the params model has an email_to field
+        if hasattr(params_model, "model_fields") and "email_to" in params_model.model_fields:
+            email_list = final_params.get("email_to", [])
+            # Ensure email_list is a list
+            if not isinstance(email_list, list):
+                email_list = [email_list] if email_list else []
+            # Add authenticated user's email if not already present
+            if auth_email not in email_list:
+                email_list.append(auth_email)
+                final_params["email_to"] = email_list
+                logger.info(f"Added authenticated user email '{auth_email}' to email_to parameter for recipe '{recipe_name}'")
+        # Also handle case where params_model might be a dict or have different structure
+        elif isinstance(final_params, dict) and "email_to" in final_params:
+            email_list = final_params.get("email_to", [])
+            if not isinstance(email_list, list):
+                email_list = [email_list] if email_list else []
+            if auth_email not in email_list:
+                email_list.append(auth_email)
+                final_params["email_to"] = email_list
+                logger.info(f"Added authenticated user email '{auth_email}' to email_to parameter for recipe '{recipe_name}'")
 
     tags += BASE_TAGS
     deployment_filter = DeploymentFilter(
