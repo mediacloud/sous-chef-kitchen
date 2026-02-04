@@ -19,6 +19,13 @@ from prefect.artifacts import create_table_artifact
 from prefect.context import FlowRunContext
 from sous_chef import get_flow
 
+# Import BaseArtifact for artifact detection
+try:
+    from sous_chef.artifacts import BaseArtifact
+except ImportError:
+    # Fallback if artifacts module not available
+    BaseArtifact = None
+
 # Import flows to trigger registration
 try:
     from sous_chef.flows import *  # noqa: F403, F401 # This triggers @register_flow decorators
@@ -143,19 +150,87 @@ def _filter_restricted_fields(
 def _create_artifacts(
     formatted_data: Dict[str, Dict[str, Any]], flow_run_name: str
 ) -> None:
-    """Create Prefect artifacts from formatted flow outputs."""
+    """
+    Create Prefect artifacts from formatted flow outputs.
+    
+    Handles multiple data formats:
+    - Tuple returns: (result, artifact) - creates separate artifacts for result and artifact
+    - BaseArtifact instances: creates artifact table directly
+    - Legacy formats: list, dict, DataFrame, else - uses existing logic
+    """
     for task_name, output in formatted_data.items():
         key = re.sub("[^0-9a-zA-Z]+", "-", task_name.lower())
         data = output["data"]
         print(key)
         print(data)
-        # Handle different data formats
+        
+        # Handle tuple returns: (result, artifact)
+        if isinstance(data, tuple) and len(data) == 2:
+            result, artifact = data
+            
+            # Create artifact if present
+            if artifact is not None and BaseArtifact is not None and isinstance(artifact, BaseArtifact):
+                artifact_key = f"{key}-artifact"
+                table = artifact.to_table()
+                description = f"{task_name} - {artifact.artifact_type}"
+                try:
+                    create_table_artifact(
+                        key=f"{flow_run_name}-{artifact_key}",
+                        table=table,
+                        description=description
+                    )
+                except Exception as e:
+                    print(
+                        f"Warning! Failed to generate artifact: {artifact_key}. Error: {e}. continuing "
+                    )
+            
+            # Create result artifact (if result is not None)
+            if result is not None:
+                # Convert result to table format
+                if isinstance(result, pd.DataFrame):
+                    table = result.to_dict('records')
+                elif isinstance(result, dict):
+                    table = [result]
+                elif isinstance(result, list):
+                    table = result
+                else:
+                    table = [{"value": result}]
+                
+                try:
+                    create_table_artifact(
+                        key=f"{flow_run_name}-{key}",
+                        table=table,
+                        description=task_name
+                    )
+                except Exception as e:
+                    print(
+                        f"Warning! Failed to generate artifact: {key}. Error: {e}. continuing "
+                    )
+            continue
+        
+        # Handle single BaseArtifact instance
+        if BaseArtifact is not None and isinstance(data, BaseArtifact):
+            table = data.to_table()
+            description = f"{task_name} ({data.artifact_type})"
+            try:
+                create_table_artifact(
+                    key=f"{flow_run_name}-{key}",
+                    table=table,
+                    description=description
+                )
+            except Exception as e:
+                print(
+                    f"Warning! Failed to generate artifact: {key}. Error: {e}. continuing "
+                )
+            continue
+        
+        # Handle legacy data formats (backward compatibility)
         if isinstance(data, list):
             table = data
         elif isinstance(data, dict):
             table = [data]
         elif isinstance(data, pd.DataFrame):
-            table = [data.to_json()]
+            table = data.to_dict('records')
         else:
             table = [{"value": data}]
 
