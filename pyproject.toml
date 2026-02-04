@@ -1,6 +1,6 @@
 [project]
 name = "sous-chef-kitchen"
-version = "1.0.2"
+version = "1.0.3"
 description = 'Job API around Prefect for driving Sous-Chef'
 readme = "README.md"
 requires-python = ">=3.10"
@@ -54,7 +54,7 @@ server = [
 
 # used for requirements-flow.txt, in Dockerfile
 sous-chef = [
-    "sous-chef @ git+https://github.com/mediacloud/sous-chef@artifact-improvements",
+    "sous-chef @ git+https://github.com/mediacloud/sous-chef@3.0.4",
     # Pin torch explicitly to prevent TORCH_LIBRARY registration conflicts
     # when both transformers and spacy are loaded
     "torch>=2.0.0,<3.0.0",
