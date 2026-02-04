@@ -43,11 +43,11 @@ blis==1.3.3
     # via thinc
 boilerpy3==1.0.7
     # via mediacloud-metadata
-boto3==1.42.40
+boto3==1.42.41
     # via
     #   prefect-aws
     #   sous-chef
-botocore==1.42.40
+botocore==1.42.41
     # via
     #   boto3
     #   prefect-aws
@@ -148,7 +148,7 @@ exceptiongroup==1.3.1
     # via prefect
 fakeredis==2.33.0
     # via pydocket
-fastapi==0.128.0
+fastapi==0.128.1
     # via prefect
 fasttext==0.9.3
     # via mc-providers
@@ -203,7 +203,7 @@ httpx==0.28.1
     # via
     #   huggingface-hub
     #   prefect
-huggingface-hub==1.3.7
+huggingface-hub==1.4.0
     # via
     #   tokenizers
     #   transformers
@@ -540,7 +540,7 @@ sortedcontainers==2.4.0
     #   sigfig
 soupsieve==2.8.3
     # via beautifulsoup4
-sous-chef @ git+https://github.com/mediacloud/sous-chef@v3.0.3
+sous-chef @ git+https://github.com/mediacloud/sous-chef@artifact-improvements
     # via sous-chef-kitchen (pyproject.toml)
 spacy==3.8.11
     # via
