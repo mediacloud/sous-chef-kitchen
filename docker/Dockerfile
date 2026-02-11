@@ -25,7 +25,8 @@ COPY pyproject.toml ${APP}/pyproject.toml
 RUN pip install --no-cache-dir --editable '.[server]'
 
 # Install sous-chef; allow override via SOUS_CHEF_REF for dev builds
-RUN if [ -n "$SOUS_CHEF_REF" ]; then \
+RUN echo "Building with SOUS_CHEF_REF=${SOUS_CHEF_REF}" && \
+    if [ -n "$SOUS_CHEF_REF" ]; then \
         echo "Installing sous-chef from git ref $SOUS_CHEF_REF"; \
         pip install --no-cache-dir "sous-chef @ git+https://github.com/mediacloud/sous-chef@$SOUS_CHEF_REF"; \
     else \
