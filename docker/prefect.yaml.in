@@ -55,14 +55,8 @@ pull:
     id: override-sous-chef-if-requested
     stream_output: true
     script: |
-      /bin/sh -c "
-        if [ -n \"\${SOUS_CHEF_REF:-}\" ]; then
-          echo \"Overriding sous-chef with ref \${SOUS_CHEF_REF}\"
-          pip install --no-cache-dir \"sous-chef @ git+https://github.com/mediacloud/sous-chef@\${SOUS_CHEF_REF}\"
-        else
-          echo \"SOUS_CHEF_REF not set; using default sous-chef from requirements-flow.txt\"
-        fi
-      "
+      chmod +x '{{ clone-step.directory }}/scripts/override-sous-chef.sh'
+      '{{ clone-step.directory }}/scripts/override-sous-chef.sh'
     
 
 
