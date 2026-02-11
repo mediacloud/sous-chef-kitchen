@@ -49,7 +49,7 @@ pull:
     id: override-sous-chef-if-requested
     stream_output: true
     script: |
-      chmod +x '{{ clone-step.directorypi }}/scripts/override-sous-chef.sh'
+      chmod +x '{{ clone-step.directory }}/scripts/override-sous-chef.sh'
       '{{ clone-step.directory }}/scripts/override-sous-chef.sh'
 
 - prefect.deployments.steps.pip_install_requirements:
