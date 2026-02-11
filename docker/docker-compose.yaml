@@ -29,6 +29,8 @@ services:
       context: ..
       # path to Dockerfile from context directory
       dockerfile: docker/Dockerfile
+      args:
+        SOUS_CHEF_REF: $SOUS_CHEF_REF
     command: /app/prefect-config.sh
     environment:
       PREFECT_API_URL: $PREFECT_URL
@@ -48,6 +50,7 @@ services:
     environment:
       LOG_LEVEL: DEBUG
       PREFECT_API_URL: $PREFECT_URL
+      SOUS_CHEF_REF: $SOUS_CHEF_REF
     deploy:
       replicas: 1
       restart_policy:
@@ -68,6 +71,7 @@ services:
       SC_PREFECT_DEPLOYMENT: $KITCHEN_DEPLOYMENT_NAME
       SC_PREFECT_WORK_POOL: $PREFECT_WORK_POOL_NAME
       LOG_LEVEL: DEBUG
+      SOUS_CHEF_REF: $SOUS_CHEF_REF
     deploy:
       replicas: 1
       restart_policy:

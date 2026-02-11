@@ -49,16 +49,18 @@ usage() {
     echo "  -d      enable debug output (show environment variables)"
     echo "  -h      output this help and exit"
     echo "  -n      dry-run: do not deploy"
+    echo "  -s REF  use sous-chef git ref (branch, tag, or SHA) REF for dev build"
     exit 1
 }
 
 # if you add an option here, add to usage function above!!!
-while getopts abB:dn OPT; do
+while getopts abB:dns: OPT; do
    case "$OPT" in
    b) BUILD_ONLY=1;;
    B) NO_ACTION=1; AS_USER=1; BRANCH=$OPTARG;;
    d) DEBUG=1;;
    n) NO_ACTION=1; AS_USER=1;;
+   s) SOUS_CHEF_REF=$OPTARG;;
    ?) usage;;		# here on 'h' '?' or unhandled option
    esac
 done
@@ -318,6 +320,7 @@ exp PREFECT_URL
 exp PREFECT_WORK_POOL_NAME	# used multiple places
 
 exp PRIVATE_CONF_FILE
+exp SOUS_CHEF_REF allow-empty
 
 #exp STATSD_REALM
 #exp STATSD_URL

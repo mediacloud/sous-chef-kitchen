@@ -39,6 +39,17 @@ pull:
     requirements_file: requirements-flow.txt
     stream_output: true
 
+- prefect.deployments.steps.run_shell_script:
+    id: override-sous-chef-if-requested
+    stream_output: true
+    script: |
+      if [ -n "${SOUS_CHEF_REF:-}" ]; then
+        echo "Overriding sous-chef with ref ${SOUS_CHEF_REF}"
+        pip install --no-cache-dir "sous-chef @ git+https://github.com/mediacloud/sous-chef@${SOUS_CHEF_REF}"
+      else
+        echo "SOUS_CHEF_REF not set; using default sous-chef from requirements-flow.txt"
+      fi
+
 # Deployments section
 deployments:
 - name: kitchen-base
