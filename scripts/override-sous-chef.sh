@@ -5,7 +5,7 @@
 
 if [ -n "${SOUS_CHEF_REF:-}" ]; then
     echo "Overriding sous-chef with ref ${SOUS_CHEF_REF}"
-    pip install --no-cache-dir "sous-chef @ git+https://github.com/mediacloud/sous-chef@${SOUS_CHEF_REF}"
+    pip install --no-cache-dir --force-reinstall "sous-chef @ git+https://github.com/mediacloud/sous-chef@${SOUS_CHEF_REF}"
 else
     echo "SOUS_CHEF_REF not set; using default sous-chef from requirements-flow.txt"
 fi

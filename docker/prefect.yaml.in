@@ -45,19 +45,17 @@ pull:
     script: |
       pip uninstall -y sous-chef
 
+- prefect.deployments.steps.run_shell_script:
+    id: override-sous-chef-if-requested
+    stream_output: true
+    script: |
+      chmod +x '{{ clone-step.directorypi }}/scripts/override-sous-chef.sh'
+      '{{ clone-step.directory }}/scripts/override-sous-chef.sh'
 
 - prefect.deployments.steps.pip_install_requirements:
     directory: '{{ clone-step.directory }}'
     requirements_file: requirements-flow.txt
     stream_output: true
-
-- prefect.deployments.steps.run_shell_script:
-    id: override-sous-chef-if-requested
-    stream_output: true
-    script: |
-      chmod +x '{{ clone-step.directory }}/scripts/override-sous-chef.sh'
-      '{{ clone-step.directory }}/scripts/override-sous-chef.sh'
-    
 
 
 # the deployments section allows you to provide configuration for deploying flows
