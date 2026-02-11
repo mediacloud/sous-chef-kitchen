@@ -25,12 +25,18 @@ COPY pyproject.toml ${APP}/pyproject.toml
 RUN pip install --no-cache-dir --editable '.[server]'
 
 # Install sous-chef; allow override via SOUS_CHEF_REF for dev builds
-RUN echo "Building with SOUS_CHEF_REF=${SOUS_CHEF_REF}" && \
-    if [ -n "$SOUS_CHEF_REF" ]; then \
-        echo "Installing sous-chef from git ref $SOUS_CHEF_REF"; \
+# Fetch commit SHA for the ref to bust cache when branch/tag is updated
+RUN if [ -n "$SOUS_CHEF_REF" ]; then \
+        echo "Fetching commit SHA for ref: $SOUS_CHEF_REF"; \
+        COMMIT_SHA=$(git ls-remote https://github.com/mediacloud/sous-chef.git "$SOUS_CHEF_REF" | cut -f1 | head -n1); \
+        if [ -z "$COMMIT_SHA" ]; then \
+            echo "Warning: Could not fetch SHA for $SOUS_CHEF_REF, using ref directly"; \
+            COMMIT_SHA="$SOUS_CHEF_REF"; \
+        fi; \
+        echo "Building with SOUS_CHEF_REF=${SOUS_CHEF_REF} (commit: ${COMMIT_SHA})"; \
         pip install --no-cache-dir "sous-chef @ git+https://github.com/mediacloud/sous-chef@$SOUS_CHEF_REF"; \
     else \
-        echo "Installing default sous-chef extra from pyproject.toml"; \
+        echo "Building with default sous-chef from pyproject.toml"; \
         pip install --no-cache-dir --editable '.[sous-chef]'; \
     fi
 
