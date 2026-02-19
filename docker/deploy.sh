@@ -49,21 +49,40 @@ usage() {
     echo "  -d      enable debug output (show environment variables)"
     echo "  -h      output this help and exit"
     echo "  -n      dry-run: do not deploy"
+    echo "  -s REF  use sous-chef git ref (branch, tag, or SHA) REF for dev build (must exist in mediacloud/sous-chef)"
     exit 1
 }
 
 # if you add an option here, add to usage function above!!!
-while getopts abB:dn OPT; do
+while getopts abB:dns: OPT; do
    case "$OPT" in
    b) BUILD_ONLY=1;;
    B) NO_ACTION=1; AS_USER=1; BRANCH=$OPTARG;;
    d) DEBUG=1;;
    n) NO_ACTION=1; AS_USER=1;;
+   s) SOUS_CHEF_REF=$OPTARG;;
    ?) usage;;		# here on 'h' '?' or unhandled option
    esac
 done
 
 # XXX complain if anything extra on command line?
+
+check_sous_chef_ref() {
+    if [ -z "${SOUS_CHEF_REF:-}" ]; then
+	return 0
+    fi
+
+    echo "Checking sous-chef git ref '${SOUS_CHEF_REF}'..."
+    if git ls-remote --exit-code https://github.com/mediacloud/sous-chef.git "$SOUS_CHEF_REF" >/dev/null 2>&1; then
+	echo "Found sous-chef ref '${SOUS_CHEF_REF}'."
+    else
+	echo "ERROR: sous-chef git ref '${SOUS_CHEF_REF}' not found on GitHub." 1>&2
+	echo "       Make sure it's a valid branch, tag, or SHA in mediacloud/sous-chef." 1>&2
+	exit 1
+    fi
+}
+
+check_sous_chef_ref
 
 if [ "x$AS_USER" = x -a $(whoami) != root ]; then
     if ! groups | tr ' ' '\n' | fgrep -qx docker; then
@@ -318,6 +337,7 @@ exp PREFECT_URL
 exp PREFECT_WORK_POOL_NAME	# used multiple places
 
 exp PRIVATE_CONF_FILE
+exp SOUS_CHEF_REF allow-empty
 
 #exp STATSD_REALM
 #exp STATSD_URL

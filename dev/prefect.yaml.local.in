@@ -39,6 +39,13 @@ pull:
     requirements_file: requirements-flow.txt
     stream_output: true
 
+- prefect.deployments.steps.run_shell_script:
+    id: override-sous-chef-if-requested
+    stream_output: true
+    script: |
+      chmod +x '{{ clone-step.directory }}/scripts/override-sous-chef.sh'
+      '{{ clone-step.directory }}/scripts/override-sous-chef.sh'
+
 # Deployments section
 deployments:
 - name: kitchen-base
