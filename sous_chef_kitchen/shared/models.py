@@ -3,7 +3,6 @@ Data models shared between the backend and client.
 """
 
 from pydantic import BaseModel, Field, computed_field
-import re
 
 
 class SousChefKitchenAuthStatus(BaseModel):
@@ -25,8 +24,6 @@ class SousChefKitchenAuthStatus(BaseModel):
         return self.media_cloud_authorized and self.sous_chef_authorized
 
 
-
-
 class SousChefKitchenSystemStatus(BaseModel):
     """Status of Sous Chef Kitchen backend system components."""
 
@@ -35,6 +32,7 @@ class SousChefKitchenSystemStatus(BaseModel):
     prefect_cloud_ready: bool = Field(False, title="Prefect Cloud")
     prefect_work_pool_ready: bool = Field(False, title="Prefect Work Pool")
     prefect_workers_ready: bool = Field(False, title="Prefect Workers")
+    max_user_flows: int = Field(1, title="Maximum flows allowed per user")
 
     @computed_field
     @property

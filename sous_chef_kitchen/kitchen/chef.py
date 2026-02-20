@@ -28,10 +28,10 @@ from prefect.client.schemas.objects import (
     WorkerStatus,
     WorkPoolStatus,
 )
-from pydantic import ValidationError
 from prefect.exceptions import ObjectNotFound
 from prefect.server.schemas.responses import SetStateStatus
 from prefect.server.schemas.states import State
+from pydantic import ValidationError
 from sous_chef import get_flow, get_flow_schema, list_flows
 
 from sous_chef_kitchen.kitchen.logging_config import setup_logging
@@ -55,6 +55,7 @@ DEFAULT_PREFECT_WORK_POOL = "bly"
 PREFECT_ACTIVE_STATES = [StateType.RUNNING, StateType.SCHEDULED, StateType.PENDING]
 PREFECT_DEPLOYMENT = os.getenv("SC_PREFECT_DEPLOYMENT", "kitchen-base")
 PREFECT_WORK_POOL = os.getenv("SC_PREFECT_WORK_POOL", DEFAULT_PREFECT_WORK_POOL)
+MAX_USER_FLOWS = int(os.getenv("SC_MAX_USER_FLOWS", "1"))
 logger = logging.getLogger("sous_chef_kitchen.chef")
 
 
@@ -81,9 +82,11 @@ def _artifact_to_dict(artifact: Artifact) -> Dict[str, Any]:
     }
 
 
-async def fetch_all_runs(tags: List[str] = [], parent_only: bool = True) -> List[Dict[str, Any]]:
+async def fetch_all_runs(
+    tags: List[str] = [], parent_only: bool = True
+) -> List[Dict[str, Any]]:
     """Fetch all Sous Chef Kitchen runs from Prefect.
-    
+
     Args:
         tags: List of tags to filter runs by
         parent_only: If True, only return parent runs (exclude child/subflow runs). Defaults to True.
@@ -94,15 +97,17 @@ async def fetch_all_runs(tags: List[str] = [], parent_only: bool = True) -> List
 
     async with prefect.get_client() as client:
         runs = await client.read_flow_runs(flow_run_filter=tags_filter)
-        
+
         # Filter out child runs if parent_only is True
         # Child runs (subflows) have parent_task_run_id set, parent runs have it as None
         if parent_only:
-            runs = [run for run in runs if getattr(run, 'parent_task_run_id', None) is None]
-        
+            runs = [
+                run for run in runs if getattr(run, "parent_task_run_id", None) is None
+            ]
+
         # Sort by most recent first (descending order) using the 'created' field
         runs = sorted(runs, key=lambda run: run.created, reverse=True)
-        
+
         return [_run_to_dict(run) for run in runs]
 
 
@@ -115,14 +120,16 @@ async def cancel_recipe_run(
     try:
         run_dict = await fetch_run_by_id(run_id)
     except Exception as e:
-        raise ValueError(f"Unable to find a run {run_id} for recipe {recipe_name}: {str(e)}")
+        raise ValueError(
+            f"Unable to find a run {run_id} for recipe {recipe_name}: {str(e)}"
+        )
 
     # Verify the run has the required tags for authorization
     # If tags are provided (user's tag), verify the run has them
     # If no tags provided (admin viewing all runs), just verify it has BASE_TAGS
     required_tags = tags + BASE_TAGS if tags else BASE_TAGS
     run_tags = run_dict.get("tags", [])
-    
+
     # Check if run has all required tags
     if not all(tag in run_tags for tag in required_tags):
         raise ValueError(
@@ -133,9 +140,7 @@ async def cancel_recipe_run(
     async with prefect.get_client() as client:
         # Create state without state_details to avoid validation error
         cancel_state = State(type=StateType.CANCELLING, state_details=None)
-        result = await client.set_flow_run_state(
-            run_dict["id"], cancel_state
-        )
+        result = await client.set_flow_run_state(run_dict["id"], cancel_state)
 
     if result.status == SetStateStatus.ABORT:
         raise RuntimeError(f"Unable to cancel the flow run: {result.details.reason}")
@@ -189,7 +194,9 @@ async def get_system_status() -> SousChefKitchenSystemStatus:
     """Check whether the Sous Chef backend systems are available and ready."""
 
     # If the request made it this far then the API itself is ready
-    status = SousChefKitchenSystemStatus(connection_ready=True, kitchen_api_ready=True)
+    status = SousChefKitchenSystemStatus(
+        connection_ready=True, kitchen_api_ready=True, max_user_flows=MAX_USER_FLOWS
+    )
 
     # Check whether Prefect Cloud, Work Pool, and Workers are ready
     async with prefect.get_client() as client:
@@ -275,14 +282,14 @@ async def start_recipe(
             schema = get_flow_schema(recipe_name)
             error_messages = []
             field_errors = {}
-            
+
             for error in e.errors():
                 # Get field path (handles nested fields)
                 field_path = " -> ".join(str(loc) for loc in error["loc"])
                 error_msg = error["msg"]
                 field_errors[field_path] = error_msg
                 error_messages.append(f"{field_path}: {error_msg}")
-            
+
             # Create a formatted error message
             formatted_errors = "\n".join(error_messages)
             raise ValueError(
@@ -299,7 +306,10 @@ async def start_recipe(
     # Inject authenticated user's email into email_to param if the flow supports it
     if auth_email and params_model:
         # Check if the params model has an email_to field
-        if hasattr(params_model, "model_fields") and "email_to" in params_model.model_fields:
+        if (
+            hasattr(params_model, "model_fields")
+            and "email_to" in params_model.model_fields
+        ):
             email_list = final_params.get("email_to", [])
             # Ensure email_list is a list
             if not isinstance(email_list, list):
@@ -308,7 +318,9 @@ async def start_recipe(
             if auth_email not in email_list:
                 email_list.append(auth_email)
                 final_params["email_to"] = email_list
-                logger.info(f"Added authenticated user email '{auth_email}' to email_to parameter for recipe '{recipe_name}'")
+                logger.info(
+                    f"Added authenticated user email '{auth_email}' to email_to parameter for recipe '{recipe_name}'"
+                )
         # Also handle case where params_model might be a dict or have different structure
         elif isinstance(final_params, dict) and "email_to" in final_params:
             email_list = final_params.get("email_to", [])
@@ -317,7 +329,9 @@ async def start_recipe(
             if auth_email not in email_list:
                 email_list.append(auth_email)
                 final_params["email_to"] = email_list
-                logger.info(f"Added authenticated user email '{auth_email}' to email_to parameter for recipe '{recipe_name}'")
+                logger.info(
+                    f"Added authenticated user email '{auth_email}' to email_to parameter for recipe '{recipe_name}'"
+                )
 
     tags += BASE_TAGS
     deployment_filter = DeploymentFilter(
@@ -325,8 +339,11 @@ async def start_recipe(
     )
 
     active_runs = await fetch_active_runs(tags)
-    if len(active_runs) > 0:
-        raise RuntimeError("Cannot start a new recipe run while you have another active run. Please wait for your current run to complete or cancel it before starting a new one.")
+    if len(active_runs) >= MAX_USER_FLOWS:
+        raise RuntimeError(
+            f"Cannot start a new recipe run. You have {len(active_runs)}/{MAX_USER_FLOWS} allocated flows running. "
+            "Please wait for your current runs to complete or cancel them before starting a new one."
+        )
 
     prefect_parameters = {
         "recipe_name": recipe_name,
