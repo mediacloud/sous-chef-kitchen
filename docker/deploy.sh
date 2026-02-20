@@ -278,6 +278,19 @@ if [ ! -f "$PRIVATE_CONF_FILE" ]; then
     exit 1
 fi
 
+# Load SC_MAX_USER_FLOWS from config file, default to 1 if not set
+# Read the value directly from the .env file to avoid sourcing all variables
+if grep -q "^SC_MAX_USER_FLOWS=" "$PRIVATE_CONF_FILE" 2>/dev/null; then
+    SC_MAX_USER_FLOWS=$(grep "^SC_MAX_USER_FLOWS=" "$PRIVATE_CONF_FILE" | cut -d'=' -f2 | tr -d '"' | tr -d "'" | xargs)
+    # Validate it's a positive integer
+    if ! echo "$SC_MAX_USER_FLOWS" | egrep '^[1-9][0-9]*$' >/dev/null 2>&1; then
+	echo "WARNING: SC_MAX_USER_FLOWS='$SC_MAX_USER_FLOWS' is not a positive integer, defaulting to 1" 1>&2
+	SC_MAX_USER_FLOWS=1
+    fi
+else
+    SC_MAX_USER_FLOWS=1
+fi
+
 # display things that vary by stack type, from most to least interesting
 echo STACK_NAME $STACK_NAME
 echo PREFECT_URL $PREFECT_URL
@@ -337,6 +350,7 @@ exp PREFECT_URL
 exp PREFECT_WORK_POOL_NAME	# used multiple places
 
 exp PRIVATE_CONF_FILE
+exp SC_MAX_USER_FLOWS int	# max flows per user (defaults to 1)
 exp SOUS_CHEF_REF allow-empty
 
 #exp STATSD_REALM
