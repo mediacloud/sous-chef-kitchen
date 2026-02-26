@@ -154,6 +154,7 @@ async def start_recipe(
             tags=[auth_status.tag_slug],
             user_full_text_authorized=auth_status.media_cloud_full_text_authorized,
             auth_email=auth_email,
+            user_is_admin=auth_status.media_cloud_staff,
         )
     except ValueError as e:
         logger.error(f"Validation error starting recipe {recipe_name}: {e}")
@@ -212,7 +213,10 @@ async def recipe_schema(
         )
     logger.info(f"Get recipe schema for {recipe_name}")
     try:
-        return await chef.recipe_schema(recipe_name)
+        return await chef.recipe_schema(
+            recipe_name,
+            is_admin=auth_status.media_cloud_staff,
+        )
     except ValueError as e:
         logger.warning(f"Recipe schema not found for {recipe_name}: {e}")
         raise HTTPException(
@@ -235,7 +239,9 @@ async def recipe_list(
         )
     logger.info("Fetching recipe list")
     try:
-        recipe_list_result = await chef.recipe_list()
+        recipe_list_result = await chef.recipe_list(
+            is_admin=auth_status.media_cloud_staff
+        )
         logger.info(
             f"Recipe list fetched successfully: {len(recipe_list_result)} recipes found"
         )

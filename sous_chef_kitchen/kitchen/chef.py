@@ -257,6 +257,7 @@ async def start_recipe(
     parameters: Dict = {},
     user_full_text_authorized: bool = False,
     auth_email: Optional[str] = None,
+    user_is_admin: bool = False,
 ) -> Dict[str, Any]:
     """Handle orders for the requested flow from the Sous Chef Kitchen, using the flow registry."""
 
@@ -264,6 +265,10 @@ async def start_recipe(
     flow_meta = get_flow(recipe_name)
     if not flow_meta:
         raise ValueError(f"Flow '{recipe_name}' not found")
+
+    # Enforce admin-only recipes
+    if flow_meta.get("admin_only", False) and not user_is_admin:
+        raise RuntimeError(f"Recipe '{recipe_name}' is restricted to admin users.")
 
     # Validate parameters using flow's params model
     params_model = flow_meta.get("params_model")
@@ -366,20 +371,35 @@ async def start_recipe(
     return _run_to_dict(run)
 
 
-async def recipe_schema(recipe_name: str) -> Dict:
+async def recipe_schema(recipe_name: str, is_admin: bool = False) -> Dict:
     """Get parameter schema for a flow."""
+    flow_meta = get_flow(recipe_name)
+    if not flow_meta:
+        return {}
+
+    # Enforce admin-only recipes
+    if flow_meta.get("admin_only", False) and not is_admin:
+        # Return empty dict to avoid leaking which recipes exist
+        raise ValueError(f"Recipe '{recipe_name}' not found")
+
     schema = get_flow_schema(recipe_name)
     if not schema:
         return {}
     return schema  # Already returns properties dict
 
 
-async def recipe_list() -> Dict:
+async def recipe_list(is_admin: bool = False) -> Dict:
     """List available flows from the flow registry."""
     logger.info("In Recipe List")
     try:
         flows = list_flows()
-        recipe_info = {name: get_recipe_info(name) for name in flows.keys()}
+        recipe_info = {}
+        for name in flows.keys():
+            flow_meta = get_flow(name)
+            # Filter out admin-only recipes for non-admin users
+            if flow_meta and flow_meta.get("admin_only", False) and not is_admin:
+                continue
+            recipe_info[name] = get_recipe_info(name)
         logger.info(f"Got {len(recipe_info)} flows")
         return recipe_info
     except Exception as e:
