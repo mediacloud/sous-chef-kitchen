@@ -96,7 +96,7 @@ def setup_secrets(overwrite=True):
         "mediacloud-api-key", overwrite=overwrite
     )
 
-    Secret(valie=config.HUGGINGFACE_API_KEY).save(
+    Secret(value=config.HUGGINGFACE_API_KEY).save(
         "llm-huggingface-api-key", overwrite=overwrite
     )
 
