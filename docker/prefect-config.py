@@ -6,8 +6,8 @@ import httpx
 from dotenv import load_dotenv
 from prefect import get_client
 from prefect.blocks.system import Secret
-from prefect.variables import Variable
 from prefect.server.schemas.actions import WorkPoolCreate
+from prefect.variables import Variable
 from prefect_aws import AwsClientParameters, AwsCredentials
 from prefect_email import EmailServerCredentials
 from pydantic_settings import BaseSettings
@@ -63,6 +63,8 @@ class SousChefCredentials(BaseSettings):
 
     MEDIACLOUD_API_KEY: str
 
+    HUGGINGFACE_API_KEY: str
+
 
 def setup_secrets(overwrite=True):
     print("⏳ Waiting for Prefect Secret setup_secrets...")
@@ -93,6 +95,11 @@ def setup_secrets(overwrite=True):
     Secret(value=config.MEDIACLOUD_API_KEY).save(
         "mediacloud-api-key", overwrite=overwrite
     )
+
+    Secret(value=config.HUGGINGFACE_API_KEY).save(
+        "llm-huggingface-api-key", overwrite=overwrite
+    )
+
     print("✅ Prefect Sous-Chef Secrets Setup")
 
 
