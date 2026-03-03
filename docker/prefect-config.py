@@ -64,6 +64,7 @@ class SousChefCredentials(BaseSettings):
     MEDIACLOUD_API_KEY: str
 
     HUGGINGFACE_API_KEY: str
+    GROQ_API_KEY: str
 
 
 def setup_secrets(overwrite=True):
@@ -99,6 +100,8 @@ def setup_secrets(overwrite=True):
     Secret(value=config.HUGGINGFACE_API_KEY).save(
         "llm-huggingface-api-key", overwrite=overwrite
     )
+
+    Secret(value=config.GROQ_API_KEY).save("llm-groq-api-key", overwrite=overwrite)
 
     print("✅ Prefect Sous-Chef Secrets Setup")
 
