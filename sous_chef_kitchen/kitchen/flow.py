@@ -11,6 +11,7 @@ This is the execution layer that:
 
 import os
 import re
+from datetime import date, datetime
 from typing import Any, Dict, List
 
 import pandas as pd
@@ -195,6 +196,43 @@ def _filter_restricted_fields(
     return filtered
 
 
+def _df_to_records(df: pd.DataFrame) -> List[Dict[str, Any]]:
+    """
+    Convert DataFrame to records with proper date serialization.
+
+    This ensures that date and datetime columns are converted to ISO format strings
+    for JSON serialization compatibility when creating Prefect artifacts.
+
+    Args:
+        df: DataFrame to convert
+
+    Returns:
+        List of dict records with dates serialized to strings
+    """
+    if df.empty:
+        return []
+
+    # Make a copy to avoid modifying the original
+    df_copy = df.copy()
+
+    # Convert datetime64 columns to strings
+    for col in df_copy.columns:
+        if pd.api.types.is_datetime64_any_dtype(df_copy[col]):
+            # Convert datetime columns to ISO format strings
+            df_copy[col] = (
+                df_copy[col].dt.strftime("%Y-%m-%dT%H:%M:%S").replace("NaT", None)
+            )
+        elif df_copy[col].dtype == "object":
+            # Check if column contains date/datetime objects (not datetime64)
+            sample = df_copy[col].dropna()
+            if len(sample) > 0 and isinstance(sample.iloc[0], (date, datetime)):
+                df_copy[col] = df_copy[col].apply(
+                    lambda x: x.isoformat() if isinstance(x, (date, datetime)) else x
+                )
+
+    return df_copy.to_dict("records")
+
+
 def _create_artifacts(
     formatted_data: Dict[str, Dict[str, Any]], flow_run_name: str
 ) -> None:
@@ -240,7 +278,7 @@ def _create_artifacts(
             if result is not None:
                 # Convert result to table format
                 if isinstance(result, pd.DataFrame):
-                    table = result.to_dict("records")
+                    table = _df_to_records(result)
                 elif isinstance(result, dict):
                     table = [result]
                 elif isinstance(result, list):
@@ -278,7 +316,7 @@ def _create_artifacts(
         elif isinstance(data, dict):
             table = [data]
         elif isinstance(data, pd.DataFrame):
-            table = data.to_dict("records")
+            table = _df_to_records(data)
         else:
             table = [{"value": data}]
 
