@@ -7,7 +7,7 @@ providing run status, artifact metadata, and error information to external syste
 
 import logging
 import time
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any, Dict, List, Optional
 
 import httpx
@@ -21,6 +21,114 @@ except ImportError:
     BaseArtifact = None
 
 logger = logging.getLogger("sous_chef_kitchen.webhook")
+
+
+def _serialize_artifact_data(data: Any) -> Any:
+    """
+    Serialize artifact data to JSON-compatible format.
+
+    Handles various data types:
+    - DataFrames: Convert to list of dicts with date serialization
+    - BaseArtifact: Convert via to_table() method
+    - Tuples: Handle (result, artifact) pattern
+    - Lists/Dicts: Return as-is (assumed JSON-serializable)
+    - Other: Wrap in dict
+
+    Args:
+        data: Artifact data to serialize
+
+    Returns:
+        JSON-serializable data structure
+    """
+    # Handle tuple returns: (result, artifact)
+    if isinstance(data, tuple) and len(data) == 2:
+        result, artifact = data
+        # For webhooks, we'll include both result and artifact data
+        serialized = {}
+
+        # Serialize result
+        if result is not None:
+            if isinstance(result, pd.DataFrame):
+                serialized["result"] = _df_to_records(result)
+            elif isinstance(result, (list, dict)):
+                serialized["result"] = result
+            else:
+                serialized["result"] = {"value": result}
+
+        # Serialize artifact if present
+        if (
+            artifact is not None
+            and BaseArtifact is not None
+            and isinstance(artifact, BaseArtifact)
+        ):
+            try:
+                serialized["artifact"] = artifact.to_table()
+                serialized["artifact_type"] = getattr(
+                    artifact, "artifact_type", "artifact"
+                )
+            except Exception as e:
+                logger.warning(f"Failed to serialize artifact: {e}")
+                serialized["artifact"] = None
+
+        return serialized
+
+    # Handle BaseArtifact instance
+    if BaseArtifact is not None and isinstance(data, BaseArtifact):
+        try:
+            table = data.to_table()
+            artifact_type = getattr(data, "artifact_type", "artifact")
+            return {"data": table, "artifact_type": artifact_type}
+        except Exception as e:
+            logger.warning(f"Failed to serialize BaseArtifact: {e}")
+            return {"data": None, "artifact_type": "unknown"}
+
+    # Handle DataFrame
+    if isinstance(data, pd.DataFrame):
+        return _df_to_records(data)
+
+    # Handle list or dict (assume already JSON-serializable)
+    if isinstance(data, (list, dict)):
+        return data
+
+    # Fallback: wrap in dict
+    return {"value": data}
+
+
+def _df_to_records(df: pd.DataFrame) -> List[Dict[str, Any]]:
+    """
+    Convert DataFrame to records with proper date serialization.
+
+    This ensures that date and datetime columns are converted to ISO format strings
+    for JSON serialization compatibility.
+
+    Args:
+        df: DataFrame to convert
+
+    Returns:
+        List of dict records with dates serialized to strings
+    """
+    if df.empty:
+        return []
+
+    # Make a copy to avoid modifying the original
+    df_copy = df.copy()
+
+    # Convert datetime64 columns to strings
+    for col in df_copy.columns:
+        if pd.api.types.is_datetime64_any_dtype(df_copy[col]):
+            # Convert datetime columns to ISO format strings
+            df_copy[col] = (
+                df_copy[col].dt.strftime("%Y-%m-%dT%H:%M:%S").replace("NaT", None)
+            )
+        elif df_copy[col].dtype == "object":
+            # Check if column contains date/datetime objects (not datetime64)
+            sample = df_copy[col].dropna()
+            if len(sample) > 0 and isinstance(sample.iloc[0], (date, datetime)):
+                df_copy[col] = df_copy[col].apply(
+                    lambda x: x.isoformat() if isinstance(x, (date, datetime)) else x
+                )
+
+    return df_copy.to_dict("records")
 
 
 def fire_webhook(
@@ -50,12 +158,14 @@ def fire_webhook(
         error: Error message if execution failed
         artifacts: Artifact data if execution succeeded
     """
-    # Build artifact summary (metadata only, not full data)
-    artifact_summary = []
+    # Build artifact list with full data
+    artifact_list = []
     if artifacts:
         for task_name, output in artifacts.items():
             data = output.get("data")
-            # Determine artifact type and row count
+            restricted = output.get("restricted", False)
+
+            # Determine artifact type and row count for metadata
             artifact_type = "unknown"
             row_count = None
 
@@ -69,7 +179,6 @@ def fire_webhook(
                 artifact_type = "object"
                 row_count = 1
             elif BaseArtifact is not None and isinstance(data, BaseArtifact):
-                # BaseArtifact instance
                 artifact_type = getattr(data, "artifact_type", "artifact")
                 if hasattr(data, "to_table"):
                     try:
@@ -78,7 +187,6 @@ def fire_webhook(
                     except Exception:
                         pass
             elif isinstance(data, tuple) and len(data) == 2:
-                # Handle tuple returns: (result, artifact)
                 result, artifact = data
                 if BaseArtifact is not None and isinstance(artifact, BaseArtifact):
                     artifact_type = getattr(artifact, "artifact_type", "artifact")
@@ -88,13 +196,26 @@ def fire_webhook(
                             row_count = len(table) if isinstance(table, list) else None
                         except Exception:
                             pass
+                # For tuple, also check result
+                if isinstance(result, pd.DataFrame):
+                    row_count = len(result) if row_count is None else row_count
+                elif isinstance(result, list):
+                    row_count = len(result) if row_count is None else row_count
 
-            artifact_summary.append(
+            # Serialize the full artifact data
+            try:
+                serialized_data = _serialize_artifact_data(data)
+            except Exception as e:
+                logger.warning(f"Failed to serialize artifact '{task_name}': {e}")
+                serialized_data = {"error": f"Serialization failed: {str(e)}"}
+
+            artifact_list.append(
                 {
                     "key": task_name,
                     "type": artifact_type,
                     "row_count": row_count,
-                    "restricted": output.get("restricted", False),
+                    "restricted": restricted,
+                    "data": serialized_data,  # Full artifact data
                 }
             )
 
@@ -111,7 +232,7 @@ def fire_webhook(
             # Sanitize parameters - remove webhook params and any secrets
             "parameters": sanitize_parameters(parameters),
         },
-        "artifacts": artifact_summary,
+        "artifacts": artifact_list,
     }
 
     # Add error info if failed
