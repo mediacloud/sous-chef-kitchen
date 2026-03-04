@@ -455,6 +455,12 @@ sed -e "s/DEPLOYMENT_NAME/$KITCHEN_DEPLOYMENT_NAME/g" \
 
 
 BUILD_COMMAND="docker compose -f $COMPOSE_FILE build"
+
+# If we’re overriding sous-chef via a git ref, bust the Docker cache
+if [ -n "${SOUS_CHEF_REF:-}" ]; then
+   BUILD_COMMAND="$BUILD_COMMAND --no-cache"
+fi
+
 echo $BUILD_COMMAND
 $BUILD_COMMAND
 STATUS=$?
