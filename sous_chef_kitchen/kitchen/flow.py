@@ -11,10 +11,8 @@ This is the execution layer that:
 
 import os
 import re
-from datetime import date, datetime
 from typing import Any, Dict, List
 
-import pandas as pd
 import prefect
 from prefect import flow, get_run_logger
 from prefect.artifacts import create_table_artifact
@@ -156,23 +154,41 @@ def _format_flow_output(
     Format flow output for artifact creation.
 
     Converts raw return value to: {task_name: {data: ..., restricted: bool}}
+
+    Flows must return Dict[str, BaseArtifact]. This function validates that
+    all values are BaseArtifact instances and wraps them in the expected format.
     """
-    # If already in correct format, return as-is
-    if isinstance(run_data, dict):
-        # Check if already formatted
-        if all(isinstance(v, dict) and "data" in v for v in run_data.values()):
-            return run_data
+    if BaseArtifact is None:
+        # If BaseArtifact is not available, fall back to legacy behavior
+        if isinstance(run_data, dict):
+            if all(isinstance(v, dict) and "data" in v for v in run_data.values()):
+                return run_data
+            formatted = {}
+            for key, value in run_data.items():
+                restricted = flow_meta.get("restricted_fields", {}).get(key, False)
+                formatted[key] = {"data": value, "restricted": restricted}
+            return formatted
+        return {"result": {"data": run_data, "restricted": False}}
 
-        # Otherwise, format it
-        formatted = {}
-        for key, value in run_data.items():
-            # Determine if restricted (could come from flow metadata)
-            restricted = flow_meta.get("restricted_fields", {}).get(key, False)
-            formatted[key] = {"data": value, "restricted": restricted}
-        return formatted
+    # Validate that run_data is a dict
+    if not isinstance(run_data, dict):
+        raise TypeError(
+            f"Flow must return Dict[str, BaseArtifact], got {type(run_data).__name__}"
+        )
 
-    # Single result - wrap it
-    return {"result": {"data": run_data, "restricted": False}}
+    # Validate that all values are BaseArtifact instances
+    formatted = {}
+    for key, value in run_data.items():
+        if not isinstance(value, BaseArtifact):
+            raise TypeError(
+                f"Flow return value '{key}' must be a BaseArtifact instance, "
+                f"got {type(value).__name__}"
+            )
+        # Determine if restricted (could come from flow metadata)
+        restricted = flow_meta.get("restricted_fields", {}).get(key, False)
+        formatted[key] = {"data": value, "restricted": restricted}
+
+    return formatted
 
 
 def _filter_restricted_fields(
@@ -196,135 +212,42 @@ def _filter_restricted_fields(
     return filtered
 
 
-def _df_to_records(df: pd.DataFrame) -> List[Dict[str, Any]]:
-    """
-    Convert DataFrame to records with proper date serialization.
-
-    This ensures that date and datetime columns are converted to ISO format strings
-    for JSON serialization compatibility when creating Prefect artifacts.
-
-    Args:
-        df: DataFrame to convert
-
-    Returns:
-        List of dict records with dates serialized to strings
-    """
-    if df.empty:
-        return []
-
-    # Make a copy to avoid modifying the original
-    df_copy = df.copy()
-
-    # Convert datetime64 columns to strings
-    for col in df_copy.columns:
-        if pd.api.types.is_datetime64_any_dtype(df_copy[col]):
-            # Convert datetime columns to ISO format strings
-            df_copy[col] = (
-                df_copy[col].dt.strftime("%Y-%m-%dT%H:%M:%S").replace("NaT", None)
-            )
-        elif df_copy[col].dtype == "object":
-            # Check if column contains date/datetime objects (not datetime64)
-            sample = df_copy[col].dropna()
-            if len(sample) > 0 and isinstance(sample.iloc[0], (date, datetime)):
-                df_copy[col] = df_copy[col].apply(
-                    lambda x: x.isoformat() if isinstance(x, (date, datetime)) else x
-                )
-
-    return df_copy.to_dict("records")
-
-
 def _create_artifacts(
     formatted_data: Dict[str, Dict[str, Any]], flow_run_name: str
 ) -> None:
     """
     Create Prefect artifacts from formatted flow outputs.
 
-    Handles multiple data formats:
-    - Tuple returns: (result, artifact) - creates separate artifacts for result and artifact
-    - BaseArtifact instances: creates artifact table directly
-    - Legacy formats: list, dict, DataFrame, else - uses existing logic
+    Flows must return Dict[str, BaseArtifact]. This function calls
+    serialize_for_prefect() on each artifact to get the table and description,
+    then creates Prefect table artifacts.
     """
+    if BaseArtifact is None:
+        # If BaseArtifact is not available, skip artifact creation
+        return
+
     for task_name, output in formatted_data.items():
         key = re.sub("[^0-9a-zA-Z]+", "-", task_name.lower())
-        data = output["data"]
-        print(key)
-        print(data)
+        artifact = output["data"]
 
-        # Handle tuple returns: (result, artifact)
-        if isinstance(data, tuple) and len(data) == 2:
-            result, artifact = data
-
-            # Create artifact if present
-            if (
-                artifact is not None
-                and BaseArtifact is not None
-                and isinstance(artifact, BaseArtifact)
-            ):
-                artifact_key = f"{key}-artifact"
-                table = artifact.to_table()
-                description = f"{task_name} - {artifact.artifact_type}"
-                try:
-                    create_table_artifact(
-                        key=f"{flow_run_name}-{artifact_key}",
-                        table=table,
-                        description=description,
-                    )
-                except Exception as e:
-                    print(
-                        f"Warning! Failed to generate artifact: {artifact_key}. Error: {e}. continuing "
-                    )
-
-            # Create result artifact (if result is not None)
-            if result is not None:
-                # Convert result to table format
-                if isinstance(result, pd.DataFrame):
-                    table = _df_to_records(result)
-                elif isinstance(result, dict):
-                    table = [result]
-                elif isinstance(result, list):
-                    table = result
-                else:
-                    table = [{"value": result}]
-
-                try:
-                    create_table_artifact(
-                        key=f"{flow_run_name}-{key}", table=table, description=task_name
-                    )
-                except Exception as e:
-                    print(
-                        f"Warning! Failed to generate artifact: {key}. Error: {e}. continuing "
-                    )
+        # Validate that we have a BaseArtifact instance
+        if not isinstance(artifact, BaseArtifact):
+            print(
+                f"Warning! Skipping artifact creation for '{task_name}': "
+                f"expected BaseArtifact, got {type(artifact).__name__}"
+            )
             continue
 
-        # Handle single BaseArtifact instance
-        if BaseArtifact is not None and isinstance(data, BaseArtifact):
-            table = data.to_table()
-            description = f"{task_name} ({data.artifact_type})"
-            try:
-                create_table_artifact(
-                    key=f"{flow_run_name}-{key}", table=table, description=description
-                )
-            except Exception as e:
-                print(
-                    f"Warning! Failed to generate artifact: {key}. Error: {e}. continuing "
-                )
-            continue
-
-        # Handle legacy data formats (backward compatibility)
-        if isinstance(data, list):
-            table = data
-        elif isinstance(data, dict):
-            table = [data]
-        elif isinstance(data, pd.DataFrame):
-            table = _df_to_records(data)
-        else:
-            table = [{"value": data}]
+        # Use artifact's own serialization method
+        serialized = artifact.serialize_for_prefect()
+        table = serialized["table"]
+        description = serialized["description"]
 
         try:
             create_table_artifact(
-                key=f"{flow_run_name}-{key}", table=table, description=task_name
+                key=f"{flow_run_name}-{key}",
+                table=table,
+                description=description,
             )
         except Exception as e:
-            print(
-                f"Warning! Failed to generate artifact: {key}. Error: {e}. continuing "
-            )
+            print(f"Warning! Failed to create artifact '{key}': {e}. Continuing...")
