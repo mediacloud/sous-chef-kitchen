@@ -17,6 +17,7 @@ import prefect
 from prefect import flow, get_run_logger
 from prefect.artifacts import create_table_artifact
 from prefect.context import FlowRunContext
+from pydantic import BaseModel as PydanticBaseModel
 from sous_chef import get_flow
 
 from sous_chef_kitchen.kitchen.webhook import fire_webhook
@@ -155,8 +156,11 @@ def _format_flow_output(
 
     Converts raw return value to: {task_name: {data: ..., restricted: bool}}
 
-    Flows must return Dict[str, BaseArtifact]. This function validates that
-    all values are BaseArtifact instances and wraps them in the expected format.
+    Flows can return either:
+    - A FlowOutput model instance (Pydantic BaseModel with BaseArtifact fields)
+    - A Dict[str, BaseArtifact] directly
+
+    This function handles both cases and validates that all values are BaseArtifact instances.
     """
     if BaseArtifact is None:
         # If BaseArtifact is not available, fall back to legacy behavior
@@ -170,10 +174,16 @@ def _format_flow_output(
             return formatted
         return {"result": {"data": run_data, "restricted": False}}
 
+    # Handle FlowOutput model instances (Pydantic BaseModel)
+    if isinstance(run_data, PydanticBaseModel):
+        # Convert FlowOutput model to dict
+        run_data = run_data.model_dump()
+
     # Validate that run_data is a dict
     if not isinstance(run_data, dict):
         raise TypeError(
-            f"Flow must return Dict[str, BaseArtifact], got {type(run_data).__name__}"
+            f"Flow must return Dict[str, BaseArtifact] or FlowOutput model, "
+            f"got {type(run_data).__name__}"
         )
 
     # Validate that all values are BaseArtifact instances

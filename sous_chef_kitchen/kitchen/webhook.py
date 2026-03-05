@@ -75,12 +75,12 @@ def _serialize_artifact_data(data: Any) -> Any:
     # Handle BaseArtifact instance
     if BaseArtifact is not None and isinstance(data, BaseArtifact):
         try:
-            table = data.to_table()
-            artifact_type = getattr(data, "artifact_type", "artifact")
-            return {"data": table, "artifact_type": artifact_type}
+            # to_table() already returns a list of dicts with _artifact_type included
+            # Just return the table directly - no need for extra nesting
+            return data.to_table()
         except Exception as e:
             logger.warning(f"Failed to serialize BaseArtifact: {e}")
-            return {"data": None, "artifact_type": "unknown"}
+            return []
 
     # Handle DataFrame
     if isinstance(data, pd.DataFrame):
