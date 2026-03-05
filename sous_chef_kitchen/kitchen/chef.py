@@ -32,7 +32,12 @@ from prefect.exceptions import ObjectNotFound
 from prefect.server.schemas.responses import SetStateStatus
 from prefect.server.schemas.states import State
 from pydantic import ValidationError
-from sous_chef import get_flow, get_flow_schema, list_flows
+from sous_chef import (
+    get_flow,
+    get_flow_output_schema,
+    get_flow_schema,
+    list_flows,
+)
 
 from sous_chef_kitchen.kitchen.logging_config import setup_logging
 from sous_chef_kitchen.shared.models import (
@@ -372,7 +377,7 @@ async def start_recipe(
 
 
 async def recipe_schema(recipe_name: str, is_admin: bool = False) -> Dict:
-    """Get parameter schema for a flow."""
+    """Get parameter and output schema for a flow."""
     flow_meta = get_flow(recipe_name)
     if not flow_meta:
         return {}
@@ -382,10 +387,19 @@ async def recipe_schema(recipe_name: str, is_admin: bool = False) -> Dict:
         # Return empty dict to avoid leaking which recipes exist
         raise ValueError(f"Recipe '{recipe_name}' not found")
 
-    schema = get_flow_schema(recipe_name)
-    if not schema:
+    # Input (parameter) schema
+    input_schema = get_flow_schema(recipe_name)
+    if not input_schema:
         return {}
-    return schema  # Already returns properties dict
+
+    # Output (artifact) schema - may be empty if no output_model defined
+    output_schema = get_flow_output_schema(recipe_name)
+
+    # Return both input and output schemas so clients can discover output formats
+    return {
+        "input": input_schema,
+        "output": output_schema,
+    }
 
 
 async def recipe_list(is_admin: bool = False) -> Dict:
