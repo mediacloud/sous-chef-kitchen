@@ -17,17 +17,13 @@ import prefect
 from prefect import flow, get_run_logger
 from prefect.artifacts import create_table_artifact
 from prefect.context import FlowRunContext
-from pydantic import BaseModel as PydanticBaseModel
 from sous_chef import get_flow
 
-from sous_chef_kitchen.kitchen.webhook import fire_webhook
+# Import BaseArtifact and BaseFlowOutput for type checking
+from sous_chef.artifacts import BaseArtifact
+from sous_chef.flow import BaseFlowOutput
 
-# Import BaseArtifact for artifact detection
-try:
-    from sous_chef.artifacts import BaseArtifact
-except ImportError:
-    # Fallback if artifacts module not available
-    BaseArtifact = None
+from sous_chef_kitchen.kitchen.webhook import fire_webhook
 
 # Import flows to trigger registration
 try:
@@ -157,25 +153,13 @@ def _format_flow_output(
     Converts raw return value to: {task_name: {data: ..., restricted: bool}}
 
     Flows can return either:
-    - A FlowOutput model instance (Pydantic BaseModel with BaseArtifact fields)
+    - A BaseFlowOutput model instance (with BaseArtifact fields)
     - A Dict[str, BaseArtifact] directly
 
     This function handles both cases and validates that all values are BaseArtifact instances.
     """
-    if BaseArtifact is None:
-        # If BaseArtifact is not available, fall back to legacy behavior
-        if isinstance(run_data, dict):
-            if all(isinstance(v, dict) and "data" in v for v in run_data.values()):
-                return run_data
-            formatted = {}
-            for key, value in run_data.items():
-                restricted = flow_meta.get("restricted_fields", {}).get(key, False)
-                formatted[key] = {"data": value, "restricted": restricted}
-            return formatted
-        return {"result": {"data": run_data, "restricted": False}}
-
-    # Handle FlowOutput model instances (Pydantic BaseModel)
-    if isinstance(run_data, PydanticBaseModel):
+    # Handle BaseFlowOutput model instances
+    if isinstance(run_data, BaseFlowOutput):
         # Extract field values directly to preserve BaseArtifact instances
         # Using model_dump() would serialize nested BaseModel instances to dicts
         run_data = {
@@ -186,21 +170,23 @@ def _format_flow_output(
     # Validate that run_data is a dict
     if not isinstance(run_data, dict):
         raise TypeError(
-            f"Flow must return Dict[str, BaseArtifact] or FlowOutput model, "
+            f"Flow must return Dict[str, BaseArtifact] or BaseFlowOutput model, "
             f"got {type(run_data).__name__}"
         )
 
     # Validate that all values are BaseArtifact instances
     formatted = {}
+    restricted_fields = flow_meta.get("restricted_fields", {})
     for key, value in run_data.items():
         if not isinstance(value, BaseArtifact):
             raise TypeError(
                 f"Flow return value '{key}' must be a BaseArtifact instance, "
                 f"got {type(value).__name__}"
             )
-        # Determine if restricted (could come from flow metadata)
-        restricted = flow_meta.get("restricted_fields", {}).get(key, False)
-        formatted[key] = {"data": value, "restricted": restricted}
+        formatted[key] = {
+            "data": value,
+            "restricted": restricted_fields.get(key, False),
+        }
 
     return formatted
 
