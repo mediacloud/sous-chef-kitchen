@@ -176,8 +176,12 @@ def _format_flow_output(
 
     # Handle FlowOutput model instances (Pydantic BaseModel)
     if isinstance(run_data, PydanticBaseModel):
-        # Convert FlowOutput model to dict
-        run_data = run_data.model_dump()
+        # Extract field values directly to preserve BaseArtifact instances
+        # Using model_dump() would serialize nested BaseModel instances to dicts
+        run_data = {
+            field_name: getattr(run_data, field_name)
+            for field_name in run_data.model_fields.keys()
+        }
 
     # Validate that run_data is a dict
     if not isinstance(run_data, dict):
