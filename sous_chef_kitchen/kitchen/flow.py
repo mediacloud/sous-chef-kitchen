@@ -218,14 +218,11 @@ def _create_artifacts(
     """
     Create Prefect artifacts from formatted flow outputs.
 
-    Flows must return Dict[str, BaseArtifact]. This function calls
-    serialize_for_prefect() on each artifact to get the table and description,
-    then creates Prefect table artifacts.
+    After `_format_flow_output` runs, `formatted_data` is a dict of:
+    {task_name: {data: BaseArtifact, restricted: bool}}.
+    This function calls `serialize_for_prefect()` on each artifact to get
+    the table and description, then creates Prefect table artifacts.
     """
-    if BaseArtifact is None:
-        # If BaseArtifact is not available, skip artifact creation
-        return
-
     for task_name, output in formatted_data.items():
         key = re.sub("[^0-9a-zA-Z]+", "-", task_name.lower())
         artifact = output["data"]

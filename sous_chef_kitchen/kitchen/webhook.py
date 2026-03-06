@@ -14,11 +14,7 @@ import httpx
 import pandas as pd
 
 # Import BaseArtifact for artifact detection
-try:
-    from sous_chef.artifacts import BaseArtifact
-except ImportError:
-    # Fallback if artifacts module not available
-    BaseArtifact = None
+from sous_chef.artifacts import BaseArtifact
 
 logger = logging.getLogger("sous_chef_kitchen.webhook")
 
@@ -56,11 +52,7 @@ def _serialize_artifact_data(data: Any) -> Any:
                 serialized["result"] = {"value": result}
 
         # Serialize artifact if present
-        if (
-            artifact is not None
-            and BaseArtifact is not None
-            and isinstance(artifact, BaseArtifact)
-        ):
+        if artifact is not None and isinstance(artifact, BaseArtifact):
             try:
                 serialized["artifact"] = artifact.to_table()
                 serialized["artifact_type"] = getattr(
@@ -73,7 +65,7 @@ def _serialize_artifact_data(data: Any) -> Any:
         return serialized
 
     # Handle BaseArtifact instance
-    if BaseArtifact is not None and isinstance(data, BaseArtifact):
+    if isinstance(data, BaseArtifact):
         try:
             # to_table() already returns a list of dicts with _artifact_type included
             # Just return the table directly - no need for extra nesting
