@@ -505,7 +505,7 @@ readability-lxml==0.8.4.1
     # via mediacloud-metadata
 readchar==4.2.1
     # via prefect
-redis==7.2.1
+redis==7.3.0
     # via
     #   fakeredis
     #   py-key-value-aio
@@ -604,7 +604,7 @@ sortedcontainers==2.4.0
     #   sigfig
 soupsieve==2.8.3
     # via beautifulsoup4
-sous-chef @ git+https://github.com/mediacloud/sous-chef@v3.4.0
+sous-chef @ git+https://github.com/mediacloud/sous-chef@v3.4.1
     # via sous-chef-kitchen (pyproject.toml)
 spacy==3.8.11
     # via
