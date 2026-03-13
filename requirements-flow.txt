@@ -31,7 +31,7 @@ anyio==4.12.1
     #   openai
     #   prefect
     #   starlette
-apprise==1.9.7
+apprise==1.9.8
     # via prefect
 asgi-lifespan==2.1.0
     # via prefect
@@ -57,16 +57,16 @@ blis==1.3.3
     # via thinc
 boilerpy3==1.0.7
     # via mediacloud-metadata
-boto3==1.42.62
+boto3==1.42.67
     # via
     #   prefect-aws
     #   sous-chef
-botocore==1.42.62
+botocore==1.42.67
     # via
     #   boto3
     #   prefect-aws
     #   s3transfer
-cachetools==7.0.3
+cachetools==7.0.5
     # via
     #   prefect
     #   py-key-value-aio
@@ -85,7 +85,7 @@ certifi==2026.2.25
     #   trafilatura
 cffi==2.0.0
     # via cryptography
-chardet==7.0.1
+chardet==7.1.0
     # via readability-lxml
 charset-normalizer==3.4.5
     # via
@@ -122,7 +122,7 @@ coolname==4.0.0
     # via prefect
 courlan==1.3.2
     # via trafilatura
-croniter==6.0.0
+cronsim==2.7
     # via pydocket
 cryptography==46.0.5
     # via prefect
@@ -131,7 +131,7 @@ cssselect==1.4.0
     #   goose3
     #   newspaper3k
     #   readability-lxml
-cyclopts==4.7.0
+cyclopts==4.9.0
     # via prefect
 cymem==2.0.13
     # via
@@ -184,7 +184,7 @@ feedfinder2==0.0.4
     # via newspaper3k
 feedparser==6.0.12
     # via newspaper3k
-filelock==3.25.0
+filelock==3.25.2
     # via
     #   huggingface-hub
     #   tldextract
@@ -214,7 +214,7 @@ griffelib==2.0.0
     # via
     #   griffe
     #   griffecli
-groq==1.0.0
+groq==1.1.1
     # via sous-chef
 h11==0.16.0
     # via
@@ -222,7 +222,7 @@ h11==0.16.0
     #   uvicorn
 h2==4.3.0
     # via httpx
-hf-xet==1.3.2
+hf-xet==1.4.2
     # via huggingface-hub
 hpack==4.1.0
     # via h2
@@ -241,7 +241,7 @@ httpx==0.28.1
     #   litellm
     #   openai
     #   prefect
-huggingface-hub==1.6.0
+huggingface-hub==1.7.1
     # via
     #   tokenizers
     #   transformers
@@ -303,7 +303,7 @@ justext==3.0.2
     # via trafilatura
 langdetect==1.0.9
     # via goose3
-litellm==1.82.0
+litellm==1.82.1
     # via sous-chef
 lupa==2.6
     # via fakeredis
@@ -346,7 +346,7 @@ murmurhash==1.0.15
     #   preshed
     #   spacy
     #   thinc
-mypy-boto3-s3==1.42.37
+mypy-boto3-s3==1.42.67
     # via prefect-aws
 mypy-boto3-secretsmanager==1.42.8
     # via prefect-aws
@@ -383,7 +383,7 @@ orderedmultidict==1.0.2
     # via furl
 orjson==3.11.7
     # via prefect
-packaging==25.0
+packaging==26.0
     # via
     #   huggingface-hub
     #   prefect
@@ -403,7 +403,7 @@ pillow==12.1.1
     #   newspaper3k
 pluggy==1.6.0
     # via prefect
-prefect==3.6.21
+prefect==3.6.22
     # via
     #   prefect-aws
     #   prefect-email
@@ -460,7 +460,7 @@ pydantic-extra-types==2.11.0
     # via prefect
 pydantic-settings==2.13.1
     # via prefect
-pydocket==0.18.1
+pydocket==0.18.2
     # via prefect
 pygments==2.19.2
     # via rich
@@ -469,7 +469,6 @@ pyparsing==3.3.2
 python-dateutil==2.9.0.post0
     # via
     #   botocore
-    #   croniter
     #   dateparser
     #   elasticsearch-dsl
     #   goose3
@@ -490,7 +489,6 @@ python-slugify==8.0.4
     # via prefect
 pytz==2026.1.post1
     # via
-    #   croniter
     #   dateparser
     #   pandas
     #   prefect
@@ -604,7 +602,7 @@ sortedcontainers==2.4.0
     #   sigfig
 soupsieve==2.8.3
     # via beautifulsoup4
-sous-chef @ git+https://github.com/mediacloud/sous-chef@v3.4.1
+sous-chef @ git+https://github.com/mediacloud/sous-chef@v3.5.0
     # via sous-chef-kitchen (pyproject.toml)
 spacy==3.8.11
     # via
@@ -652,7 +650,7 @@ tiktoken==0.12.0
     # via litellm
 tinysegmenter==0.3
     # via newspaper3k
-tld==0.13.1
+tld==0.13.2
     # via courlan
 tldextract==5.1.3
     # via
@@ -767,7 +765,7 @@ zipp==3.23.0
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
-setuptools==82.0.0
+setuptools==82.0.1
     # via
     #   fasttext
     #   spacy
