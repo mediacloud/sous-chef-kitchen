@@ -30,7 +30,7 @@ from prefect.client.schemas.objects import (
 )
 from prefect.exceptions import ObjectNotFound
 from prefect.server.schemas.responses import SetStateStatus
-from prefect.server.schemas.states import State
+from prefect.states import State
 from pydantic import ValidationError
 from sous_chef import (
     get_flow,
