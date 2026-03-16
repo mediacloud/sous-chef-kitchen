@@ -282,7 +282,7 @@ async def fetch_active_runs(
 @app.post("/runs/cancel")
 async def cancel_recipe_run(
     auth: bearer, request: Request, response: Response
-) -> List[Dict[str, Any]]:
+) -> Dict[str, Any]:
     """Cancel the specified Sous Chef Kitchen run."""
 
     auth_status = await _validate_auth(auth, request, response)
@@ -312,7 +312,13 @@ async def cancel_recipe_run(
         # For regular users, pass their tag for authorization check
         # For admins, pass empty tags (will only check BASE_TAGS)
         user_tags = [] if auth_status.media_cloud_staff else [auth_status.tag_slug]
-        return await chef.cancel_recipe_run(recipe_name, run_id, tags=user_tags)
+        result = await chef.cancel_recipe_run(recipe_name, run_id, tags=user_tags)
+        # Normalize response to a simple JSON-serializable payload
+        return {
+            "status": getattr(result, "status", None),
+            "state_type": getattr(getattr(result, "state", None), "type", None),
+            "state_name": getattr(getattr(result, "state", None), "name", None),
+        }
     except ValueError as e:
         logger.warning(f"Error canceling recipe run {run_id}: {e}")
         raise HTTPException(status_code=http_status.HTTP_400_BAD_REQUEST, detail=str(e))

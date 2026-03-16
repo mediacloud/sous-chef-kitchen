@@ -30,7 +30,7 @@ from prefect.client.schemas.objects import (
 )
 from prefect.exceptions import ObjectNotFound
 from prefect.server.schemas.responses import SetStateStatus
-from prefect.server.schemas.states import State
+from prefect.states import State
 from pydantic import ValidationError
 from sous_chef import (
     get_flow,
@@ -143,9 +143,20 @@ async def cancel_recipe_run(
         )
 
     async with prefect.get_client() as client:
-        # Create state without state_details to avoid validation error
-        cancel_state = State(type=StateType.CANCELLING, state_details=None)
+        # Request cancellation using a valid StateDetails instance to avoid
+        # downstream validation errors when runs are reloaded from Prefect.
+        cancel_state = State(type=StateType.CANCELLING)
         result = await client.set_flow_run_state(run_dict["id"], cancel_state)
+
+    logger.info(
+        "Requested cancellation for run %s (recipe=%s); "
+        "Prefect response status=%s, final_state_type=%s, final_state_name=%s",
+        run_id,
+        recipe_name,
+        getattr(result, "status", None),
+        getattr(getattr(result, "state", None), "type", None),
+        getattr(getattr(result, "state", None), "name", None),
+    )
 
     if result.status == SetStateStatus.ABORT:
         raise RuntimeError(f"Unable to cancel the flow run: {result.details.reason}")
