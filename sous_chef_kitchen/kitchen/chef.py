@@ -145,7 +145,7 @@ async def cancel_recipe_run(
     async with prefect.get_client() as client:
         # Request cancellation using a valid StateDetails instance to avoid
         # downstream validation errors when runs are reloaded from Prefect.
-        cancel_state = State(type=StateType.CANCELLING, state_details={})
+        cancel_state = State(type=StateType.CANCELLING)
         result = await client.set_flow_run_state(run_dict["id"], cancel_state)
 
     logger.info(
