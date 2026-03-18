@@ -4,12 +4,17 @@
 #
 #    pip-compile --allow-unsafe --extra=sous-chef --output-file=requirements-flow.txt.tmp --strip-extras pyproject.toml
 #
+aiobotocore==3.3.0
+    # via prefect-aws
 aiohappyeyeballs==2.6.1
     # via aiohttp
 aiohttp==3.13.3
     # via
+    #   aiobotocore
     #   instructor
     #   litellm
+aioitertools==0.13.0
+    # via aiobotocore
 aiosignal==1.4.0
     # via aiohttp
 aiosqlite==0.22.1
@@ -57,12 +62,13 @@ blis==1.3.3
     # via thinc
 boilerpy3==1.0.7
     # via mediacloud-metadata
-boto3==1.42.69
+boto3==1.42.70
     # via
     #   prefect-aws
     #   sous-chef
-botocore==1.42.69
+botocore==1.42.70
     # via
+    #   aiobotocore
     #   boto3
     #   prefect-aws
     #   s3transfer
@@ -85,7 +91,7 @@ certifi==2026.2.25
     #   trafilatura
 cffi==2.0.0
     # via cryptography
-chardet==7.1.0
+chardet==7.2.0
     # via readability-lxml
 charset-normalizer==3.4.6
     # via
@@ -285,6 +291,7 @@ jiter==0.11.1
     #   openai
 jmespath==1.1.0
     # via
+    #   aiobotocore
     #   boto3
     #   botocore
 joblib==1.5.3
@@ -303,7 +310,7 @@ justext==3.0.2
     # via trafilatura
 langdetect==1.0.9
     # via goose3
-litellm==1.82.3
+litellm==1.82.4
     # via sous-chef
 lupa==2.6
     # via fakeredis
@@ -339,6 +346,7 @@ mpmath==1.3.0
     # via sympy
 multidict==6.7.1
     # via
+    #   aiobotocore
     #   aiohttp
     #   yarl
 murmurhash==1.0.15
@@ -346,10 +354,6 @@ murmurhash==1.0.15
     #   preshed
     #   spacy
     #   thinc
-mypy-boto3-s3==1.42.67
-    # via prefect-aws
-mypy-boto3-secretsmanager==1.42.8
-    # via prefect-aws
 networkx==3.6.1
     # via
     #   torch
@@ -371,7 +375,7 @@ numpy==1.26.4
     #   yake
 oauthlib==3.3.1
     # via requests-oauthlib
-openai==2.28.0
+openai==2.29.0
     # via
     #   instructor
     #   litellm
@@ -408,7 +412,7 @@ prefect==3.6.22
     #   prefect-aws
     #   prefect-email
     #   sous-chef
-prefect-aws==0.5.13
+prefect-aws==0.7.5
     # via sous-chef
 prefect-email==0.4.2
     # via sous-chef
@@ -468,6 +472,7 @@ pyparsing==3.3.2
     # via prefect-aws
 python-dateutil==2.9.0.post0
     # via
+    #   aiobotocore
     #   botocore
     #   dateparser
     #   elasticsearch-dsl
@@ -549,6 +554,7 @@ rich==14.3.3
     #   cyclopts
     #   instructor
     #   prefect
+    #   prefect-aws
     #   pydocket
     #   rich-rst
     #   typer
@@ -602,7 +608,7 @@ sortedcontainers==2.4.0
     #   sigfig
 soupsieve==2.8.3
     # via beautifulsoup4
-sous-chef @ git+https://github.com/mediacloud/sous-chef@v3.6.0
+sous-chef @ git+https://github.com/mediacloud/sous-chef@v3.7.0
     # via sous-chef-kitchen (pyproject.toml)
 spacy==3.8.11
     # via
@@ -682,6 +688,7 @@ typer==0.24.1
     # via
     #   huggingface-hub
     #   instructor
+    #   prefect-aws
     #   pydocket
     #   transformers
     #   typer-slim
@@ -699,8 +706,6 @@ typing-extensions==4.15.0
     #   fastapi
     #   groq
     #   huggingface-hub
-    #   mypy-boto3-s3
-    #   mypy-boto3-secretsmanager
     #   openai
     #   opentelemetry-api
     #   prefect
@@ -756,7 +761,9 @@ weasel==0.4.3
 websockets==16.0
     # via prefect
 wrapt==2.1.2
-    # via smart-open
+    # via
+    #   aiobotocore
+    #   smart-open
 yake==0.7.3
     # via sous-chef
 yarl==1.23.0
