@@ -1,6 +1,7 @@
 import asyncio
 import os
 import time
+from typing import Optional
 
 import httpx
 from dotenv import load_dotenv
@@ -64,6 +65,9 @@ class SousChefCredentials(BaseSettings):
     MEDIACLOUD_API_KEY: str
 
     HUGGINGFACE_API_KEY: str
+    # Optional org name to charge routed Hugging Face Inference API calls to.
+    # If unset/empty, requests will be billed to the user's account.
+    HUGGINGFACE_BILL_TO: Optional[str] = None
     GROQ_API_KEY: str
 
 
@@ -87,6 +91,8 @@ def setup_secrets(overwrite=True):
     ).save("b2-s3-credentials", overwrite=overwrite)
 
     Variable.set("b2-bucket-name", config.B2_BUCKET)
+    if config.HUGGINGFACE_BILL_TO:
+        Variable.set("llm-huggingface-bill-to", config.HUGGINGFACE_BILL_TO)
 
     EmailServerCredentials(
         username=config.GMAIL_APP_USERNAME,
