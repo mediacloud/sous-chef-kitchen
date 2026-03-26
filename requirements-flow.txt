@@ -24,20 +24,20 @@ annotated-doc==0.0.4
     #   typer
 annotated-types==0.7.0
     # via pydantic
-anyio==4.12.1
+anyio==4.13.0
     # via
     #   groq
     #   httpx
     #   openai
     #   prefect
     #   starlette
-apprise==1.9.8
+apprise==1.9.9
     # via prefect
 asgi-lifespan==2.1.0
     # via prefect
 asyncpg==0.31.0
     # via prefect
-attrs==25.4.0
+attrs==26.1.0
     # via
     #   aiohttp
     #   cyclopts
@@ -57,11 +57,11 @@ blis==1.3.3
     # via thinc
 boilerpy3==1.0.7
     # via mediacloud-metadata
-boto3==1.42.71
+boto3==1.42.76
     # via
     #   prefect-aws
     #   sous-chef
-botocore==1.42.71
+botocore==1.42.76
     # via
     #   boto3
     #   prefect-aws
@@ -85,7 +85,7 @@ certifi==2026.2.25
     #   trafilatura
 cffi==2.0.0
     # via cryptography
-chardet==7.2.0
+chardet==7.3.0
     # via readability-lxml
 charset-normalizer==3.4.6
     # via
@@ -114,8 +114,9 @@ cloudpickle==3.1.2
     #   pydocket
 colorama==0.4.6
     # via griffecli
-confection==0.1.5
+confection==1.3.3
     # via
+    #   spacy
     #   thinc
     #   weasel
 coolname==4.1.0
@@ -124,14 +125,14 @@ courlan==1.3.2
     # via trafilatura
 cronsim==2.7
     # via pydocket
-cryptography==46.0.5
+cryptography==46.0.6
     # via prefect
 cssselect==1.4.0
     # via
     #   goose3
     #   newspaper3k
     #   readability-lxml
-cyclopts==4.10.0
+cyclopts==4.10.1
     # via prefect
 cymem==2.0.13
     # via
@@ -172,7 +173,7 @@ exceptiongroup==1.3.1
     # via prefect
 fakeredis==2.34.1
     # via pydocket
-fastapi==0.135.1
+fastapi==0.135.2
     # via prefect
 fasttext==0.9.3
     # via mc-providers
@@ -206,15 +207,15 @@ graphviz==0.21
     # via prefect
 greenlet==3.3.2
     # via sqlalchemy
-griffe==2.0.0
+griffe==2.0.1
     # via prefect
-griffecli==2.0.0
+griffecli==2.0.1
     # via griffe
-griffelib==2.0.0
+griffelib==2.0.1
     # via
     #   griffe
     #   griffecli
-groq==1.1.1
+groq==1.1.2
     # via sous-chef
 h11==0.16.0
     # via
@@ -241,8 +242,10 @@ httpx==0.28.1
     #   litellm
     #   openai
     #   prefect
-huggingface-hub==1.7.1
+    #   weasel
+huggingface-hub==1.8.0
     # via
+    #   sous-chef
     #   tokenizers
     #   transformers
 humanize==4.15.0
@@ -291,7 +294,7 @@ joblib==1.5.3
     # via nltk
 jsonpatch==1.33
     # via prefect
-jsonpointer==3.0.0
+jsonpointer==3.1.1
     # via jsonpatch
 jsonschema==4.26.0
     # via
@@ -303,7 +306,7 @@ justext==3.0.2
     # via trafilatura
 langdetect==1.0.9
     # via goose3
-litellm==1.82.4
+litellm==1.82.6
     # via sous-chef
 lupa==2.6
     # via fakeredis
@@ -356,7 +359,7 @@ networkx==3.6.1
     #   yake
 newspaper3k==0.2.8
     # via mediacloud-metadata
-nltk==3.9.3
+nltk==3.9.4
     # via newspaper3k
 numpy==1.26.4
     # via
@@ -371,7 +374,7 @@ numpy==1.26.4
     #   yake
 oauthlib==3.3.1
     # via requests-oauthlib
-openai==2.29.0
+openai==2.30.0
     # via
     #   instructor
     #   litellm
@@ -403,7 +406,7 @@ pillow==12.1.1
     #   newspaper3k
 pluggy==1.6.0
     # via prefect
-prefect==3.6.22
+prefect==3.6.23
     # via
     #   prefect-aws
     #   prefect-email
@@ -412,7 +415,7 @@ prefect-aws==0.5.13
     # via sous-chef
 prefect-email==0.4.2
     # via sous-chef
-preshed==3.0.12
+preshed==3.0.13
     # via
     #   spacy
     #   thinc
@@ -424,7 +427,7 @@ propcache==0.4.1
     # via
     #   aiohttp
     #   yarl
-protobuf==7.34.0
+protobuf==7.34.1
     # via sous-chef
 py-key-value-aio==0.4.4
     # via pydocket
@@ -438,7 +441,6 @@ pycparser==3.0
     # via cffi
 pydantic==2.12.5
     # via
-    #   confection
     #   fastapi
     #   groq
     #   instructor
@@ -503,7 +505,7 @@ readability-lxml==0.8.4.1
     # via mediacloud-metadata
 readchar==4.2.1
     # via prefect
-redis==7.3.0
+redis==7.4.0
     # via
     #   fakeredis
     #   py-key-value-aio
@@ -519,7 +521,7 @@ regex==2026.2.28
     #   segtok
     #   tiktoken
     #   transformers
-requests==2.32.5
+requests==2.33.0
     # via
     #   apprise
     #   docker
@@ -537,7 +539,6 @@ requests==2.32.5
     #   tiktoken
     #   tldextract
     #   wayback-news-search
-    #   weasel
 requests-file==3.0.1
     # via tldextract
 requests-oauthlib==2.0.0
@@ -602,9 +603,9 @@ sortedcontainers==2.4.0
     #   sigfig
 soupsieve==2.8.3
     # via beautifulsoup4
-sous-chef @ git+https://github.com/mediacloud/sous-chef@v3.7.1
+sous-chef @ git+https://github.com/mediacloud/sous-chef@v3.8.0
     # via sous-chef-kitchen (pyproject.toml)
-spacy==3.8.11
+spacy==3.8.13
     # via
     #   mc-providers
     #   sous-chef
@@ -622,13 +623,12 @@ sqlalchemy==2.0.48
     # via
     #   alembic
     #   prefect
-srsly==2.5.2
+srsly==2.5.3
     # via
-    #   confection
     #   spacy
     #   thinc
     #   weasel
-starlette==0.52.1
+starlette==1.0.0
     # via fastapi
 statsd-client==1.0.7
     # via mc-providers
@@ -644,7 +644,7 @@ tenacity==9.1.4
     #   prefect-aws
 text-unidecode==1.3
     # via python-slugify
-thinc==8.3.10
+thinc==8.3.13
     # via spacy
 tiktoken==0.12.0
     # via litellm
@@ -663,7 +663,7 @@ tokenizers==0.22.2
     #   transformers
 toml==0.10.2
     # via prefect
-torch==2.10.0
+torch==2.11.0
     # via
     #   sous-chef
     #   sous-chef-kitchen (pyproject.toml)
@@ -683,11 +683,8 @@ typer==0.24.1
     #   huggingface-hub
     #   instructor
     #   pydocket
-    #   transformers
-    #   typer-slim
-typer-slim==0.24.0
-    # via
     #   spacy
+    #   transformers
     #   weasel
 typing-extensions==4.15.0
     # via
@@ -751,7 +748,7 @@ wayback-news-search==1.2.1
     # via
     #   mc-providers
     #   sous-chef
-weasel==0.4.3
+weasel==1.0.0
     # via spacy
 websockets==16.0
     # via prefect
@@ -765,8 +762,9 @@ zipp==3.23.0
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
-setuptools==82.0.1
+setuptools==81.0.0
     # via
     #   fasttext
     #   spacy
     #   thinc
+    #   torch
