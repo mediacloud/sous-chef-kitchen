@@ -11,7 +11,7 @@ This is the execution layer that:
 
 import os
 import re
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import prefect
 from prefect import flow, get_run_logger
@@ -22,6 +22,7 @@ from sous_chef import get_flow
 # Import BaseArtifact and BaseFlowOutput for type checking
 from sous_chef.artifacts import BaseArtifact
 from sous_chef.flow import BaseFlowOutput
+from sous_chef.runtime import RuntimeRecorder, runtime_session
 
 from sous_chef_kitchen.kitchen.webhook import fire_webhook
 
@@ -76,6 +77,7 @@ def kitchen_base(
     execution_success = False
     execution_error = None
     filtered_data = {}
+    runtime_rec: Optional[RuntimeRecorder] = None
 
     try:
         # Get flow from registry
@@ -99,12 +101,23 @@ def kitchen_base(
         with prefect.tags(*tags):
             logger.info(f"Starting flow: {recipe_name}")
 
-            # Execute flow - returns raw data
-            run_data = flow_func(validated_params)
+            run_id_str = str(flow_run_id) if flow_run_id else None
+            with runtime_session(
+                recipe_name=recipe_name,
+                run_id=run_id_str,
+            ) as runtime_rec:
+                # Execute flow - returns raw data
+                run_data = flow_func(validated_params)
+
+        timeline_artifact = runtime_rec.to_timeline_artifact()
 
         # Format output for artifacts
         # Convert raw return value to artifact format: {task_name: {data: ..., restricted: bool}}
         formatted_data = _format_flow_output(run_data, flow_meta)
+        formatted_data["runtime_timeline"] = {
+            "data": timeline_artifact,
+            "restricted": False,
+        }
 
         # Filter restricted fields if user doesn't have permission
         filtered_data = _filter_restricted_fields(
@@ -119,6 +132,22 @@ def kitchen_base(
     except Exception as e:
         execution_error = str(e)
         logger.error(f"Flow execution failed: {e}", exc_info=True)
+        if runtime_rec is not None:
+            try:
+                ta = runtime_rec.to_timeline_artifact()
+                _create_artifacts(
+                    {
+                        "runtime_timeline": {
+                            "data": ta,
+                            "restricted": False,
+                        }
+                    },
+                    flow_run_name,
+                )
+            except Exception as art_err:
+                logger.warning(
+                    "Failed to create runtime timeline artifact: %s", art_err
+                )
         # Re-raise so Prefect marks run as FAILED
         raise
 
