@@ -215,6 +215,7 @@ KITCHEN_IMAGE_NAME=$STACK_NAME # per-user/deployment type
 KITCHEN_IMAGE_TAG=$IMAGE_TAG
 
 KITCHEN_IMAGE=$KITCHEN_IMAGE_REPO/$KITCHEN_IMAGE_NAME:$KITCHEN_IMAGE_TAG
+PREFECT_WORKER_IMAGE=$KITCHEN_IMAGE_REPO/$KITCHEN_IMAGE_NAME-worker:$KITCHEN_IMAGE_TAG
 # calculate port published *on docker host* using deployment-type bias:
 KITCHEN_PORT_PUBLISHED=$(expr $KITCHEN_PORT + $PORT_BIAS)
 
@@ -224,8 +225,8 @@ NETWORK_NAME=$STACK_NAME
 
 #Interpolated and then built into the kitchen image
 PREFECT_FILE=$SCRIPT_DIR/prefect.yaml
-# used for multiple services:
-PREFECT_IMAGE=prefecthq/prefect:3-latest
+# Keep prefect server on official image.
+PREFECT_SERVER_IMAGE=prefecthq/prefect:3-latest
 # calculate published port numbers using deployment-type bias:
 PREFECT_PORT_PUBLISHED=$(expr $PREFECT_PORT + $PORT_BIAS)
 PREFECT_URL=http://$PREFECT_SERVER:$PREFECT_PORT/api
@@ -343,10 +344,11 @@ exp KITCHEN_PORT_PUBLISHED int
 exp NETWORK_NAME
 
 exp PREFECT_CONTAINERS
-exp PREFECT_IMAGE
 exp PREFECT_PORT int
 exp PREFECT_PORT_PUBLISHED int
+exp PREFECT_SERVER_IMAGE
 exp PREFECT_URL
+exp PREFECT_WORKER_IMAGE
 exp PREFECT_WORK_POOL_NAME	# used multiple places
 
 exp PRIVATE_CONF_FILE
@@ -448,6 +450,7 @@ echo GIT_REPO $GIT_REPO
 
 echo "Interpolating prefect.yaml"
 sed -e "s/DEPLOYMENT_NAME/$KITCHEN_DEPLOYMENT_NAME/g" \
+    -e "s@PREFECT_WORKER_IMAGE@$PREFECT_WORKER_IMAGE@g" \
     -e "s/WORK_POOL_NAME/$PREFECT_WORK_POOL_NAME/g" \
     -e "s@GIT_REPO@$GIT_REPO@g" \
     -e "s/GIT_TAG/$TAG/g" \

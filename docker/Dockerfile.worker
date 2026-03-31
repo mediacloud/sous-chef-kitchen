@@ -1,0 +1,33 @@
+FROM prefecthq/prefect:3-latest
+
+ENV APP=/app
+WORKDIR ${APP}
+
+# Runtime OS dependencies required by flow libraries.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libxml2-dev \
+    libxslt1-dev \
+    zlib1g-dev \
+    gcc \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Optional override for sous-chef git ref (branch/tag/SHA).
+ARG SOUS_CHEF_REF=""
+ENV SOUS_CHEF_REF=${SOUS_CHEF_REF}
+
+# Copy dependency and package metadata first for better layer caching.
+COPY requirements-flow.txt ${APP}/requirements-flow.txt
+COPY pyproject.toml ${APP}/pyproject.toml
+
+# Install pinned runtime dependencies.
+RUN pip install --no-cache-dir -r requirements-flow.txt
+
+# Optional build-time override for sous-chef versions in dev/testing.
+RUN if [ -n "$SOUS_CHEF_REF" ]; then \
+        echo "Building worker with SOUS_CHEF_REF=${SOUS_CHEF_REF}"; \
+        pip install --no-cache-dir --force-reinstall "sous-chef @ git+https://github.com/mediacloud/sous-chef@$SOUS_CHEF_REF"; \
+    fi
+
+# Bake flow source code into the worker image to avoid runtime git clone.
+COPY sous_chef_kitchen/ ${APP}/sous_chef_kitchen/

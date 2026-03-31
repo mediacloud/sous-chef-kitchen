@@ -5,7 +5,7 @@ services:
   # MUST match PREFECT_CONTAINER_NAME in swarm .yml file
   # (cannot be interpolated):
   prefect-server:
-    image: $PREFECT_IMAGE
+    image: $PREFECT_SERVER_IMAGE
     command: prefect server start --host 0.0.0.0
     ports:
       - target: $PREFECT_PORT
@@ -45,7 +45,12 @@ services:
       - my-network
 
   prefect-worker:
-    image: $PREFECT_IMAGE
+    image: $PREFECT_WORKER_IMAGE
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.worker
+      args:
+        SOUS_CHEF_REF: $SOUS_CHEF_REF
     command: prefect worker start --pool $PREFECT_WORK_POOL_NAME
     environment:
       LOG_LEVEL: DEBUG
