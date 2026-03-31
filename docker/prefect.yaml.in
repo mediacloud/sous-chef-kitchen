@@ -24,33 +24,8 @@ prefect-version: 3.2.0
 #    tag: '{{ build-image.tag }}'
 #    credentials: '{{ prefect.blocks.docker-registry-credentials.docker-auth }}'
 
-# pull section allows you to provide instructions for cloning this project in remote locations
-pull:
-- prefect.deployments.steps.git_clone:
-    id: clone-step
-    repository: GIT_REPO
-    branch: GIT_TAG
-
-- prefect.deployments.steps.run_shell_script:
-    id: update-build
-    script: |
-      apt-get update
-      apt-get install -y libxml2-dev libxslt1-dev zlib1g-dev gcc
-      pip install --upgrade pip setuptools wheel flit packaging
-
-
-- prefect.deployments.steps.pip_install_requirements:
-    directory: '{{ clone-step.directory }}'
-    requirements_file: requirements-flow.txt
-    stream_output: true
-
-# Optionally override the installed version of sous-chef for test environments.
-- prefect.deployments.steps.run_shell_script:
-    id: override-sous-chef-if-requested
-    stream_output: true
-    script: |
-      chmod +x '{{ clone-step.directory }}/scripts/override-sous-chef.sh'
-      '{{ clone-step.directory }}/scripts/override-sous-chef.sh'
+# No pull steps: flow code and dependencies are baked into worker image.
+pull: []
 
 # the deployments section allows you to provide configuration for deploying flows
 deployments:
@@ -65,5 +40,5 @@ deployments:
     name: WORK_POOL_NAME
     work_queue_name:
     job_variables:
-      image: '{{ build-image.image }}'
+      image: PREFECT_WORKER_IMAGE
   schedules: []
