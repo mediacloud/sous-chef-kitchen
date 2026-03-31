@@ -164,10 +164,12 @@ async def cancel_recipe_run(
     return result
 
 
-async def fetch_active_runs(tags: List[str] = []) -> List[Dict[str, Any]]:
+async def fetch_active_runs(
+    tags: List[str] = [], parent_only: bool = True
+) -> List[Dict[str, Any]]:
     """Fetch any active or upcoming Sous Chef Kitchen runs from Prefect."""
 
-    return await fetch_runs_by_state(tags, PREFECT_ACTIVE_STATES)
+    return await fetch_runs_by_state(tags, PREFECT_ACTIVE_STATES, parent_only)
 
 
 async def fetch_paused_runs(tags: List[str] = []) -> List[Dict[str, Any]]:
@@ -191,7 +193,7 @@ async def fetch_run_by_id(run_id: UUID | str) -> Dict[str, Any]:
 
 
 async def fetch_runs_by_state(
-    tags: List[str] = [], states: List[StateType] = []
+    tags: List[str] = [], states: List[StateType] = [], parent_only: bool = True
 ) -> List[Dict[str, Any]]:
     """Fetch Sous Chef Kitchen runs that match the specified filters."""
 
@@ -203,6 +205,10 @@ async def fetch_runs_by_state(
 
     async with prefect.get_client() as client:
         runs = await client.read_flow_runs(flow_run_filter=states_filter)
+        if parent_only:
+            runs = [
+                run for run in runs if getattr(run, "parent_task_run_id", None) is None
+            ]
         return [_run_to_dict(run) for run in runs]
 
 
@@ -359,7 +365,7 @@ async def start_recipe(
         name=DeploymentFilterName(any_=[PREFECT_DEPLOYMENT])
     )
 
-    active_runs = await fetch_active_runs(tags)
+    active_runs = await fetch_active_runs(tags, parent_only=True)
     if len(active_runs) >= MAX_USER_FLOWS:
         raise RuntimeError(
             f"Cannot start a new recipe run. You have {len(active_runs)}/{MAX_USER_FLOWS} allocated flows running. "
