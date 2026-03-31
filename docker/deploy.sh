@@ -84,6 +84,16 @@ check_sous_chef_ref() {
 
 check_sous_chef_ref
 
+SOUS_CHEF_SHA=""
+if [ -n "${SOUS_CHEF_REF:-}" ]; then
+    SOUS_CHEF_SHA=$(git ls-remote https://github.com/mediacloud/sous-chef.git "$SOUS_CHEF_REF" | awk 'NR==1 {print $1}')
+    if [ -z "$SOUS_CHEF_SHA" ]; then
+	echo "ERROR: could not resolve sous-chef git ref '${SOUS_CHEF_REF}' to a commit SHA." 1>&2
+	exit 1
+    fi
+    echo "Resolved sous-chef ref '${SOUS_CHEF_REF}' to commit ${SOUS_CHEF_SHA}."
+fi
+
 if [ "x$AS_USER" = x -a $(whoami) != root ]; then
     if ! groups | tr ' ' '\n' | fgrep -qx docker; then
        echo must be run as root or member of docker group 1>&2
@@ -354,6 +364,7 @@ exp PREFECT_WORK_POOL_NAME	# used multiple places
 exp PRIVATE_CONF_FILE
 exp SC_MAX_USER_FLOWS int	# max flows per user (defaults to 1)
 exp SOUS_CHEF_REF allow-empty
+exp SOUS_CHEF_SHA allow-empty
 
 #exp STATSD_REALM
 #exp STATSD_URL
@@ -458,11 +469,6 @@ sed -e "s/DEPLOYMENT_NAME/$KITCHEN_DEPLOYMENT_NAME/g" \
 
 
 BUILD_COMMAND="docker compose -f $COMPOSE_FILE build"
-
-# If we’re overriding sous-chef via a git ref, bust the Docker cache
-if [ -n "${SOUS_CHEF_REF:-}" ]; then
-   BUILD_COMMAND="$BUILD_COMMAND --no-cache"
-fi
 
 echo $BUILD_COMMAND
 $BUILD_COMMAND

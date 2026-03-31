@@ -14,6 +14,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Optional override for sous-chef git ref (branch/tag/SHA).
 ARG SOUS_CHEF_REF=""
+ARG SOUS_CHEF_SHA=""
 ENV SOUS_CHEF_REF=${SOUS_CHEF_REF}
 
 # Copy dependency and package metadata first for better layer caching.
@@ -25,7 +26,7 @@ RUN pip install --no-cache-dir -r requirements-flow.txt
 
 # Optional build-time override for sous-chef versions in dev/testing.
 RUN if [ -n "$SOUS_CHEF_REF" ]; then \
-        echo "Building worker with SOUS_CHEF_REF=${SOUS_CHEF_REF}"; \
+        echo "Building worker with SOUS_CHEF_REF=${SOUS_CHEF_REF} (commit: ${SOUS_CHEF_SHA})"; \
         pip install --no-cache-dir --force-reinstall "sous-chef @ git+https://github.com/mediacloud/sous-chef@$SOUS_CHEF_REF"; \
     fi
 

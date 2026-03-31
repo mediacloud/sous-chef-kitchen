@@ -31,6 +31,7 @@ services:
       dockerfile: docker/Dockerfile
       args:
         SOUS_CHEF_REF: $SOUS_CHEF_REF
+        SOUS_CHEF_SHA: $SOUS_CHEF_SHA
     command: /app/prefect-config.sh
     environment:
       PREFECT_API_URL: $PREFECT_URL
@@ -51,6 +52,7 @@ services:
       dockerfile: docker/Dockerfile.worker
       args:
         SOUS_CHEF_REF: $SOUS_CHEF_REF
+        SOUS_CHEF_SHA: $SOUS_CHEF_SHA
     command: prefect worker start --pool $PREFECT_WORK_POOL_NAME
     environment:
       LOG_LEVEL: DEBUG
