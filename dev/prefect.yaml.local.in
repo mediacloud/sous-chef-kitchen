@@ -15,36 +15,8 @@
 name: kitchen-base
 prefect-version: 3.2.0
 
-# pull section - clones from git using current branch
-pull:
-- prefect.deployments.steps.git_clone:
-    id: clone-step
-    repository: GIT_REPO
-    branch: GIT_BRANCH
-
-- prefect.deployments.steps.run_shell_script:
-    id: update-build
-    script: |
-      pip install --upgrade pip setuptools wheel flit packaging
-
-# uninstall any local sous-chef, so the most recent version is guaranteed in next step
-- prefect.deployments.steps.run_shell_script:
-    id: uninstall-local-sous-chef
-    stream_output: true
-    script: |
-      pip uninstall -y sous-chef
-
-- prefect.deployments.steps.pip_install_requirements:
-    directory: '{{ clone-step.directory }}'
-    requirements_file: requirements-flow.txt
-    stream_output: true
-
-- prefect.deployments.steps.run_shell_script:
-    id: override-sous-chef-if-requested
-    stream_output: true
-    script: |
-      chmod +x '{{ clone-step.directory }}/scripts/override-sous-chef.sh'
-      '{{ clone-step.directory }}/scripts/override-sous-chef.sh'
+# No pull steps for local deploys; use the local environment as-is.
+pull: []
 
 # Deployments section
 deployments:
