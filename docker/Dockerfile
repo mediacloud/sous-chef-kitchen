@@ -22,17 +22,19 @@ ENV SOUS_CHEF_REF=${SOUS_CHEF_REF}
 # Copy pyproject file and install requirements
 COPY pyproject.toml ${APP}/pyproject.toml
 
-# Install core server dependencies (without sous-chef)
-RUN pip install --no-cache-dir --editable '.[server]'
+# Install core server dependencies (without sous-chef); BuildKit pip cache for repeat builds.
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --editable '.[server]'
 
 # Install sous-chef; allow override via SOUS_CHEF_REF for dev builds
 # SOUS_CHEF_SHA is a cache key: changing it refreshes this layer without global --no-cache.
-RUN if [ -n "$SOUS_CHEF_REF" ]; then \
+RUN --mount=type=cache,target=/root/.cache/pip \
+    if [ -n "$SOUS_CHEF_REF" ]; then \
         echo "Building with SOUS_CHEF_REF=${SOUS_CHEF_REF} (commit: ${SOUS_CHEF_SHA})"; \
-        pip install --no-cache-dir "sous-chef @ git+https://github.com/mediacloud/sous-chef@$SOUS_CHEF_REF"; \
+        pip install "sous-chef @ git+https://github.com/mediacloud/sous-chef@$SOUS_CHEF_REF"; \
     else \
         echo "Building with default sous-chef from pyproject.toml"; \
-        pip install --no-cache-dir --editable '.[sous-chef]'; \
+        pip install --editable '.[sous-chef]'; \
     fi
 
 COPY sous_chef_kitchen/ ${APP}/sous_chef_kitchen/

@@ -21,13 +21,15 @@ ENV SOUS_CHEF_REF=${SOUS_CHEF_REF}
 COPY requirements-flow.txt ${APP}/requirements-flow.txt
 COPY pyproject.toml ${APP}/pyproject.toml
 
-# Install pinned runtime dependencies.
-RUN pip install --no-cache-dir -r requirements-flow.txt
+# Install pinned runtime dependencies (BuildKit cache mount speeds repeat builds).
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install -r requirements-flow.txt
 
 # Optional build-time override for sous-chef versions in dev/testing.
-RUN if [ -n "$SOUS_CHEF_REF" ]; then \
+RUN --mount=type=cache,target=/root/.cache/pip \
+    if [ -n "$SOUS_CHEF_REF" ]; then \
         echo "Building worker with SOUS_CHEF_REF=${SOUS_CHEF_REF} (commit: ${SOUS_CHEF_SHA})"; \
-        pip install --no-cache-dir --force-reinstall "sous-chef @ git+https://github.com/mediacloud/sous-chef@$SOUS_CHEF_REF"; \
+        pip install "sous-chef @ git+https://github.com/mediacloud/sous-chef@$SOUS_CHEF_REF"; \
     fi
 
 # Bake flow source code into the worker image to avoid runtime git clone.
