@@ -2,6 +2,23 @@
 #	which passes environment variables to be interpolated!!
 
 services:
+  # Prefect API database (PostgreSQL). Avoids SQLite "database is locked" under
+  # concurrent kitchen-api + worker traffic. Not published; stack-internal only.
+  prefect-postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: $PREFECT_POSTGRES_USER
+      POSTGRES_PASSWORD: $PREFECT_POSTGRES_PASSWORD
+      POSTGRES_DB: $PREFECT_POSTGRES_DB
+    volumes:
+      - prefect_postgres_data:/var/lib/postgresql/data
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    networks:
+      - my-network
+
   # MUST match PREFECT_CONTAINER_NAME in swarm .yml file
   # (cannot be interpolated):
   prefect-server:
@@ -14,6 +31,7 @@ services:
         mode: ingress
     environment:
       PREFECT_HOME: /data
+      PREFECT_API_DATABASE_CONNECTION_URL: $PREFECT_API_DATABASE_CONNECTION_URL
     deploy:
       replicas: $PREFECT_CONTAINERS
       restart_policy:
@@ -86,6 +104,9 @@ services:
         condition: on-failure
     networks:
       - my-network
+
+volumes:
+  prefect_postgres_data:
 
 networks:
   my-network:

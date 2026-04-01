@@ -11,6 +11,7 @@ from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi import status as http_status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from prefect.exceptions import ObjectNotFound
 
 from sous_chef_kitchen.kitchen import chef
 from sous_chef_kitchen.kitchen.logging_config import setup_logging
@@ -509,6 +510,12 @@ async def fetch_run_by_id(
     except ValueError as e:
         logger.warning(f"Invalid run ID {run_id}: {e}")
         raise HTTPException(status_code=http_status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except ObjectNotFound:
+        logger.warning("Flow run not found in Prefect (read_flow_run): %s", run_id)
+        raise HTTPException(
+            status_code=http_status.HTTP_404_NOT_FOUND,
+            detail="Flow run not found",
+        )
 
 
 @app.get("/run/{run_id}/artifacts")
@@ -533,6 +540,12 @@ async def fetch_run_artifacts(
         raise HTTPException(
             status_code=http_status.HTTP_400_BAD_REQUEST,
             detail=f"Invalid run ID: {str(e)}",
+        )
+    except ObjectNotFound:
+        logger.warning("Flow run not found in Prefect (artifacts): %s", run_id)
+        raise HTTPException(
+            status_code=http_status.HTTP_404_NOT_FOUND,
+            detail="Flow run not found",
         )
     except Exception as e:
         logger.error(f"Failed to fetch run artifacts for {run_id}: {e}", exc_info=True)

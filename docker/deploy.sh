@@ -302,6 +302,22 @@ else
     SC_MAX_USER_FLOWS=1
 fi
 
+# Prefect server database: PostgreSQL (compose service prefect-postgres).
+# URL is built here so special characters in the password are percent-encoded.
+PREFECT_POSTGRES_USER=${PREFECT_POSTGRES_USER:-prefect}
+PREFECT_POSTGRES_DB=${PREFECT_POSTGRES_DB:-prefect}
+if grep -q "^PREFECT_POSTGRES_PASSWORD=" "$PRIVATE_CONF_FILE" 2>/dev/null; then
+    PREFECT_POSTGRES_PASSWORD=$(grep "^PREFECT_POSTGRES_PASSWORD=" "$PRIVATE_CONF_FILE" | cut -d'=' -f2- | sed "s/^[\"']//;s/[\"']$//" | xargs)
+elif [ "$DEPLOY_TYPE" = dev ]; then
+    PREFECT_POSTGRES_PASSWORD=devprefectlocal
+else
+    echo "FATAL: PREFECT_POSTGRES_PASSWORD must be set in $PRIVATE_CONF_FILE" 1>&2
+    exit 1
+fi
+PREFECT_POSTGRES_PASSWORD_ENCODED=$(PREFECT_POSTGRES_PASSWORD="$PREFECT_POSTGRES_PASSWORD" python3 -c "import os, urllib.parse; print(urllib.parse.quote(os.environ['PREFECT_POSTGRES_PASSWORD'], safe=''))")
+PREFECT_POSTGRES_USER_ENCODED=$(PREFECT_POSTGRES_USER="$PREFECT_POSTGRES_USER" python3 -c "import os, urllib.parse; print(urllib.parse.quote(os.environ['PREFECT_POSTGRES_USER'], safe=''))")
+PREFECT_API_DATABASE_CONNECTION_URL="postgresql+asyncpg://${PREFECT_POSTGRES_USER_ENCODED}:${PREFECT_POSTGRES_PASSWORD_ENCODED}@prefect-postgres:5432/${PREFECT_POSTGRES_DB}"
+
 # display things that vary by stack type, from most to least interesting
 echo STACK_NAME $STACK_NAME
 echo PREFECT_URL $PREFECT_URL
@@ -353,9 +369,13 @@ exp KITCHEN_PORT_PUBLISHED int
 
 exp NETWORK_NAME
 
+exp PREFECT_API_DATABASE_CONNECTION_URL
 exp PREFECT_CONTAINERS
 exp PREFECT_PORT int
 exp PREFECT_PORT_PUBLISHED int
+exp PREFECT_POSTGRES_DB
+exp PREFECT_POSTGRES_PASSWORD
+exp PREFECT_POSTGRES_USER
 exp PREFECT_SERVER_IMAGE
 exp PREFECT_URL
 exp PREFECT_WORKER_IMAGE
