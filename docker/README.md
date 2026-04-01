@@ -8,8 +8,9 @@ This a reproducable process for dev deployment. - Everything here is set up to b
 
 The stack includes a `prefect-postgres` service. The Prefect API uses it via `PREFECT_API_DATABASE_CONNECTION_URL` (see [Prefect 3 self-hosted](https://docs.prefect.io/v3/how-to-guides/self-hosted/server-cli)) instead of SQLite, which avoids `database is locked` errors under concurrent API and worker load.
 
-- **Staging / production:** set `PREFECT_POSTGRES_PASSWORD` in your private `.env` (the same file used for other secrets). Optional overrides: `PREFECT_POSTGRES_USER` (default `prefect`), `PREFECT_POSTGRES_DB` (default `prefect`).
-- **Dev** (`DEPLOY_TYPE=dev`): if the password is not in that file, deploy uses a default (`devprefectlocal`) so local stacks still work.
+- **Staging / production:** set `PREFECT_POSTGRES_PASSWORD` in your private `.env` (the same file `deploy.sh` uses as `PRIVATE_CONF_FILE`). `deploy.sh` reads **only** that password from the file; it does not parse other Postgres keys from `.env`.
+- **User / database name:** defaults are `prefect` / `prefect`. To override `PREFECT_POSTGRES_USER` or `PREFECT_POSTGRES_DB`, **export them in your shell** before running `deploy.sh` (they are not read from the private `.env` today).
+- **Dev** (`DEPLOY_TYPE=dev`): if `PREFECT_POSTGRES_PASSWORD` is not in that file, deploy uses a built-in default (`devprefectlocal`) so local stacks still work.
 - **Data:** Postgres data lives in the `prefect_postgres_data` volume. Removing the volume gives a clean Prefect DB (runs/history lost), which matches the expected upgrade contract for this stack.
 - **First deploy:** Postgres and `prefect-server` start together; if the one-shot `prefect-config` task runs before the API is ready, redeploy once or re-run that service after Postgres is up.
 
