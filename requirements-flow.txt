@@ -6,7 +6,7 @@
 #
 aiohappyeyeballs==2.6.1
     # via aiohttp
-aiohttp==3.13.4
+aiohttp==3.13.5
     # via
     #   instructor
     #   litellm
@@ -223,7 +223,7 @@ h11==0.16.0
     #   uvicorn
 h2==4.3.0
     # via httpx
-hf-xet==1.4.2
+hf-xet==1.4.3
     # via huggingface-hub
 hpack==4.1.0
     # via h2
@@ -435,7 +435,7 @@ py3langid==0.2.2
     # via mediacloud-metadata
 pyahocorasick==2.3.0
     # via goose3
-pybind11==3.0.2
+pybind11==3.0.3
     # via fasttext
 pycparser==3.0
     # via cffi
@@ -603,7 +603,7 @@ sortedcontainers==2.4.0
     #   sigfig
 soupsieve==2.8.3
     # via beautifulsoup4
-sous-chef @ git+https://github.com/mediacloud/sous-chef@v3.8.2
+sous-chef @ git+https://github.com/mediacloud/sous-chef@v3.8.3
     # via sous-chef-kitchen (pyproject.toml)
 spacy==3.8.14
     # via
