@@ -7,6 +7,7 @@ import hashlib
 import logging
 import os
 import re
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
@@ -28,6 +29,7 @@ from prefect.client.schemas.objects import (
     WorkerStatus,
     WorkPoolStatus,
 )
+from prefect.client.schemas.sorting import FlowRunSort
 from prefect.exceptions import ObjectNotFound
 from prefect.server.schemas.responses import SetStateStatus
 from prefect.states import State
@@ -63,6 +65,44 @@ PREFECT_WORK_POOL = os.getenv("SC_PREFECT_WORK_POOL", DEFAULT_PREFECT_WORK_POOL)
 MAX_USER_FLOWS = int(os.getenv("SC_MAX_USER_FLOWS", "1"))
 logger = logging.getLogger("sous_chef_kitchen.chef")
 
+# Prefect applies PREFECT_API_DEFAULT_LIMIT (200) per read_flow_runs call when limit is None.
+_FLOW_RUN_PAGE_SIZE = 200
+# Avoid unbounded memory if a filter matches a huge history.
+_FLOW_RUN_MAX_PAGES = 250
+
+
+def _run_recency_key(run: FlowRun) -> datetime:
+    """Sort key for newest-first lists (prefer enqueue time, then execution times)."""
+    for candidate in (run.created, run.start_time, run.expected_start_time):
+        if candidate is not None:
+            return candidate
+    return datetime.min.replace(tzinfo=timezone.utc)
+
+
+async def _read_flow_runs_paginated(
+    client: Any, flow_run_filter: FlowRunFilter
+) -> List[FlowRun]:
+    """
+    Load all flow runs matching the filter, using server-side sort so offset pagination
+    is correct. START_TIME_DESC uses coalesce(start_time, expected_start_time) per Prefect.
+    """
+    runs: List[FlowRun] = []
+    offset = 0
+    for _ in range(_FLOW_RUN_MAX_PAGES):
+        page = await client.read_flow_runs(
+            flow_run_filter=flow_run_filter,
+            sort=FlowRunSort.START_TIME_DESC,
+            limit=_FLOW_RUN_PAGE_SIZE,
+            offset=offset,
+        )
+        if not page:
+            break
+        runs.extend(page)
+        if len(page) < _FLOW_RUN_PAGE_SIZE:
+            break
+        offset += len(page)
+    return runs
+
 
 def _run_to_dict(run: FlowRun) -> Dict[str, Any]:
     """Serialize a Prefect run into a dictionary."""
@@ -74,6 +114,8 @@ def _run_to_dict(run: FlowRun) -> Dict[str, Any]:
         "state_name": run.state_name,
         "state_type": run.state_type,
         "tags": run.tags,
+        # Prefect sets `created` when the flow run row is inserted (API submission time).
+        "submitted_at": run.created,
     }
 
 
@@ -101,7 +143,7 @@ async def fetch_all_runs(
     tags_filter = FlowRunFilter(tags=FlowRunFilterTags(all_=tags))
 
     async with prefect.get_client() as client:
-        runs = await client.read_flow_runs(flow_run_filter=tags_filter)
+        runs = await _read_flow_runs_paginated(client, tags_filter)
 
         # Filter out child runs if parent_only is True
         # Child runs (subflows) have parent_task_run_id set, parent runs have it as None
@@ -110,8 +152,7 @@ async def fetch_all_runs(
                 run for run in runs if getattr(run, "parent_task_run_id", None) is None
             ]
 
-        # Sort by most recent first (descending order) using the 'created' field
-        runs = sorted(runs, key=lambda run: run.created, reverse=True)
+        runs = sorted(runs, key=_run_recency_key, reverse=True)
 
         return [_run_to_dict(run) for run in runs]
 
@@ -204,11 +245,12 @@ async def fetch_runs_by_state(
     )
 
     async with prefect.get_client() as client:
-        runs = await client.read_flow_runs(flow_run_filter=states_filter)
+        runs = await _read_flow_runs_paginated(client, states_filter)
         if parent_only:
             runs = [
                 run for run in runs if getattr(run, "parent_task_run_id", None) is None
             ]
+        runs = sorted(runs, key=_run_recency_key, reverse=True)
         return [_run_to_dict(run) for run in runs]
 
 
