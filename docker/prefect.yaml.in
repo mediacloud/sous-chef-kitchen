@@ -24,8 +24,11 @@ prefect-version: 3.2.0
 #    tag: '{{ build-image.tag }}'
 #    credentials: '{{ prefect.blocks.docker-registry-credentials.docker-auth }}'
 
-# No pull steps: flow code and dependencies are baked into worker image.
-pull: []
+# Flow code lives under /app in Dockerfile.worker. Prefect 3 can otherwise set cwd to
+# PREFECT_HOME (/opt/prefect on the base image), breaking relative entrypoints.
+pull:
+- prefect.deployments.steps.set_working_directory:
+    directory: /app
 
 # the deployments section allows you to provide configuration for deploying flows
 deployments:

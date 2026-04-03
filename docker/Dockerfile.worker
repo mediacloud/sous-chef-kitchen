@@ -1,6 +1,9 @@
 FROM prefecthq/prefect:3-latest
 
 ENV APP=/app
+# Official image defaults PREFECT_HOME to /opt/prefect; Prefect 3 may chdir there
+# before loading script entrypoints. Flow code is baked under /app — keep them aligned.
+ENV PREFECT_HOME=${APP}
 WORKDIR ${APP}
 
 # Runtime OS dependencies required by flow libraries.
