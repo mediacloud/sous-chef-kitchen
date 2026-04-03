@@ -116,6 +116,8 @@ def _run_to_dict(run: FlowRun) -> Dict[str, Any]:
         "tags": run.tags,
         # Prefect sets `created` when the flow run row is inserted (API submission time).
         "submitted_at": run.created,
+        # Set when the run reaches a terminal state (success, failed, cancelled, etc.).
+        "ended_at": run.end_time,
     }
 
 
