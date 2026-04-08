@@ -104,6 +104,17 @@ async def _read_flow_runs_paginated(
     return runs
 
 
+def _duration_seconds(run: FlowRun) -> Optional[float]:
+    """Wall time from start (or submission) to end; None if run has not finished."""
+    if run.end_time is None:
+        return None
+    start = run.start_time or run.created
+    if start is None:
+        return None
+    sec = (run.end_time - start).total_seconds()
+    return float(max(0.0, sec))
+
+
 def _run_to_dict(run: FlowRun) -> Dict[str, Any]:
     """Serialize a Prefect run into a dictionary."""
 
@@ -118,6 +129,7 @@ def _run_to_dict(run: FlowRun) -> Dict[str, Any]:
         "submitted_at": run.created,
         # Set when the run reaches a terminal state (success, failed, cancelled, etc.).
         "ended_at": run.end_time,
+        "duration_seconds": _duration_seconds(run),
     }
 
 
