@@ -125,7 +125,7 @@ run_as_login_user() {
 
 report_deployment() {
     # Reporting is best-effort; deployment success should not depend on it.
-    if ! python3 -m mc-manage.airtable-deployment-update --help >/dev/null 2>&1; then
+    if ! run_as_login_user "python3 -m mc-manage.airtable-deployment-update --help" >/dev/null 2>&1; then
 	echo "WARNING: deployment reporting skipped (mc-manage not available)" 1>&2
 	return 0
     fi
@@ -183,14 +183,7 @@ report_deployment() {
 	echo "WARNING: $KITCHEN_PYPROJECT_FILE not found; using image tag as version" 1>&2
     fi
 
-    export AIRTABLE_API_KEY
-    export AIRTABLE_BASE_ID
-    if ! python3 -m mc-manage.airtable-deployment-update \
-	 --codebase "sous-chef-kitchen" \
-	 --name "$STACK_NAME" \
-	 --env "$DEPLOY_TYPE" \
-	 --version "$REPORT_VERSION" \
-	 --hardware "$HOSTNAME"; then
+    if ! run_as_login_user "AIRTABLE_API_KEY='$AIRTABLE_API_KEY' AIRTABLE_BASE_ID='$AIRTABLE_BASE_ID' python3 -m mc-manage.airtable-deployment-update --codebase 'sous-chef-kitchen' --name '$STACK_NAME' --env '$DEPLOY_TYPE' --version '$REPORT_VERSION' --hardware '$HOSTNAME'"; then
 	echo "WARNING: deployment reporting failed (non-fatal)" 1>&2
     fi
     return 0

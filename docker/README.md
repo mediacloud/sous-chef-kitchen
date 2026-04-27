@@ -4,6 +4,9 @@ This a reproducable process for dev deployment. - Everything here is set up to b
 ###
 `sudo ./docker/deploy.sh` will build and tag Docker images, interpolate environment variables into the swarm configuration, and launch a docker-swarm instance with all moving parts. If that runs successfully, you're ready to test.
 
+Before deploying, install dev dependencies in your active virtual environment so deployment reporting tooling is available:
+`pip install .[dev]`
+
 ### Prefect server database (PostgreSQL)
 
 The stack includes a `prefect-postgres` service. The Prefect API uses it via `PREFECT_API_DATABASE_CONNECTION_URL` (see [Prefect 3 self-hosted](https://docs.prefect.io/v3/how-to-guides/self-hosted/server-cli)) instead of SQLite, which avoids `database is locked` errors under concurrent API and worker load.
