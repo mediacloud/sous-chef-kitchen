@@ -40,6 +40,7 @@ common = [
 
 # for pre-commit, make requirements
 dev = [
+    "mc-manage @ git+https://github.com/mediacloud/mc-manage@main",
     "pip-tools >= 7.5.2",  # 7.5.2+ fixes compatibility with pip >= 25.3 (removes use_pep517 dependency)
     "pre-commit ~= 4.2.0"
 ]
