@@ -123,6 +123,79 @@ run_as_login_user() {
     fi
 }
 
+report_deployment() {
+    # Reporting is best-effort; deployment success should not depend on it.
+    if ! python3 -m mc-manage.airtable-deployment-update --help >/dev/null 2>&1; then
+	echo "WARNING: deployment reporting skipped (mc-manage not available)" 1>&2
+	return 0
+    fi
+
+    # Reuse private temp dir and clone pattern to fetch env.sh secrets.
+    REPORT_CONF_DIR=$SCRIPT_DIR/private-report-conf$$
+    rm -rf "$REPORT_CONF_DIR"
+    if ! run_as_login_user mkdir "$REPORT_CONF_DIR"; then
+	echo "WARNING: deployment reporting skipped (could not create temp dir)" 1>&2
+	return 0
+    fi
+    chmod go-rwx "$REPORT_CONF_DIR"
+
+    REPORT_CWD=$(pwd)
+    cd "$REPORT_CONF_DIR" || return 0
+    CONFIG_REPO_PREFIX=$(zzz tvg@tvguho.pbz:zrqvnpybhq)
+    MGMT_CONFIG_REPO_NAME=$(zzz znantrzrag-pbasvt)
+    if ! run_as_login_user "git clone $CONFIG_REPO_PREFIX/$MGMT_CONFIG_REPO_NAME.git" >/dev/null 2>&1; then
+	echo "WARNING: deployment reporting skipped (could not clone management-config)" 1>&2
+	cd "$REPORT_CWD" || true
+	rm -rf "$REPORT_CONF_DIR"
+	return 0
+    fi
+
+    ENV_SH="$REPORT_CONF_DIR/$MGMT_CONFIG_REPO_NAME/env.sh"
+    if [ ! -f "$ENV_SH" ]; then
+	echo "WARNING: deployment reporting skipped (missing env.sh)" 1>&2
+	cd "$REPORT_CWD" || true
+	rm -rf "$REPORT_CONF_DIR"
+	return 0
+    fi
+
+    # Source in a subshell and print only needed vars as safe KEY=VALUE lines.
+    REPORT_ENV=$(sh -c ". \"$ENV_SH\" >/dev/null 2>&1; printf '%s\n' \"AIRTABLE_API_KEY=\${AIRTABLE_API_KEY-}\" \"AIRTABLE_BASE_ID=\${AIRTABLE_BASE_ID-}\"")
+    AIRTABLE_API_KEY=$(echo "$REPORT_ENV" | awk -F= '/^AIRTABLE_API_KEY=/{sub(/^AIRTABLE_API_KEY=/,""); print; exit}')
+    AIRTABLE_BASE_ID=$(echo "$REPORT_ENV" | awk -F= '/^AIRTABLE_BASE_ID=/{sub(/^AIRTABLE_BASE_ID=/,""); print; exit}')
+    cd "$REPORT_CWD" || true
+    rm -rf "$REPORT_CONF_DIR"
+
+    if [ "x$AIRTABLE_API_KEY" = x -o "x$AIRTABLE_BASE_ID" = x ]; then
+	echo "WARNING: deployment reporting skipped (missing AIRTABLE_API_KEY or AIRTABLE_BASE_ID)" 1>&2
+	return 0
+    fi
+
+    REPORT_VERSION=$KITCHEN_IMAGE_TAG
+    KITCHEN_PYPROJECT_FILE=$SCRIPT_DIR/../pyproject.toml
+    if [ -f "$KITCHEN_PYPROJECT_FILE" ]; then
+	PYPROJECT_VERSION=$(awk -F'"' '/^[[:space:]]*version[[:space:]]*=/ { print $2; exit }' "$KITCHEN_PYPROJECT_FILE")
+	if [ "x$PYPROJECT_VERSION" != x ]; then
+	    REPORT_VERSION=$PYPROJECT_VERSION
+	else
+	    echo "WARNING: could not parse package version from $KITCHEN_PYPROJECT_FILE; using image tag" 1>&2
+	fi
+    else
+	echo "WARNING: $KITCHEN_PYPROJECT_FILE not found; using image tag as version" 1>&2
+    fi
+
+    export AIRTABLE_API_KEY
+    export AIRTABLE_BASE_ID
+    if ! python3 -m mc-manage.airtable-deployment-update \
+	 --codebase "sous-chef-kitchen" \
+	 --name "$STACK_NAME" \
+	 --env "$DEPLOY_TYPE" \
+	 --version "$REPORT_VERSION" \
+	 --hardware "$HOSTNAME"; then
+	echo "WARNING: deployment reporting failed (non-fatal)" 1>&2
+    fi
+    return 0
+}
+
 # report dirty repo
 # (used to allow dirty deploys, so this centralized that test)
 dirty() {
@@ -528,12 +601,5 @@ echo "$DATE_TIME $HOSTNAME $STACK_NAME $REMOTE TAG" >> $SCRIPT_DIR/deploy.log
 
 # optionally prune old images?
 
-# report deployment to airtable
-# this depends on sourcing PRIVATE_CONF file to get id & key
-# run inside stack to report when host/stack restarted
-#export AIRTABLE_API_KEY
-#export MEAG_BASE_ID
-#if [ "x$AIRTABLE_API_KEY" != x ]; then
-#    echo updating airtable
-#    python3 -m mc-manage.airtable-deployment-update --codebase "sous-chef-kitchen" --name $STACK_NAME --env $DEPLOY_TYPE --version $KITCHEN_IMAGE_TAG --hardware $HOSTNAME
-#fi
+echo "Reporting deployment to Airtable (best effort)"
+report_deployment
