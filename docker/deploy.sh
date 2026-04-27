@@ -14,7 +14,7 @@
 # works for users in docker group: su(do) not required!
 
 SCRIPT=$0
-SCRIPT_DIR=$(dirname $SCRIPT)
+SCRIPT_DIR=$(cd "$(dirname "$SCRIPT")" && pwd)
 
 # keep created files (which may contain secrets) private:
 umask 077
@@ -141,24 +141,23 @@ report_deployment() {
     fi
     chmod go-rwx "$REPORT_CONF_DIR"
 
-    REPORT_CWD=$(pwd)
-    cd "$REPORT_CONF_DIR" || return 0
     CONFIG_REPO_PREFIX=$(zzz tvg@tvguho.pbz:zrqvnpybhq)
     MGMT_CONFIG_REPO_NAME=$(zzz znantrzrag-pbasvt)
-    echo "Reporting preflight: cloning '$MGMT_CONFIG_REPO_NAME' from '$CONFIG_REPO_PREFIX' into '$REPORT_CONF_DIR'" 1>&2
-    if ! run_as_login_user "git clone $CONFIG_REPO_PREFIX/$MGMT_CONFIG_REPO_NAME.git" >/dev/null 2>&1; then
+    REPORT_REPO_DIR="$REPORT_CONF_DIR/$MGMT_CONFIG_REPO_NAME"
+    echo "Reporting preflight: cloning '$MGMT_CONFIG_REPO_NAME' from '$CONFIG_REPO_PREFIX' into '$REPORT_REPO_DIR'" 1>&2
+    if ! run_as_login_user "git clone $CONFIG_REPO_PREFIX/$MGMT_CONFIG_REPO_NAME.git '$REPORT_REPO_DIR'" >/dev/null 2>&1; then
 	echo "WARNING: deployment reporting skipped (could not clone management-config)" 1>&2
-	cd "$REPORT_CWD" || true
 	rm -rf "$REPORT_CONF_DIR"
 	return 0
     fi
-    echo "Reporting preflight: clone command completed, checking expected path '$REPORT_CONF_DIR/$MGMT_CONFIG_REPO_NAME'" 1>&2
+    echo "Reporting preflight: clone command completed, checking expected path '$REPORT_REPO_DIR'" 1>&2
 
-    ENV_SH="$REPORT_CONF_DIR/$MGMT_CONFIG_REPO_NAME/env.sh"
+    ENV_SH="$REPORT_REPO_DIR/env.sh"
     if [ ! -f "$ENV_SH" ]; then
 	echo "WARNING: deployment reporting skipped (missing env.sh at '$ENV_SH')" 1>&2
+	echo "Reporting debug: cwd is '$(pwd)'" 1>&2
 	ls -la "$REPORT_CONF_DIR" 1>&2 || true
-	cd "$REPORT_CWD" || true
+	ls -la "$REPORT_REPO_DIR" 1>&2 || true
 	rm -rf "$REPORT_CONF_DIR"
 	return 0
     fi
@@ -167,7 +166,6 @@ report_deployment() {
     REPORT_ENV=$(sh -c ". \"$ENV_SH\" >/dev/null 2>&1; printf '%s\n' \"AIRTABLE_API_KEY=\${AIRTABLE_API_KEY-}\" \"AIRTABLE_BASE_ID=\${AIRTABLE_BASE_ID-}\"")
     AIRTABLE_API_KEY=$(echo "$REPORT_ENV" | awk -F= '/^AIRTABLE_API_KEY=/{sub(/^AIRTABLE_API_KEY=/,""); print; exit}')
     AIRTABLE_BASE_ID=$(echo "$REPORT_ENV" | awk -F= '/^AIRTABLE_BASE_ID=/{sub(/^AIRTABLE_BASE_ID=/,""); print; exit}')
-    cd "$REPORT_CWD" || true
     rm -rf "$REPORT_CONF_DIR"
 
     if [ "x$AIRTABLE_API_KEY" = x -o "x$AIRTABLE_BASE_ID" = x ]; then
