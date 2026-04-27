@@ -125,6 +125,7 @@ run_as_login_user() {
 
 report_deployment() {
     # Reporting is best-effort; deployment success should not depend on it.
+    echo "Reporting preflight: checking mc-manage availability as user '$LOGIN_USER'" 1>&2
     if ! run_as_login_user "python3 -m mc-manage.airtable-deployment-update --help" >/dev/null 2>&1; then
 	echo "WARNING: deployment reporting skipped (mc-manage not available)" 1>&2
 	return 0
@@ -132,6 +133,7 @@ report_deployment() {
 
     # Reuse private temp dir and clone pattern to fetch env.sh secrets.
     REPORT_CONF_DIR=$SCRIPT_DIR/private-report-conf$$
+    echo "Reporting preflight: using temp config dir '$REPORT_CONF_DIR'" 1>&2
     rm -rf "$REPORT_CONF_DIR"
     if ! run_as_login_user mkdir "$REPORT_CONF_DIR"; then
 	echo "WARNING: deployment reporting skipped (could not create temp dir)" 1>&2
@@ -143,16 +145,19 @@ report_deployment() {
     cd "$REPORT_CONF_DIR" || return 0
     CONFIG_REPO_PREFIX=$(zzz tvg@tvguho.pbz:zrqvnpybhq)
     MGMT_CONFIG_REPO_NAME=$(zzz znantrzrag-pbasvt)
+    echo "Reporting preflight: cloning '$MGMT_CONFIG_REPO_NAME' from '$CONFIG_REPO_PREFIX' into '$REPORT_CONF_DIR'" 1>&2
     if ! run_as_login_user "git clone $CONFIG_REPO_PREFIX/$MGMT_CONFIG_REPO_NAME.git" >/dev/null 2>&1; then
 	echo "WARNING: deployment reporting skipped (could not clone management-config)" 1>&2
 	cd "$REPORT_CWD" || true
 	rm -rf "$REPORT_CONF_DIR"
 	return 0
     fi
+    echo "Reporting preflight: clone command completed, checking expected path '$REPORT_CONF_DIR/$MGMT_CONFIG_REPO_NAME'" 1>&2
 
     ENV_SH="$REPORT_CONF_DIR/$MGMT_CONFIG_REPO_NAME/env.sh"
     if [ ! -f "$ENV_SH" ]; then
-	echo "WARNING: deployment reporting skipped (missing env.sh)" 1>&2
+	echo "WARNING: deployment reporting skipped (missing env.sh at '$ENV_SH')" 1>&2
+	ls -la "$REPORT_CONF_DIR" 1>&2 || true
 	cd "$REPORT_CWD" || true
 	rm -rf "$REPORT_CONF_DIR"
 	return 0
