@@ -11,7 +11,6 @@ import dotenv
 from tabulate import tabulate
 
 from sous_chef_kitchen.client.menu import API_BASE_URL, SousChefKitchenAPIClient
-from sous_chef_kitchen.shared import recipe
 from sous_chef_kitchen.shared.models import SousChefKitchenSystemStatus
 
 DEFAULT_ENV_PATH = Path.cwd() / ".env"
@@ -205,13 +204,21 @@ def auth(validate: bool) -> None:
         click.echo("API credentials cached locally for future use.")
 
 
+def _get_title(k) -> str:
+    return SousChefKitchenSystemStatus.model_fields[k].title
+
+
+def _get_ready(v):
+    return "Ready" if v else "Not Ready"
+
+
 @click.command("status")
 def system_status() -> None:
     """Check whether the Sous Chef Kitchen API is available and ready."""
     api_client = SousChefKitchenAPIClient()
     system_status = api_client.fetch_system_status()
-    system_name = lambda k: SousChefKitchenSystemStatus.model_fields[k].title
-    system_ready = lambda v: "Ready" if v else "Not Ready"
+    system_name = (_get_title,)
+    system_ready = (_get_ready,)
     system_rows = [(system_name(k), system_ready(v)) for k, v in system_status]
     click.echo(f"SC_API_BASE_URL: {API_BASE_URL}")
     click.echo(tabulate(system_rows, headers=["System Name", "Status"]))

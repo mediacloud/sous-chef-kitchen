@@ -90,9 +90,11 @@ def setup_secrets(overwrite=True):
         aws_client_parameters=AwsClientParameters(endpoint_url=config.B2_S3_ENDPOINT),
     ).save("b2-s3-credentials", overwrite=overwrite)
 
-    Variable.set("b2-bucket-name", config.B2_BUCKET)
+    Variable.set("b2-bucket-name", config.B2_BUCKET, overwrite=overwrite)
     if config.HUGGINGFACE_BILL_TO:
-        Variable.set("llm-huggingface-bill-to", config.HUGGINGFACE_BILL_TO)
+        Variable.set(
+            "llm-huggingface-bill-to", config.HUGGINGFACE_BILL_TO, overwrite=overwrite
+        )
 
     EmailServerCredentials(
         username=config.GMAIL_APP_USERNAME,
