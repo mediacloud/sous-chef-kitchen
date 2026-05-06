@@ -1,5 +1,5 @@
 #!/bin/sh
-#Run configuration steps againsts a prefect instance. 
+#Run configuration steps againsts a prefect instance.
 
 
 echo "==> Running prefect-config.py"

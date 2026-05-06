@@ -8,7 +8,7 @@
 
 **Root Cause**: The endpoint was returning the `auth_status` object directly instead of raising an `HTTPException` when authentication failed.
 
-**Fix**: 
+**Fix**:
 - Modified all protected endpoints to raise `HTTPException` with 403 status when authentication fails
 - Only the `/auth/validate` endpoint should return the auth status object
 - Added detailed logging for authentication attempts
@@ -111,4 +111,4 @@ Should return 403 Forbidden.
 - The `/auth/validate` endpoint is the only endpoint that should return the auth status object
 - All other protected endpoints now properly raise HTTPException on authentication failure
 - Logging is now properly configured for Docker environments
-- Detailed authentication logging helps with debugging auth issues 
+- Detailed authentication logging helps with debugging auth issues
