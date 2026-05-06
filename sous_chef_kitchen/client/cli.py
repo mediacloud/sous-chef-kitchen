@@ -204,21 +204,18 @@ def auth(validate: bool) -> None:
         click.echo("API credentials cached locally for future use.")
 
 
-def _get_title(k) -> str:
-    return SousChefKitchenSystemStatus.model_fields[k].title
-
-
-def _get_ready(v):
-    return "Ready" if v else "Not Ready"
-
-
 @click.command("status")
 def system_status() -> None:
     """Check whether the Sous Chef Kitchen API is available and ready."""
     api_client = SousChefKitchenAPIClient()
     system_status = api_client.fetch_system_status()
-    system_name = (_get_title,)
-    system_ready = (_get_ready,)
+
+    def system_name(k) -> str:
+        return SousChefKitchenSystemStatus.model_fields[k].title
+
+    def system_ready(v):
+        return "Ready" if v else "Not Ready"
+
     system_rows = [(system_name(k), system_ready(v)) for k, v in system_status]
     click.echo(f"SC_API_BASE_URL: {API_BASE_URL}")
     click.echo(tabulate(system_rows, headers=["System Name", "Status"]))
