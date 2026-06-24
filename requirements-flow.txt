@@ -4,9 +4,9 @@
 #
 #    pip-compile --allow-unsafe --extra=sous-chef --output-file=requirements-flow.txt.tmp --strip-extras pyproject.toml
 #
-aiohappyeyeballs==2.6.1
+aiohappyeyeballs==2.6.2
     # via aiohttp
-aiohttp==3.13.5
+aiohttp==3.14.1
     # via
     #   instructor
     #   litellm
@@ -24,14 +24,14 @@ annotated-doc==0.0.4
     #   typer
 annotated-types==0.7.0
     # via pydantic
-anyio==4.13.0
+anyio==4.14.0
     # via
     #   groq
     #   httpx
     #   openai
     #   prefect
     #   starlette
-apprise==1.10.0
+apprise==1.11.0
     # via prefect
 asgi-lifespan==2.1.0
     # via prefect
@@ -66,18 +66,18 @@ blis==1.3.3
     # via thinc
 boilerpy3==1.0.7
     # via mediacloud-metadata
-boto3==1.43.4
+boto3==1.43.36
     # via
     #   prefect-aws
     #   sous-chef
-botocore==1.43.4
+botocore==1.43.36
     # via
     #   boto3
     #   prefect-aws
     #   s3transfer
-burner-redis==0.1.6
+burner-redis==0.1.7
     # via pydocket
-cachetools==7.1.1
+cachetools==7.1.4
     # via
     #   prefect
     #   py-key-value-aio
@@ -86,9 +86,10 @@ catalogue==2.0.10
     #   spacy
     #   srsly
     #   thinc
-certifi==2026.4.22
+certifi==2026.6.17
     # via
     #   apprise
+    #   elastic-transport
     #   httpcore
     #   httpx
     #   requests
@@ -103,10 +104,13 @@ charset-normalizer==3.4.7
     #   requests
     #   trafilatura
 ciso8601==2.2.0
-    # via wayback-news-search
-click==8.3.3
+    # via
+    #   mc-providers
+    #   wayback-news-search
+click==8.4.2
     # via
     #   apprise
+    #   huggingface-hub
     #   litellm
     #   nltk
     #   prefect
@@ -131,11 +135,11 @@ constantly==23.10.4
     # via twisted
 coolname==5.0.0
     # via prefect
-courlan==1.3.2
+courlan==1.4.0
     # via trafilatura
 cronsim==2.7
     # via pydocket
-cryptography==48.0.0
+cryptography==49.0.0
     # via
     #   prefect
     #   pyopenssl
@@ -148,20 +152,20 @@ cssselect==1.4.0
     #   parsel
     #   readability-lxml
     #   scrapy
-cuda-bindings==13.2.0
+cuda-bindings==13.3.1
     # via torch
-cuda-pathfinder==1.5.4
+cuda-pathfinder==1.5.5
     # via cuda-bindings
 cuda-toolkit==13.0.2
     # via torch
-cyclopts==4.11.2
+cyclopts==4.19.0
     # via prefect
 cymem==2.0.13
     # via
     #   preshed
     #   spacy
     #   thinc
-dateparser==1.1.8
+dateparser==1.2.2
     # via
     #   htmldate
     #   mc-providers
@@ -179,15 +183,23 @@ docstring-parser==0.18.0
     # via
     #   cyclopts
     #   instructor
-docutils==0.22.4
-    # via rich-rst
+elastic-transport==8.17.1
+    # via
+    #   elasticsearch
+    #   elasticsearch-dsl
+elasticsearch==8.17.2
+    # via
+    #   elasticsearch-dsl
+    #   mc-providers
+elasticsearch-dsl==8.17.1
+    # via mc-providers
 exceptiongroup==1.3.1
     # via
     #   anyio
     #   prefect
     #   pydocket
     #   taskgroup
-fastapi==0.136.1
+fastapi==0.138.0
     # via prefect
 fasttext==0.9.3
     # via mc-providers
@@ -199,7 +211,7 @@ feedfinder2==0.0.4
     # via newspaper3k
 feedparser==6.0.12
     # via newspaper3k
-filelock==3.29.0
+filelock==3.29.4
     # via
     #   huggingface-hub
     #   tldextract
@@ -208,7 +220,7 @@ frozenlist==1.8.0
     # via
     #   aiohttp
     #   aiosignal
-fsspec==2026.4.0
+fsspec==2026.6.0
     # via
     #   huggingface-hub
     #   prefect
@@ -219,17 +231,17 @@ goose3==3.1.21
     # via mediacloud-metadata
 graphviz==0.21
     # via prefect
-greenlet==3.5.0
+greenlet==3.5.2
     # via sqlalchemy
-griffe==2.0.2
+griffe==2.1.0
     # via prefect
-griffecli==2.0.2
+griffecli==2.1.0
     # via griffe
-griffelib==2.0.2
+griffelib==2.1.0
     # via
     #   griffe
     #   griffecli
-groq==1.2.0
+groq==1.5.0
     # via sous-chef
 h11==0.16.0
     # via
@@ -237,11 +249,11 @@ h11==0.16.0
     #   uvicorn
 h2==4.3.0
     # via httpx
-hf-xet==1.5.0
+hf-xet==1.5.1
     # via huggingface-hub
-hpack==4.1.0
+hpack==4.2.0
     # via h2
-htmldate==1.4.3
+htmldate==1.8.1
     # via
     #   mediacloud-metadata
     #   trafilatura
@@ -257,7 +269,7 @@ httpx==0.28.1
     #   openai
     #   prefect
     #   weasel
-huggingface-hub==1.14.0
+huggingface-hub==1.20.1
     # via
     #   sous-chef
     #   tokenizers
@@ -270,7 +282,7 @@ hyperframe==6.1.0
     # via h2
 hyperlink==21.0.0
     # via twisted
-idna==3.13
+idna==3.18
     # via
     #   anyio
     #   httpx
@@ -278,13 +290,11 @@ idna==3.13
     #   requests
     #   tldextract
     #   yarl
-importlib-metadata==8.7.1
-    # via
-    #   litellm
-    #   opentelemetry-api
+importlib-metadata==8.9.0
+    # via litellm
 incremental==24.11.0
     # via twisted
-instructor==1.15.1
+instructor==1.15.3
     # via sous-chef
 itemadapter==0.13.1
     # via
@@ -307,7 +317,7 @@ jinja2==3.1.6
     #   torch
 jinja2-humanize-extension==0.4.0
     # via prefect
-jiter==0.13.0
+jiter==0.14.0
     # via
     #   instructor
     #   openai
@@ -333,9 +343,9 @@ justext==3.0.2
     # via trafilatura
 langdetect==1.0.9
     # via goose3
-litellm==1.83.0
+litellm==1.89.3
     # via sous-chef
-lxml==6.1.0
+lxml==5.1.1
     # via
     #   goose3
     #   htmldate
@@ -347,30 +357,24 @@ lxml==6.1.0
     #   scrapy
     #   trafilatura
 lxml-html-clean==0.4.4
-    # via
-    #   lxml
-    #   readability-lxml
+    # via readability-lxml
 mako==1.3.12
     # via alembic
 markdown==3.10.2
     # via apprise
-markdown-it-py==4.1.0
+markdown-it-py==4.2.0
     # via rich
 markupsafe==3.0.3
     # via
     #   jinja2
     #   mako
-mc-providers==0.4.0
+mc-providers @ git+https://github.com/mediacloud/mc-providers@v4.4.latest
     # via sous-chef
 mdurl==0.1.2
     # via markdown-it-py
-mediacloud==5.0.0
-    # via
-    #   mc-providers
-    #   sous-chef
-mediacloud-api-legacy==3.13.1
-    # via mc-providers
-mediacloud-metadata==0.9.4
+mediacloud==5.1.0
+    # via sous-chef
+mediacloud-metadata==1.4.3
     # via
     #   mc-providers
     #   sous-chef
@@ -385,7 +389,7 @@ murmurhash==1.0.15
     #   preshed
     #   spacy
     #   thinc
-mypy-boto3-s3==1.43.0
+mypy-boto3-s3==1.43.31
     # via prefect-aws
 mypy-boto3-secretsmanager==1.43.0
     # via prefect-aws
@@ -408,18 +412,20 @@ numpy==1.26.4
     #   thinc
     #   transformers
     #   yake
-nvidia-cublas==13.1.0.3
+nvidia-cublas==13.1.1.3
     # via
-    #   cuda-toolkit
     #   nvidia-cudnn-cu13
     #   nvidia-cusolver
+    #   torch
 nvidia-cuda-cupti==13.0.85
     # via cuda-toolkit
 nvidia-cuda-nvrtc==13.0.88
-    # via cuda-toolkit
+    # via
+    #   cuda-toolkit
+    #   nvidia-cublas
 nvidia-cuda-runtime==13.0.96
     # via cuda-toolkit
-nvidia-cudnn-cu13==9.19.0.56
+nvidia-cudnn-cu13==9.20.0.48
     # via torch
 nvidia-cufft==12.0.0.61
     # via cuda-toolkit
@@ -433,9 +439,9 @@ nvidia-cusparse==12.6.3.3
     # via
     #   cuda-toolkit
     #   nvidia-cusolver
-nvidia-cusparselt-cu13==0.8.0
+nvidia-cusparselt-cu13==0.8.1
     # via torch
-nvidia-nccl-cu13==2.28.9
+nvidia-nccl-cu13==2.29.7
     # via torch
 nvidia-nvjitlink==13.0.88
     # via
@@ -449,11 +455,11 @@ nvidia-nvtx==13.0.85
     # via cuda-toolkit
 oauthlib==3.3.1
     # via requests-oauthlib
-openai==2.35.0
+openai==2.43.0
     # via
     #   instructor
     #   litellm
-opentelemetry-api==1.41.1
+opentelemetry-api==1.43.0
     # via
     #   prefect
     #   pydocket
@@ -488,7 +494,7 @@ pillow==12.2.0
     #   newspaper3k
 pluggy==1.6.0
     # via prefect
-prefect==3.7.0
+prefect==3.7.5
     # via
     #   prefect-aws
     #   prefect-email
@@ -505,26 +511,20 @@ prometheus-client==0.25.0
     # via
     #   prefect
     #   pydocket
-propcache==0.4.1
+propcache==0.5.2
     # via
     #   aiohttp
     #   yarl
-protego==0.6.0
+protego==0.6.1
     # via scrapy
-protobuf==7.34.1
+protobuf==7.35.1
     # via sous-chef
-py-key-value-aio==0.4.4
+py-key-value-aio==0.4.5
     # via pydocket
 py3langid==0.2.2
     # via mediacloud-metadata
 pyahocorasick==2.3.1
     # via goose3
-pyasn1==0.6.3
-    # via
-    #   pyasn1-modules
-    #   service-identity
-pyasn1-modules==0.4.2
-    # via service-identity
 pybind11==3.0.4
     # via fasttext
 pycparser==3.0
@@ -550,24 +550,27 @@ pydantic-core==2.46.4
     #   pydantic
 pydantic-extra-types==2.11.1
     # via prefect
-pydantic-settings==2.14.0
+pydantic-settings==2.14.2
     # via prefect
 pydispatcher==2.0.7
     # via scrapy
-pydocket==0.20.1
+pydocket==0.22.0
     # via prefect
 pygments==2.20.0
-    # via rich
-pyhumps==3.8.0
-    # via mc-providers
-pyopenssl==26.2.0
+    # via
+    #   rich
+    #   rich-rst
+pyopenssl==26.3.0
     # via scrapy
 pyparsing==3.3.2
     # via prefect-aws
-python-dateutil==2.8.2
+pyrate-limiter==4.4.0
+    # via requests-ratelimiter
+python-dateutil==2.9.0.post0
     # via
     #   botocore
     #   dateparser
+    #   elasticsearch-dsl
     #   goose3
     #   htmldate
     #   mc-providers
@@ -602,7 +605,7 @@ readability-lxml==0.8.4.1
     # via mediacloud-metadata
 readchar==4.2.2
     # via prefect
-redis==7.4.0
+redis==8.0.1
     # via
     #   py-key-value-aio
     #   pydocket
@@ -610,14 +613,14 @@ referencing==0.37.0
     # via
     #   jsonschema
     #   jsonschema-specifications
-regex==2026.4.4
+regex==2026.5.9
     # via
     #   dateparser
     #   nltk
     #   segtok
     #   tiktoken
     #   transformers
-requests==2.33.1
+requests==2.34.2
     # via
     #   apprise
     #   docker
@@ -626,11 +629,11 @@ requests==2.33.1
     #   instructor
     #   mc-providers
     #   mediacloud
-    #   mediacloud-api-legacy
     #   mediacloud-metadata
     #   newspaper3k
     #   requests-file
     #   requests-oauthlib
+    #   requests-ratelimiter
     #   sous-chef
     #   spacy
     #   tiktoken
@@ -640,6 +643,8 @@ requests-file==3.0.1
     # via tldextract
 requests-oauthlib==2.0.0
     # via apprise
+requests-ratelimiter==0.10.0
+    # via mediacloud
 rfc3339-validator==0.1.4
     # via prefect
 rich==14.3.4
@@ -650,7 +655,7 @@ rich==14.3.4
     #   pydocket
     #   rich-rst
     #   typer
-rich-rst==1.3.2
+rich-rst==2.0.1
     # via cyclopts
 rpds-py==0.30.0
     # via
@@ -660,11 +665,11 @@ ruamel-yaml==0.19.1
     # via prefect
 ruamel-yaml-clib==0.2.15
     # via prefect
-s3transfer==0.17.0
+s3transfer==0.19.0
     # via boto3
-safetensors==0.7.0
+safetensors==0.8.0
     # via transformers
-scrapy==2.15.2
+scrapy==2.16.0
     # via sous-chef
 segtok==1.5.11
     # via yake
@@ -672,12 +677,14 @@ semver==3.0.4
     # via prefect
 sentencepiece==0.2.1
     # via sous-chef
-service-identity==24.2.0
+service-identity==26.1.0
     # via scrapy
 sgmllib3k==1.0.0
     # via feedparser
 shellingham==1.5.4
     # via typer
+sigfig==1.1.10
+    # via mc-providers
 six==1.17.0
     # via
     #   feedfinder2
@@ -688,7 +695,7 @@ six==1.17.0
     #   rfc3339-validator
     #   surt
     #   url-normalize
-smart-open==7.6.0
+smart-open==7.6.1
     # via weasel
 sniffio==1.3.1
     # via
@@ -696,12 +703,15 @@ sniffio==1.3.1
     #   groq
     #   openai
     #   prefect
-soupsieve==2.8.3
+sortedcontainers==2.4.0
+    # via sigfig
+soupsieve==2.8.4
     # via beautifulsoup4
-sous-chef @ git+https://github.com/mediacloud/sous-chef@v3.9.4
+sous-chef @ git+https://github.com/mediacloud/sous-chef@v3.10.0
     # via sous-chef-kitchen (pyproject.toml)
 spacy==3.8.14
     # via
+    #   mc-providers
     #   sous-chef
     #   spacy-download
     #   spacy-ngram
@@ -713,7 +723,7 @@ spacy-loggers==1.0.5
     # via spacy
 spacy-ngram==1.0.1
     # via sous-chef
-sqlalchemy==2.0.49
+sqlalchemy==2.0.51
     # via
     #   alembic
     #   prefect
@@ -722,8 +732,12 @@ srsly==2.5.3
     #   spacy
     #   thinc
     #   weasel
-starlette==1.0.0
-    # via fastapi
+starlette==1.3.1
+    # via
+    #   fastapi
+    #   prefect
+statsd-client==1.0.7
+    # via mc-providers
 surt==0.3.1
     # via mediacloud-metadata
 sympy==1.14.0
@@ -740,13 +754,13 @@ text-unidecode==1.3
     # via python-slugify
 thinc==8.3.13
     # via spacy
-tiktoken==0.12.0
+tiktoken==0.13.0
     # via litellm
 tinysegmenter==0.3
     # via newspaper3k
 tld==0.13.2
     # via courlan
-tldextract==3.4.4
+tldextract==5.1.3
     # via
     #   mediacloud-metadata
     #   newspaper3k
@@ -763,24 +777,24 @@ tomli==2.4.1
     #   alembic
     #   cyclopts
     #   incremental
-torch==2.11.0
+torch==2.12.1
     # via
     #   sous-chef
     #   sous-chef-kitchen (pyproject.toml)
-tqdm==4.67.3
+tqdm==4.68.3
     # via
     #   huggingface-hub
     #   nltk
     #   openai
     #   spacy
     #   transformers
-trafilatura==1.6.1
+trafilatura==1.8.1
     # via mediacloud-metadata
-transformers==5.8.0
+transformers==5.12.1
     # via sous-chef
-triton==3.6.0
+triton==3.7.1
     # via torch
-twisted==25.5.0
+twisted==26.4.0
     # via scrapy
 typer==0.25.1
     # via
@@ -792,6 +806,7 @@ typer==0.25.1
     #   weasel
 typing-extensions==4.15.0
     # via
+    #   aiohttp
     #   aiosignal
     #   alembic
     #   anyio
@@ -799,6 +814,7 @@ typing-extensions==4.15.0
     #   confection
     #   cryptography
     #   cyclopts
+    #   elasticsearch-dsl
     #   exceptiongroup
     #   fastapi
     #   groq
@@ -832,7 +848,7 @@ tzdata==2026.2
     # via
     #   pandas
     #   pendulum
-tzlocal==5.3.1
+tzlocal==5.4.3
     # via dateparser
 uncalled-for==0.3.2
     # via pydocket
@@ -840,15 +856,16 @@ uniseg==0.10.1
     # via sous-chef
 url-normalize==1.4.3
     # via mediacloud-metadata
-urllib3==2.6.3
+urllib3==2.7.0
     # via
     #   botocore
     #   courlan
     #   docker
+    #   elastic-transport
     #   htmldate
     #   requests
     #   trafilatura
-uvicorn==0.46.0
+uvicorn==0.49.0
     # via prefect
 w3lib==2.4.1
     # via
@@ -867,15 +884,15 @@ weasel==1.0.0
     # via spacy
 websockets==16.0
     # via prefect
-wrapt==2.1.2
+wrapt==2.2.2
     # via smart-open
 yake==0.7.3
     # via sous-chef
-yarl==1.23.0
+yarl==1.24.2
     # via aiohttp
-zipp==3.23.1
+zipp==4.1.0
     # via importlib-metadata
-zope-interface==8.4
+zope-interface==8.5
     # via
     #   scrapy
     #   twisted
