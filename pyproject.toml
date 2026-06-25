@@ -85,6 +85,5 @@ upgrade = true
 # https://setuptools.pypa.io/en/latest/userguide/package_discovery.html#custom-discovery
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["indexer*"]
-exclude = ["indexer.tests*"]
+include = ["sous_chef_kitchen*"]
 namespaces = false
