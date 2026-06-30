@@ -1,4 +1,15 @@
 #!/bin/sh
+# NOTE: INTENTIONALLY avoids depending on bash!!!
+
+# PLEASE do not add functions that are called only once
+#	(unless unavoidable due to need to return early)
+# putting them at the top of the file makes it hard to
+# understand the flow, and putting them just before they're
+# used interrupts the flow, and makes it ambiguous whether
+# they're used elsewhere!
+
+# Deployment infrastructure is OVERDUE for translation
+# to a customizable set of Python classes and mixins!!
 
 # Deploy sous-chef-kitchen API stack
 # Phil Budne, 7/2025
@@ -67,33 +78,6 @@ done
 
 # XXX complain if anything extra on command line?
 
-check_sous_chef_ref() {
-    if [ -z "${SOUS_CHEF_REF:-}" ]; then
-	return 0
-    fi
-
-    echo "Checking sous-chef git ref '${SOUS_CHEF_REF}'..."
-    if git ls-remote --exit-code https://github.com/mediacloud/sous-chef.git "$SOUS_CHEF_REF" >/dev/null 2>&1; then
-	echo "Found sous-chef ref '${SOUS_CHEF_REF}'."
-    else
-	echo "ERROR: sous-chef git ref '${SOUS_CHEF_REF}' not found on GitHub." 1>&2
-	echo "       Make sure it's a valid branch, tag, or SHA in mediacloud/sous-chef." 1>&2
-	exit 1
-    fi
-}
-
-check_sous_chef_ref
-
-SOUS_CHEF_SHA=""
-if [ -n "${SOUS_CHEF_REF:-}" ]; then
-    SOUS_CHEF_SHA=$(git ls-remote https://github.com/mediacloud/sous-chef.git "$SOUS_CHEF_REF" | awk 'NR==1 {print $1}')
-    if [ -z "$SOUS_CHEF_SHA" ]; then
-	echo "ERROR: could not resolve sous-chef git ref '${SOUS_CHEF_REF}' to a commit SHA." 1>&2
-	exit 1
-    fi
-    echo "Resolved sous-chef ref '${SOUS_CHEF_REF}' to commit ${SOUS_CHEF_SHA}."
-fi
-
 if [ "x$AS_USER" = x -a $(whoami) != root ]; then
     if ! groups | tr ' ' '\n' | fgrep -qx docker; then
        echo must be run as root or member of docker group 1>&2
@@ -121,68 +105,6 @@ run_as_login_user() {
 	# here as user in docker group
 	$*
     fi
-}
-
-report_deployment() {
-    # Reporting is best-effort; deployment success should not depend on it.
-    if ! run_as_login_user "python3 -m mc-manage.airtable-deployment-update --help" >/dev/null 2>&1; then
-	echo "WARNING: deployment reporting skipped (mc-manage not available)" 1>&2
-	return 0
-    fi
-
-    # Reuse private temp dir and clone pattern to fetch env.sh secrets.
-    REPORT_CONF_DIR=$SCRIPT_DIR/private-report-conf$$
-    rm -rf "$REPORT_CONF_DIR"
-    if ! run_as_login_user mkdir "$REPORT_CONF_DIR"; then
-	echo "WARNING: deployment reporting skipped (could not create temp dir)" 1>&2
-	return 0
-    fi
-    chmod go-rwx "$REPORT_CONF_DIR"
-
-    CONFIG_REPO_PREFIX=$(zzz tvg@tvguho.pbz:zrqvnpybhq)
-    MGMT_CONFIG_REPO_NAME=$(zzz znantrzrag-pbasvt)
-    REPORT_REPO_DIR="$REPORT_CONF_DIR/$MGMT_CONFIG_REPO_NAME"
-    if ! run_as_login_user "git clone $CONFIG_REPO_PREFIX/$MGMT_CONFIG_REPO_NAME.git '$REPORT_REPO_DIR'" >/dev/null 2>&1; then
-	echo "WARNING: deployment reporting skipped (could not clone management-config)" 1>&2
-	rm -rf "$REPORT_CONF_DIR"
-	return 0
-    fi
-
-    ENV_SH="$REPORT_REPO_DIR/env.sh"
-    if [ ! -f "$ENV_SH" ]; then
-	echo "WARNING: deployment reporting skipped (missing env.sh at '$ENV_SH')" 1>&2
-	rm -rf "$REPORT_CONF_DIR"
-	return 0
-    fi
-
-    # Source in a subshell and print only needed vars as safe KEY=VALUE lines.
-    REPORT_ENV=$(sh -c ". \"$ENV_SH\" >/dev/null 2>&1; printf '%s\n' \"AIRTABLE_API_KEY=\${AIRTABLE_API_KEY-}\" \"AIRTABLE_BASE_ID=\${AIRTABLE_BASE_ID-}\"")
-    AIRTABLE_API_KEY=$(echo "$REPORT_ENV" | awk -F= '/^AIRTABLE_API_KEY=/{sub(/^AIRTABLE_API_KEY=/,""); print; exit}')
-    AIRTABLE_BASE_ID=$(echo "$REPORT_ENV" | awk -F= '/^AIRTABLE_BASE_ID=/{sub(/^AIRTABLE_BASE_ID=/,""); print; exit}')
-    rm -rf "$REPORT_CONF_DIR"
-
-    if [ "x$AIRTABLE_API_KEY" = x -o "x$AIRTABLE_BASE_ID" = x ]; then
-	echo "WARNING: deployment reporting skipped (missing AIRTABLE_API_KEY or AIRTABLE_BASE_ID)" 1>&2
-	return 0
-    fi
-
-    REPORT_VERSION=$KITCHEN_IMAGE_TAG
-    KITCHEN_PYPROJECT_FILE=$SCRIPT_DIR/../pyproject.toml
-    if [ -f "$KITCHEN_PYPROJECT_FILE" ]; then
-	PYPROJECT_VERSION=$(awk -F'"' '/^[[:space:]]*version[[:space:]]*=/ { print $2; exit }' "$KITCHEN_PYPROJECT_FILE")
-	if [ "x$PYPROJECT_VERSION" != x ]; then
-	    REPORT_VERSION=$PYPROJECT_VERSION
-	else
-	    echo "WARNING: could not parse package version from $KITCHEN_PYPROJECT_FILE; using image tag" 1>&2
-	fi
-    else
-	echo "WARNING: $KITCHEN_PYPROJECT_FILE not found; using image tag as version" 1>&2
-    fi
-
-    if ! run_as_login_user "AIRTABLE_API_KEY='$AIRTABLE_API_KEY' AIRTABLE_BASE_ID='$AIRTABLE_BASE_ID' MEAG_BASE_ID='$AIRTABLE_BASE_ID' python3 -m mc-manage.airtable-deployment-update --codebase 'sous-chef-kitchen' --name '$STACK_NAME' --env '$DEPLOY_TYPE' --version '$REPORT_VERSION' --hardware '$HOSTNAME'"; then
-	echo "WARNING: deployment reporting failed (non-fatal)" 1>&2
-    fi
-    return 0
 }
 
 # report dirty repo
@@ -228,6 +150,28 @@ prod|staging)
     ;;
 esac
 
+# moved to after DEPLOY_TYPE set
+# only allow for development!!
+if [ "x${SOUS_CHEF_REF}" != x ]; then
+    case $DEPLOY_TYPE in
+    prod|staging)
+	echo "Ignoring SOUS_CHEF_REF for $DEPLOY_TYPE deployment" 1>&2
+	SOUS_CHEF_SHA=""
+	SOUS_CHEF_REF=""
+	;;
+    *)
+	# NOTE! HTTPS URL does not require ssh key, so can be run as root
+	SOUS_CHEF_SHA=$(git ls-remote https://github.com/mediacloud/sous-chef.git "$SOUS_CHEF_REF" | awk '{print $1; exit}')
+	if [ "x$SOUS_CHEF_SHA" = x ]; then
+	    echo "ERROR: could not resolve sous-chef git ref '${SOUS_CHEF_REF}' to a commit SHA." 1>&2
+	    echo "       Make sure it's a valid branch, tag, or SHA in mediacloud/sous-chef." 1>&2
+	    exit 1
+	fi
+	echo "Resolved sous-chef ref '${SOUS_CHEF_REF}' to commit ${SOUS_CHEF_SHA}."
+	;;
+    esac
+fi
+
 # check if in sync with remote
 # (send stderr to /dev/null in case remote branch does not exist)
 run_as_login_user git fetch $REMOTE $BRANCH 2>/dev/null
@@ -246,6 +190,32 @@ PREFECT_CONTAINERS=1
 
 DATE_TIME=$(date -u '+%F-%H-%M-%S')
 TAG=$DATE_TIME-$HOSTNAME-$BRANCH
+
+# require previously undeployed version number for BOTH prod & staging
+case $DEPLOY_TYPE in
+prod|staging)
+    # tomlib isn't available until Python 3.11,
+    # and Ubuntu 20.04 only has Python 3.10
+    # pip requires tomli, so assuming it's "always available" on 20.04:
+    PROJECT_VERSION=$(python -c 'import tomli; print(tomli.load(open("pyproject.toml", "rb"))["project"]["version"])')
+    if [ "x$PROJECT_VERSION" = x ]; then
+	echo "could not extract project version from pyproject.toml" 1>&2
+	exit 1
+    fi
+    echo extracted version $PROJECT_VERSION from pyproject.toml
+    PROD_TAG=v$PROJECT_VERSION
+    # NOTE! fgrep -x (-F -x) to match literal whole line (w/o regexps)
+    if git tag | grep -F -x "$PROD_TAG" >/dev/null; then
+	echo "found local tag $PROD_TAG: update pyproject.toml & CHANGES.md" 1>&2
+	exit 1
+    fi
+    if git fetch $REMOTE $TAG >/dev/null 2>&1; then
+	echo "found $REMOTE tag $TAG: update pyproject.toml & CHANGES.md" 1>&2
+	exit 1
+    fi
+    ;;
+esac
+
 case $DEPLOY_TYPE in
 prod)
     PORT_BIAS=0
@@ -254,11 +224,7 @@ prod)
     #PREFECT_SERVER=mediacloud-prefect.angwin
     SENTRY_ENVIRONMENT="production"
     STACK_NAME=$BASE_STACK_NAME
-
-    # could v${PACKAGE_VERSION} if available"
-    # rss-fetcher extracts package version and uses that for tag,
-    # refusing to deploy if tag already exists.
-    TAG=${DATE_TIME}-prod
+    TAG=$PROD_TAG
     ;;
 staging)
     PORT_BIAS=10		# ports: prod + 10
@@ -591,4 +557,62 @@ echo "$DATE_TIME $HOSTNAME $STACK_NAME $REMOTE TAG" >> $SCRIPT_DIR/deploy.log
 # optionally prune old images?
 
 echo "Reporting deployment to Airtable (best effort)"
-report_deployment
+case $DEPLOY_TYPE in
+prod|staging)
+    # Reporting is best-effort; deployment success should not depend on it.
+    # last thing in file, so just exit
+    if ! run_as_login_user "python3 -m mc-manage.airtable-deployment-update --help" >/dev/null 2>&1; then
+	echo "WARNING: deployment reporting skipped (mc-manage not available)" 1>&2
+	exit 0
+    fi
+
+    # Reuse private temp dir and clone pattern to fetch env.sh secrets.
+    REPORT_CONF_DIR=$SCRIPT_DIR/private-report-conf$$
+    rm -rf "$REPORT_CONF_DIR"
+    if ! run_as_login_user mkdir "$REPORT_CONF_DIR"; then
+	echo "WARNING: deployment reporting skipped (could not create temp dir)" 1>&2
+	exit 0
+    fi
+    chmod go-rwx "$REPORT_CONF_DIR"
+
+    CONFIG_REPO_PREFIX=$(zzz tvg@tvguho.pbz:zrqvnpybhq)
+    MGMT_CONFIG_REPO_NAME=$(zzz znantrzrag-pbasvt)
+    REPORT_REPO_DIR="$REPORT_CONF_DIR/$MGMT_CONFIG_REPO_NAME"
+    if ! run_as_login_user "git clone $CONFIG_REPO_PREFIX/$MGMT_CONFIG_REPO_NAME.git '$REPORT_REPO_DIR'" >/dev/null 2>&1; then
+	echo "WARNING: deployment reporting skipped (could not clone management-config)" 1>&2
+	rm -rf "$REPORT_CONF_DIR"
+	exit 0
+    fi
+
+    ENV_SH="$REPORT_REPO_DIR/env.sh"
+    if [ ! -f "$ENV_SH" ]; then
+	echo "WARNING: deployment reporting skipped (missing env.sh at '$ENV_SH')" 1>&2
+	rm -rf "$REPORT_CONF_DIR"
+	exit 0
+    fi
+
+    # Source in a subshell and print only needed vars as safe KEY=VALUE lines.
+    REPORT_ENV=$(sh -c ". \"$ENV_SH\" >/dev/null 2>&1; printf '%s\n' \"AIRTABLE_API_KEY=\${AIRTABLE_API_KEY-}\" \"AIRTABLE_BASE_ID=\${AIRTABLE_BASE_ID-}\"")
+    AIRTABLE_API_KEY=$(echo "$REPORT_ENV" | awk -F= '/^AIRTABLE_API_KEY=/{sub(/^AIRTABLE_API_KEY=/,""); print; exit}')
+    AIRTABLE_BASE_ID=$(echo "$REPORT_ENV" | awk -F= '/^AIRTABLE_BASE_ID=/{sub(/^AIRTABLE_BASE_ID=/,""); print; exit}')
+    rm -rf "$REPORT_CONF_DIR"
+
+    if [ "x$AIRTABLE_API_KEY" = x -o "x$AIRTABLE_BASE_ID" = x ]; then
+	echo "WARNING: deployment reporting skipped (missing AIRTABLE_API_KEY or AIRTABLE_BASE_ID)" 1>&2
+	exit 0
+    fi
+
+    REPORT_VERSION=$KITCHEN_IMAGE_TAG
+
+    if [ "x$PROD_TAG" != x ]; then
+	REPORT_VERSION=$PROD_TAG
+    else
+	echo "WARNING: could not parse package version from $KITCHEN_PYPROJECT_FILE; using image tag" 1>&2
+	echo "SHOULD NOT HAPPEN????" 1>&2
+    fi
+
+    if ! run_as_login_user "AIRTABLE_API_KEY='$AIRTABLE_API_KEY' AIRTABLE_BASE_ID='$AIRTABLE_BASE_ID' MEAG_BASE_ID='$AIRTABLE_BASE_ID' python3 -m mc-manage.airtable-deployment-update --codebase 'sous-chef-kitchen' --name '$STACK_NAME' --env '$DEPLOY_TYPE' --version '$REPORT_VERSION' --hardware '$HOSTNAME'"; then
+	echo "WARNING: deployment reporting failed (non-fatal)" 1>&2
+    fi
+    ;;
+esac
