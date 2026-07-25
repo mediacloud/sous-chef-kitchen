@@ -43,7 +43,9 @@ update:	$(VENVDONE)
 	$(VENVBIN)/pre-commit autoupdate
 
 ## build requirements-*.txt files
-requirements requirements-flow.txt: pyproject.toml Makefile
+requirements: requirements-flow.txt
+
+requirements-flow.txt: pyproject.toml Makefile
 	$(VENVBIN)/pip-compile --extra sous-chef -o requirements-flow.txt.tmp --strip-extras pyproject.toml
 	mv requirements-flow.txt.tmp requirements-flow.txt
 
