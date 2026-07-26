@@ -60,10 +60,8 @@ class SousChefKitchenDeploy(PyProjectMixin, DockerDeploy):
         self.deploy_default_settings(args)  # before loading files
 
         if self.is_prod_staging():
-            r = self.PROJECT_REPO
-            self.settings_load_private_files(f"{r}-config", [".env"])
-            m = "management"
-            self.settings_load_private_files(f"{m}-config", ["env.sh"])
+            self.settings_load_private_files(self.PROJECT_REPO, [".env"])
+            self.settings_load_private_files("management", ["env.sh"])
         else:
             # XXX test if it exists??
             self.settings_load_file(".env")
