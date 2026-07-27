@@ -1,7 +1,3 @@
-# XXX copy image_xxx values (as needed) to settings!!!
-# XXX check for missing settings!!!
-# XXX export select settings to docker_env
-
 """
 mc-deploy script for sous-chef-kitchen API stack
 started 7/25/2026
@@ -13,18 +9,64 @@ from rss-fetcher/dokku-scripts/push.sh 9/2022!
 
 import os
 import sys
+import urllib.parse
 
 # mc-deploy package (in mediacloud/system-dev-ops repo):
 from mc_deploy.base import CmdArgs, CmdParser, ParserArgs
-from mc_deploy.docker import DockerDeploy
+from mc_deploy.docker import ST, Check, DockerDeploy
 from mc_deploy.pyproject import PyProjectMixin
 
 SUPER_VERBOSE = False  # for debug
 
 
-# MUST match compose file container name (cannot be interpolated)!!
-# hostname! no underscores!
+# MUST match compose file container names (cannot be interpolated)!!
+# hostnames, so no underscores!
 PREFECT_CONTAINER_NAME = "prefect-server"
+PREFECT_POSTGRES = "prefect-postgres"
+
+# settings interpolated in docker-compose.yml file (via environment vars)
+# should be prefixed with the name of the component they apply to!!!
+
+# NOTE! failure to export a variable may result in cryptic
+# error message "read: ..../docker is dir"
+
+DOCKER_SETTINGS = [
+    # PLEASE keep in alphabetical order to avoid duplicates!!
+    # "B2" settings should be compatible with any S3-like endpoint!
+    ST("B2_APP_KEY", check=Check.PROD),
+    ST("B2_BUCKET", check=Check.PROD),
+    ST("B2_KEY_ID", check=Check.PROD),
+    ST("B2_S3_ENDPOINT", check=Check.PROD),
+    ST("KITCHEN_DEPLOYMENT_NAME", default="kitchen-base"),
+    ST("KITCHEN_IMAGE"),
+    ST("KITCHEN_PORT", check=Check.INT, default="8000"),  # inside stack
+    # port published *on docker host* using deployment-type bias:
+    ST("KITCHEN_PORT_PUBLISHED", check=Check.INT),
+    # Email Server Creds
+    ST("GMAIL_APP_USERNAME", check=Check.PROD),
+    ST("GMAIL_APP_PASSWORD", check=Check.PROD),
+    ST("GROQ_API_KEY", check=Check.PROD),  # LLMs
+    ST("HUGGINGFACE_API_KEY", check=Check.PROD),  # LLMs
+    ST("MEDIACLOUD_API_KEY", check=Check.PROD),
+    ST("NETWORK_NAME"),  # set later
+    ST("PREFECT_API_DATABASE_CONNECTION_URL"),
+    ST("PREFECT_CONTAINERS", check=Check.INT, default="1"),
+    ST("PREFECT_PORT", check=Check.INT, default="4200"),  # inside stack
+    ST("PREFECT_PORT_PUBLISHED", check=Check.INT),  # biased
+    ST("PREFECT_POSTGRES_DB", default="prefect"),
+    ST("PREFECT_POSTGRES_PASSWORD"),
+    ST("PREFECT_POSTGRES_USER", default="prefect"),
+    # user official image for prefect server:
+    ST("PREFECT_SERVER_IMAGE", default="prefecthq/prefect:3-latest"),
+    ST("PREFECT_URL"),
+    ST("PREFECT_WORKER_IMAGE"),
+    ST("PREFECT_WORK_POOL_NAME", default="kitchen-work-pool"),  # multiple places
+    # ST("PRIVATE_CONF_FILE"),   # env-file path: read by docker
+    ST("SC_MAX_USER_FLOWS", check=Check.INT, default="1"),  # max flows per user
+    ST("SOUS_CHEF_REF", check=Check.ALLOW_EMPTY),
+    ST("SOUS_CHEF_SHA", check=Check.ALLOW_EMPTY),
+    # PLEASE keep in alphabetical order to avoid duplicates!!
+]
 
 
 class SousChefKitchenDeploy(PyProjectMixin, DockerDeploy):
@@ -49,71 +91,69 @@ class SousChefKitchenDeploy(PyProjectMixin, DockerDeploy):
     def deploy_default_settings(self, args: CmdArgs) -> None:  # noqa: C901
         """
         called before deploy_cmd_helper to set defaults
-        before settings files loaded
+        before settings files loaded.
+
+        NOTE! inst_name not yet set!
         """
 
-        # Set most variables used in deploy.yaml here
-        # PLEASE try to keep alphabetical to avoid duplicates/confusion,
-        # and prefix with name of component the variable applies to!
+        # get defaults for values passed to docker:
+        self.settings_defaults(DOCKER_SETTINGS)
 
-        self.settings_add("KITCHEN_DEPLOYMENT_NAME", "kitchen-base")
-        # KITCHEN_IMAGE set later
-        # KITCHEN_IMAGE_TAG set later
-        # KITCHEN_IMAGE_NAME set later
+        # DOCKER_SETTINGS out in global vars, things here need to be
+        # set at runtime once instance type etc known.
 
-        kitchen_port = 8000  # native port (inside stack)
-        self.settings_add("KITCHEN_PORT", str(kitchen_port))
-
-        # port published *on docker host* using deployment-type bias:
+        # calculate published port numbers using deployment-type bias
+        # (set in BaseDeploy.deply_cmd_helper) based on default values
+        # set in DOCKER_SETTINGS.
+        kitchen_port = int(self.settings["KITCHEN_PORT"] or "")
         self.settings_add("KITCHEN_PORT_PUBLISHED", str(kitchen_port + self.port_bias))
-
-        # NETWORK_NAME set later
-
-        self.settings_add("PREFECT_CONTAINERS", "1")
 
         self.prefect_file = os.path.join(self.deploy_dir, self.PREFECT_FILE)
         # Interpolated and then built into the kitchen image
         self.settings_add("PREFECT_FILE", self.prefect_file)
 
-        prefect_port = 4200  # native port (inside stack)
-        self.settings_add("PREFECT_PORT", str(prefect_port))
-
-        # calculate published port numbers using deployment-type bias:
+        prefect_port = int(self.settings["PREFECT_PORT"] or "")
         self.settings_add("PREFECT_PORT_PUBLISHED", str(prefect_port + self.port_bias))
 
-        # PREFECT_WORKER_IMAGE set later
-
-        # Keep prefect server on official image.
-        self.settings_add("PREFECT_SERVER_IMAGE", "prefecthq/prefect:3-latest")
+        if self.is_dev():
+            self.settings_add("PREFECT_POSTGRES_PASSWORD", "devprefectlocal")
 
         prefect_url = "http://{PREFECT_CONTAINER_NAME}:{prefect_port}/api"
         self.settings_add("PREFECT_URL", prefect_url)
-
-        # used multiple places: might vary if multiple deployments
-        # sharing uncontainered prefect server?
-        self.settings_add("PREFECT_WORK_POOL_NAME", "kitchen-work-pool")
 
         sha, ref = self.sous_chef_sha_ref(args.sous_chef_ref)
         self.settings_add("SOUS_CHEF_REF", ref)
         self.settings_add("SOUS_CHEF_SHA", sha)
 
     def docker_compose_file_create(self) -> None:
-        # doesn't create compose file!
+        # doesn't create compose file (uses $ENV interpolation)
 
-        # here after inst_name settled, image_tag set,
-        # CANNOT be overridden by settings files:
-        self.settings_add("KITCHEN_IMAGE_NAME", self.docker_image_name())
-        self.settings_add("KITCHEN_IMAGE", self.docker_image_full())
-        self.settings_add("KITCHEN_IMAGE_TAG", self.image_tag)
+        def get(var: str) -> str:
+            val = self.settings.get(var) or ""
+            if not val:
+                self.fatal(f"{var} not set")
+            return val
 
-        # allow multiple deploys on same swarm/cluster:
-        self.settings_add("NETWORK_NAME", self.inst_name)
+        def get_enc(var: str) -> str:
+            return urllib.parse.quote(get(var), safe="")
 
-        self.settings_add("PREFECT_WORKER_IMAGE", self.docker_image_full("-worker"))
+        pw = get_enc("PREFECT_POSTGRES_PASSWORD")
+        user = get_enc("PREFECT_POSTGRES_USER")
+        db = get("PREFECT_POSTGRES_DB")  # wasn't encoded in deploy.sh
+
+        url = f"postgresql+asyncpg://{user}:{pw}@{PREFECT_POSTGRES}:5432/{db}"
+        self.settings_add("PREFECT_API_DATABASE_CONNECTION_URL", url)
+
+        # transfer settings to docker environment
+        self.docker_settings(DOCKER_SETTINGS)
 
         # ################ interpolate prefect.yaml.in
 
         prefect_in_file = self.prefect_file + ".in"
+
+        # was using sed; file is small so deal with it internally,
+        # using brute force (multiple passes over file contents)
+        # avoids changing file during development of this script.
 
         with open(prefect_in_file) as fin:
             prefect_file = fin.read()
@@ -129,6 +169,9 @@ class SousChefKitchenDeploy(PyProjectMixin, DockerDeploy):
                 setting_name = subject_string
             replacement = self.settings[setting_name]
             repl(subject_string, replacement)
+
+        # NOTE!!! If any secrets added here, make file private
+        # in fix_file_owner call below!
 
         # things in settings:
         repl_setting("DEPLOYMENT_NAME", "KITCHEN_DEPLOYMENT_NAME")
@@ -169,7 +212,6 @@ class SousChefKitchenDeploy(PyProjectMixin, DockerDeploy):
 
         if self.is_prod_staging():
             self.settings_load_private_files(self.PROJECT_REPO, [".env"])
-            self.settings_load_private_files("management", ["env.sh"])
         else:
             # XXX test if it exists??
             self.settings_load_file(".env")
@@ -208,47 +250,24 @@ class SousChefKitchenDeploy(PyProjectMixin, DockerDeploy):
     def deploy_cmd_helper(self, args: CmdArgs) -> None:
         super().deploy_cmd_helper(args)  # load config
 
+        # NOTE! Values set here CANNOT be overridden by settings files
+
+        # inst_name not set until BaseDeploy.deploy_cmd_helper returns:
+        # allow multiple deploys on same swarm/cluster:
+        self.settings_add("NETWORK_NAME", self.inst_name)
+
+        # here after image_tag set:
+        self.settings_add("KITCHEN_IMAGE_NAME", self.docker_image_name())
+        self.settings_add("KITCHEN_IMAGE", self.docker_image_full())
+        self.settings_add("KITCHEN_IMAGE_TAG", self.image_tag)
+
+        self.settings_add("PREFECT_WORKER_IMAGE", self.docker_image_full("-worker"))
+
         if SUPER_VERBOSE:
             print("======== settings")
             for key, val in self.settings.items():
                 print(key, val)
 
-        # XXX run "exp" here to put vars in docker environment
-        # XXX pass DOCKER_BUILDKIT=1 COMPOSE_DOCKER_CLI_BUILD=1 ??????
-
 
 d = SousChefKitchenDeploy()
 sys.exit(d.run())
-
-"""
-# Check and export variables interpolated in $COMPOSE_FILE.
-# Values should be set above here, and should be prefixed
-# with the name of the component they apply to!
-
-# PLEASE keep in alphabetical order to avoid duplicates
-# NOTE! failure to export a variable may result in cryptic
-# error message "read: ..../docker is dir"
-exp KITCHEN_DEPLOYMENT_NAME
-exp KITCHEN_IMAGE
-exp KITCHEN_PORT int
-exp KITCHEN_PORT_PUBLISHED int
-
-exp NETWORK_NAME
-
-exp PREFECT_API_DATABASE_CONNECTION_URL
-exp PREFECT_CONTAINERS
-exp PREFECT_PORT int
-exp PREFECT_PORT_PUBLISHED int
-exp PREFECT_POSTGRES_DB
-exp PREFECT_POSTGRES_PASSWORD
-exp PREFECT_POSTGRES_USER
-exp PREFECT_SERVER_IMAGE
-exp PREFECT_URL
-exp PREFECT_WORKER_IMAGE
-exp PREFECT_WORK_POOL_NAME	# used multiple places
-
-exp PRIVATE_CONF_FILE
-exp SC_MAX_USER_FLOWS int	# max flows per user (defaults to 1)
-exp SOUS_CHEF_REF allow-empty
-exp SOUS_CHEF_SHA allow-empty
-"""
