@@ -13,7 +13,7 @@ import urllib.parse
 
 # mc-deploy package (in mediacloud/system-dev-ops repo):
 from mc_deploy.base import CmdArgs, CmdParser, ParserArgs
-from mc_deploy.docker import ST, Check, DockerDeploy
+from mc_deploy.docker import DockerDeploy, TransferCheck, TransferVar
 from mc_deploy.pyproject import PyProjectMixin
 
 SUPER_VERBOSE = False  # for debug
@@ -30,47 +30,52 @@ PREFECT_POSTGRES = "prefect-postgres"
 # NOTE! failure to export a variable may result in cryptic
 # error message "read: ..../docker is dir"
 
+XV = TransferVar
+XC = TransferCheck
 DOCKER_SETTINGS = [
+    # Entries in this list are BY DEFINITION transferred
+    # from "settings" to the environment passed to docker
+    # build and compose commands.
     # PLEASE keep in alphabetical order to avoid duplicates!!
     # "B2" settings should be compatible with any S3-like endpoint!
-    ST("B2_APP_KEY", check=Check.PROD),
-    ST("B2_BUCKET", check=Check.PROD),
-    ST("B2_KEY_ID", check=Check.PROD),
-    ST("B2_S3_ENDPOINT", check=Check.PROD),
-    ST("KITCHEN_DEPLOYMENT_NAME", default="kitchen-base"),
-    ST("KITCHEN_IMAGE"),
-    ST("KITCHEN_PORT", check=Check.INT, default="8000"),  # inside stack
+    XV("B2_APP_KEY", check=XC.PROD),
+    XV("B2_BUCKET", check=XC.PROD),
+    XV("B2_KEY_ID", check=XC.PROD),
+    XV("B2_S3_ENDPOINT", check=XC.PROD),
+    XV("KITCHEN_DEPLOYMENT_NAME", default="kitchen-base"),
+    XV("KITCHEN_IMAGE"),
+    XV("KITCHEN_PORT", check=XC.INT, default="8000"),  # inside stack
     # port published *on docker host* using deployment-type bias:
-    ST("KITCHEN_PORT_PUBLISHED", check=Check.INT),
-    # Email Server Creds
-    ST("GMAIL_APP_USERNAME", check=Check.PROD),
-    ST("GMAIL_APP_PASSWORD", check=Check.PROD),
-    ST("GROQ_API_KEY", check=Check.PROD),  # LLMs
-    ST("HUGGINGFACE_API_KEY", check=Check.PROD),  # LLMs
-    ST("MEDIACLOUD_API_KEY", check=Check.PROD),
-    ST("NETWORK_NAME"),  # set later
-    ST("PREFECT_API_DATABASE_CONNECTION_URL"),
-    ST("PREFECT_CONTAINERS", check=Check.INT, default="1"),
-    ST("PREFECT_PORT", check=Check.INT, default="4200"),  # inside stack
-    ST("PREFECT_PORT_PUBLISHED", check=Check.INT),  # biased
-    ST("PREFECT_POSTGRES_DB", default="prefect"),
-    ST("PREFECT_POSTGRES_PASSWORD"),
-    ST("PREFECT_POSTGRES_USER", default="prefect"),
+    XV("KITCHEN_PORT_PUBLISHED", check=XC.INT),
+    # Email Server Creds:
+    XV("GMAIL_APP_USERNAME", check=XC.PROD),
+    XV("GMAIL_APP_PASSWORD", check=XC.PROD),
+    XV("GROQ_API_KEY", check=XC.PROD),  # LLMs
+    XV("HUGGINGFACE_API_KEY", check=XC.PROD),  # LLMs
+    XV("MEDIACLOUD_API_KEY", check=XC.PROD),
+    XV("NETWORK_NAME"),  # set later
+    XV("PREFECT_API_DATABASE_CONNECTION_URL"),
+    XV("PREFECT_CONTAINERS", check=XC.INT, default="1"),
+    XV("PREFECT_PORT", check=XC.INT, default="4200"),  # inside stack
+    XV("PREFECT_PORT_PUBLISHED", check=XC.INT),  # biased
+    XV("PREFECT_POSTGRES_DB", default="prefect"),
+    XV("PREFECT_POSTGRES_PASSWORD"),
+    XV("PREFECT_POSTGRES_USER", default="prefect"),
     # user official image for prefect server:
-    ST("PREFECT_SERVER_IMAGE", default="prefecthq/prefect:3-latest"),
-    ST("PREFECT_URL"),
-    ST("PREFECT_WORKER_IMAGE"),
-    ST("PREFECT_WORK_POOL_NAME", default="kitchen-work-pool"),  # multiple places
-    # ST("PRIVATE_CONF_FILE"),   # env-file path: read by docker
-    ST("SC_MAX_USER_FLOWS", check=Check.INT, default="1"),  # max flows per user
-    ST("SOUS_CHEF_REF", check=Check.ALLOW_EMPTY),
-    ST("SOUS_CHEF_SHA", check=Check.ALLOW_EMPTY),
+    XV("PREFECT_SERVER_IMAGE", default="prefecthq/prefect:3-latest"),
+    XV("PREFECT_URL"),
+    XV("PREFECT_WORKER_IMAGE"),
+    XV("PREFECT_WORK_POOL_NAME", default="kitchen-work-pool"),  # multiple places
+    # XV("PRIVATE_CONF_FILE"),   # env-file path: read by docker
+    XV("SC_MAX_USER_FLOWS", check=XC.INT, default="1"),  # max flows per user
+    XV("SOUS_CHEF_REF", check=XC.ALLOW_EMPTY),
+    XV("SOUS_CHEF_SHA", check=XC.ALLOW_EMPTY),
     # PLEASE keep in alphabetical order to avoid duplicates!!
 ]
 
 
 class SousChefKitchenDeploy(PyProjectMixin, DockerDeploy):
-    IMAGE_NAME = "notused"  # see docker_image_name below
+    IMAGE_NAME = "notused"  # see docker_image_name method below
     IMAGE_REPO = "mcsystems"
     INST_BASE = "kitchen"  # stack base name
 
@@ -145,7 +150,7 @@ class SousChefKitchenDeploy(PyProjectMixin, DockerDeploy):
         self.settings_add("PREFECT_API_DATABASE_CONNECTION_URL", url)
 
         # transfer settings to docker environment
-        self.docker_settings(DOCKER_SETTINGS)
+        self.settings_docker(DOCKER_SETTINGS)
 
         # ################ interpolate prefect.yaml.in
 
@@ -238,12 +243,11 @@ class SousChefKitchenDeploy(PyProjectMixin, DockerDeploy):
     def deploy_cmd_init(self, cp: CmdParser) -> None:
         super().deploy_cmd_init(cp)
 
-        # XXX _could_ take default from environment SOUS_CHEF_REF
-        # (would better reflect shell script behavior)
+        defref = os.environ.get("SOUS_CHEF_REF", "")
         cp.add_argument(
-            "-s",
+            "-S",
             "--sous-chef-ref",
-            default="",
+            default=defref,
             help="sous-chef git ref for development only",
         )
 
